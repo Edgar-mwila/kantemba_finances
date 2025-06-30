@@ -11,6 +11,9 @@ class DBHelper {
         'CREATE TABLE users(id TEXT PRIMARY KEY, name TEXT, password TEXT, role TEXT, permissions TEXT)',
       );
       await db.execute(
+        'CREATE TABLE business(id TEXT PRIMARY KEY, name TEXT, isMultiShop INTEGER, isVatRegistered INTEGER, isTurnoverTaxApplicable INTEGER)',
+      );
+      await db.execute(
         'CREATE TABLE inventory(id TEXT PRIMARY KEY, name TEXT, price REAL, quantity INTEGER, lowStockThreshold INTEGER, createdBy TEXT)',
       );
       await db.execute(

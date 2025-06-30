@@ -5,6 +5,7 @@ import 'package:kantemba_finances/models/sale.dart';
 import 'package:kantemba_finances/providers/inventory_provider.dart';
 import 'package:kantemba_finances/providers/sales_provider.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
+import 'package:kantemba_finances/providers/business_provider.dart';
 
 class NewSaleModal extends StatefulWidget {
   const NewSaleModal({super.key});
@@ -47,17 +48,17 @@ class _NewSaleModalState extends State<NewSaleModal> {
     }
   }
 
-  Map<String, double> _calculateTaxes(double total) {
+  Map<String, double> _calculateTaxes(double total, BusinessProvider businessProvider) {
     double vat = 0.0;
     double turnoverTax = 0.0;
-    double levy = 0.0;
+    double levy = 0.0; // Assuming mobile money levy is constant for now
 
-    if (isVatRegistered) {
+    if (businessProvider.isVatRegistered) {
       vat = total * vatRate;
-    } else if (isTurnoverTaxApplicable) {
+    } else if (businessProvider.isTurnoverTaxApplicable) {
       turnoverTax = total * turnoverTaxRate;
     }
-    if (isMobileMoneyPayment) {
+    if (isMobileMoneyPayment) { // This could also be a business setting
       levy = mobileMoneyLevy;
     }
     return {'vat': vat, 'turnoverTax': turnoverTax, 'levy': levy};
@@ -66,8 +67,8 @@ class _NewSaleModalState extends State<NewSaleModal> {
   void _addSale() {
     if (_cartItems.isEmpty) return;
 
-    final currentUser =
-        Provider.of<UsersProvider>(context, listen: false).currentUser;
+    final businessProvider = Provider.of<BusinessProvider>(context, listen: false);
+    final currentUser = Provider.of<UsersProvider>(context, listen: false).currentUser;
     if (currentUser == null) {
       ScaffoldMessenger.of(
         context,
@@ -75,7 +76,7 @@ class _NewSaleModalState extends State<NewSaleModal> {
       return;
     }
 
-    final taxes = _calculateTaxes(_grandTotal);
+    final taxes = _calculateTaxes(_grandTotal, businessProvider);
     final grandTotal =
         _grandTotal + taxes['vat']! + taxes['turnoverTax']! + taxes['levy']!;
 

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/models/user.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
+import 'package:kantemba_finances/screens/settings/backup_settings_screen.dart';
+import 'package:kantemba_finances/screens/settings/security_settings_screen.dart';
+import 'package:kantemba_finances/screens/settings/tax_compliance_settings_screen.dart';
 
 class ManageUsersScreen extends StatelessWidget {
   const ManageUsersScreen({super.key});
@@ -120,13 +123,15 @@ class ManageUsersScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            _buildSettingItem(context, Icons.cloud_upload, 'Data & Backup'),
-            _buildSettingItem(
-              context,
-              Icons.receipt_long,
-              'Tax Compliance Settings',
-            ),
-            _buildSettingItem(context, Icons.security, 'Security Settings'),
+            _buildSettingItem(context, Icons.cloud_upload, 'Data & Backup', () {
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BackupSettingsScreen()));
+            }),
+            _buildSettingItem(context, Icons.receipt_long, 'Tax Compliance Settings', () {
+               Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TaxComplianceSettingsScreen()));
+            }),
+            _buildSettingItem(context, Icons.security, 'Security Settings', () {
+               Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SecuritySettingsScreen()));
+            }),
           ],
         ),
       ),
@@ -228,7 +233,7 @@ class ManageUsersScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingItem(BuildContext context, IconData icon, String title) {
+  Widget _buildSettingItem(BuildContext context, IconData icon, String title, VoidCallback onTap) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6.0),
       elevation: 1,
@@ -237,11 +242,7 @@ class ManageUsersScreen extends StatelessWidget {
         leading: Icon(icon, color: Colors.green.shade600),
         title: Text(title, style: const TextStyle(fontSize: 16)),
         trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-        onTap: () {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('$title - Coming Soon!')));
-        },
+        onTap: onTap,
       ),
     );
   }
