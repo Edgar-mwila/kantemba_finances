@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/providers/inventory_provider.dart';
+import 'package:kantemba_finances/widgets/new_inventory_modal.dart';
 // import 'package:kantemba_finances/models/inventory_item.dart';
 
 class InventoryScreen extends StatelessWidget {
@@ -24,7 +25,11 @@ class InventoryScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Show a modal to add a new inventory item
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            builder: (ctx) => const NewInventoryModal(),
+          );
         },
         child: const Icon(Icons.add),
         backgroundColor: Colors.green.shade700,

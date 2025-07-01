@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 // import 'package:kantemba_finances/models/expense.dart';
 import 'package:kantemba_finances/providers/expenses_provider.dart';
+import 'package:kantemba_finances/widgets/new_expense_modal.dart';
 
 class ExpensesScreen extends StatelessWidget {
   const ExpensesScreen({super.key});
@@ -24,7 +25,11 @@ class ExpensesScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Show a modal to add a new expense
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            builder: (ctx) => const NewExpenseModal(),
+          );
         },
         child: const Icon(Icons.add),
         backgroundColor: Colors.green.shade700,

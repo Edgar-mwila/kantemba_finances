@@ -32,12 +32,13 @@ class SalesProvider with ChangeNotifier {
                     .map(
                       (itemMap) => SaleItem(
                         product: InventoryItem(
-                          id: itemMap["id"],
+                          id: itemMap["productId"],
                           name: itemMap['productName'],
                           price: itemMap['price'],
                           quantity: itemMap['quantity'],
-                          createdBy: itemMap["createdBy"],
+                          createdBy: '', // Not tracked in sale_items
                         ),
+                        quantity: itemMap['quantity'],
                       ),
                     )
                     .toList(),
@@ -76,7 +77,7 @@ class SalesProvider with ChangeNotifier {
     for (var item in newSale.items) {
       await DBHelper.insert('sale_items', {
         'saleId': newSale.id,
-        'productId': item.product.name, // Assuming name is unique for now
+        'productId': item.product.id, // Use the actual product ID
         'productName': item.product.name,
         'price': item.product.price,
         'quantity': item.quantity,

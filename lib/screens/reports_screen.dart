@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/providers/sales_provider.dart';
 import 'package:kantemba_finances/providers/expenses_provider.dart';
-import 'package:kantemba_finances/screens/reports/sales_book_screen.dart';
-import 'package:kantemba_finances/screens/reports/expense_book_screen.dart';
-import 'package:kantemba_finances/screens/reports/inventory_book_screen.dart';
-import 'package:kantemba_finances/screens/reports/tax_reports_screen.dart';
+import 'package:kantemba_finances/providers/inventory_provider.dart';
+import 'package:kantemba_finances/screens/reports/profit_loss_screen.dart';
+import 'package:kantemba_finances/screens/reports/cash_flow_screen.dart';
+import 'package:kantemba_finances/screens/reports/balance_sheet_screen.dart';
+import 'package:kantemba_finances/screens/reports/tax_summary_screen.dart';
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({super.key});
@@ -14,6 +15,7 @@ class ReportsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final salesData = Provider.of<SalesProvider>(context);
     final expensesData = Provider.of<ExpensesProvider>(context);
+    final inventoryData = Provider.of<InventoryProvider>(context);
 
     final totalSales = salesData.sales.fold(
       0.0,
@@ -24,6 +26,10 @@ class ReportsScreen extends StatelessWidget {
       (sum, item) => sum + item.amount,
     );
     final profit = totalSales - totalExpenses;
+    final totalStockValue = inventoryData.items.fold(
+      0.0,
+      (sum, item) => sum + (item.price * item.quantity),
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Reports'), centerTitle: true),
@@ -65,6 +71,14 @@ class ReportsScreen extends StatelessWidget {
                     profit >= 0 ? Colors.blue : Colors.orange,
                   ),
                 ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildSummaryCard(
+                    'Stock Value',
+                    'K${totalStockValue.toStringAsFixed(2)}',
+                    Colors.purple,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 24),
@@ -75,38 +89,38 @@ class ReportsScreen extends StatelessWidget {
             const SizedBox(height: 10),
             _buildReportMenuItem(
               context,
+              Icons.receipt_long,
+              'Profit & Loss Statement',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfitLossScreen()),
+              ),
+            ),
+            _buildReportMenuItem(
+              context,
+              Icons.swap_vert,
+              'Cash Flow Statement',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CashFlowScreen()),
+              ),
+            ),
+            _buildReportMenuItem(
+              context,
+              Icons.account_balance,
+              'Balance Sheet',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BalanceSheetScreen()),
+              ),
+            ),
+            _buildReportMenuItem(
+              context,
               Icons.receipt,
-              'Sales Book',
+              'Tax Summary',
               () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const SalesBookScreen()),
-              ),
-            ),
-            _buildReportMenuItem(
-              context,
-              Icons.money_off,
-              'Expense Book',
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ExpenseBookScreen()),
-              ),
-            ),
-            _buildReportMenuItem(
-              context,
-              Icons.inventory,
-              'Inventory Book',
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const InventoryBookScreen()),
-              ),
-            ),
-            _buildReportMenuItem(
-              context,
-              Icons.assessment,
-              'Tax Reports',
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const TaxReportsScreen()),
+                MaterialPageRoute(builder: (_) => const TaxSummaryScreen()),
               ),
             ),
           ],

@@ -9,18 +9,19 @@ class InventoryProvider with ChangeNotifier {
 
   Future<void> fetchAndSetItems() async {
     final dataList = await DBHelper.getData('inventory');
-    _items = dataList
-        .map(
-          (item) => InventoryItem(
-            id: item['id'],
-            name: item['name'],
-            price: item['price'],
-            quantity: item['quantity'],
-            lowStockThreshold: item['lowStockThreshold'],
-            createdBy: item['createdBy'],
-          ),
-        )
-        .toList();
+    _items =
+        dataList
+            .map(
+              (item) => InventoryItem(
+                id: item['id'],
+                name: item['name'],
+                price: item['price'],
+                quantity: item['quantity'],
+                lowStockThreshold: item['lowStockThreshold'],
+                createdBy: item['createdBy'],
+              ),
+            )
+            .toList();
     notifyListeners();
   }
 
@@ -46,6 +47,28 @@ class InventoryProvider with ChangeNotifier {
     });
   }
 
+  Future<void> saleStock(String productId, int quantitySold) async {
+    final itemIndex = _items.indexWhere((item) => item.id == productId);
+    if (itemIndex >= 0) {
+      final item = _items[itemIndex];
+      final newQuantity = item.quantity - quantitySold;
+      if (newQuantity < 0) {
+        throw Exception('Not enough stock to complete the sale.');
+      }
+      final updatedItem = InventoryItem(
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: newQuantity,
+        lowStockThreshold: item.lowStockThreshold,
+        createdBy: item.createdBy,
+      );
+      _items[itemIndex] = updatedItem;
+      notifyListeners();
+      await DBHelper.update('inventory', {'quantity': newQuantity}, item.id);
+    }
+  }
+
   Future<void> updateStock(String productId, int quantitySold) async {
     final itemIndex = _items.indexWhere((item) => item.id == productId);
     if (itemIndex >= 0) {
@@ -62,6 +85,53 @@ class InventoryProvider with ChangeNotifier {
       _items[itemIndex] = updatedItem;
       notifyListeners();
 
+      await DBHelper.update('inventory', {'quantity': newQuantity}, item.id);
+    }
+  }
+
+  Future<void> increaseStockAndUpdatePrice(
+    String productId,
+    int additionalUnits,
+    double newUnitPrice,
+  ) async {
+    final itemIndex = _items.indexWhere((item) => item.id == productId);
+    if (itemIndex >= 0) {
+      final item = _items[itemIndex];
+      final updatedItem = InventoryItem(
+        id: item.id,
+        name: item.name,
+        price: newUnitPrice,
+        quantity: item.quantity + additionalUnits,
+        lowStockThreshold: item.lowStockThreshold,
+        createdBy: item.createdBy,
+      );
+      _items[itemIndex] = updatedItem;
+      notifyListeners();
+      await DBHelper.update('inventory', {
+        'quantity': updatedItem.quantity,
+        'price': updatedItem.price,
+      }, item.id);
+    }
+  }
+
+  Future<void> decreaseStockForDamagedGoods(
+    String productId,
+    int damagedUnits,
+  ) async {
+    final itemIndex = _items.indexWhere((item) => item.id == productId);
+    if (itemIndex >= 0) {
+      final item = _items[itemIndex];
+      final newQuantity = item.quantity - damagedUnits;
+      final updatedItem = InventoryItem(
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: newQuantity,
+        lowStockThreshold: item.lowStockThreshold,
+        createdBy: item.createdBy,
+      );
+      _items[itemIndex] = updatedItem;
+      notifyListeners();
       await DBHelper.update('inventory', {'quantity': newQuantity}, item.id);
     }
   }
