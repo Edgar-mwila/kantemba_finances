@@ -13,7 +13,6 @@ class ExpensesScreen extends StatelessWidget {
     final expenses = expensesData.expenses;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Expenses'), centerTitle: true),
       body: ListView.builder(
         itemCount: expenses.length,
         itemBuilder:

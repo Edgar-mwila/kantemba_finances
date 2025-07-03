@@ -15,10 +15,6 @@ class HomeScreen extends StatelessWidget {
     final recentSales = salesData.sales.take(5).toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('KANTEMBA FINANCES'),
-        centerTitle: true, // Center the title as per design
-      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),

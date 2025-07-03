@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kantemba_finances/providers/business_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/models/inventory_item.dart';
 import 'package:kantemba_finances/models/sale.dart';
@@ -120,6 +121,10 @@ class _NewSaleModalState extends State<NewSaleModal> {
 
     final currentUser =
         Provider.of<UsersProvider>(context, listen: false).currentUser;
+    final businessProvider = Provider.of<BusinessProvider>(
+      context,
+      listen: false,
+    );
     if (currentUser == null) {
       ScaffoldMessenger.of(
         context,
@@ -147,7 +152,7 @@ class _NewSaleModalState extends State<NewSaleModal> {
       Provider.of<SalesProvider>(
         context,
         listen: false,
-      ).addSale(newSale, currentUser.id);
+      ).addSale(newSale, businessProvider.id!, currentUser.id);
 
       for (var item in _cartItems) {
         Provider.of<InventoryProvider>(

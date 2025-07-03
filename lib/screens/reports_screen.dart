@@ -7,6 +7,9 @@ import 'package:kantemba_finances/screens/reports/profit_loss_screen.dart';
 import 'package:kantemba_finances/screens/reports/cash_flow_screen.dart';
 import 'package:kantemba_finances/screens/reports/balance_sheet_screen.dart';
 import 'package:kantemba_finances/screens/reports/tax_summary_screen.dart';
+import 'package:kantemba_finances/providers/users_provider.dart';
+import 'package:kantemba_finances/models/user.dart';
+import 'package:kantemba_finances/providers/business_provider.dart';
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({super.key});
@@ -16,6 +19,8 @@ class ReportsScreen extends StatelessWidget {
     final salesData = Provider.of<SalesProvider>(context);
     final expensesData = Provider.of<ExpensesProvider>(context);
     final inventoryData = Provider.of<InventoryProvider>(context);
+    final currentUser = Provider.of<UsersProvider>(context).currentUser;
+    final isPremium = Provider.of<BusinessProvider>(context).isPremium;
 
     final totalSales = salesData.sales.fold(
       0.0,
@@ -32,7 +37,6 @@ class ReportsScreen extends StatelessWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Reports'), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -87,42 +91,96 @@ class ReportsScreen extends StatelessWidget {
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 10),
-            _buildReportMenuItem(
-              context,
-              Icons.receipt_long,
-              'Profit & Loss Statement',
-              () => Navigator.push(
+            if (currentUser != null &&
+                (currentUser.hasPermission(UserPermissions.viewReports) ||
+                    currentUser.hasPermission(UserPermissions.all))) ...[
+              _buildReportMenuItem(
                 context,
-                MaterialPageRoute(builder: (_) => const ProfitLossScreen()),
+                Icons.receipt_long,
+                'Profit & Loss Statement',
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfitLossScreen()),
+                ),
               ),
-            ),
-            _buildReportMenuItem(
-              context,
-              Icons.swap_vert,
-              'Cash Flow Statement',
-              () => Navigator.push(
+              _buildReportMenuItem(
                 context,
-                MaterialPageRoute(builder: (_) => const CashFlowScreen()),
+                Icons.swap_vert,
+                'Cash Flow Statement',
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CashFlowScreen()),
+                ),
               ),
-            ),
-            _buildReportMenuItem(
-              context,
-              Icons.account_balance,
-              'Balance Sheet',
-              () => Navigator.push(
+              _buildReportMenuItem(
                 context,
-                MaterialPageRoute(builder: (_) => const BalanceSheetScreen()),
+                Icons.account_balance,
+                'Balance Sheet',
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BalanceSheetScreen()),
+                ),
               ),
-            ),
-            _buildReportMenuItem(
-              context,
-              Icons.receipt,
-              'Tax Summary',
-              () => Navigator.push(
+              _buildReportMenuItem(
                 context,
-                MaterialPageRoute(builder: (_) => const TaxSummaryScreen()),
+                Icons.receipt,
+                'Tax Summary',
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TaxSummaryScreen()),
+                ),
               ),
-            ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed:
+                    isPremium
+                        ? () {
+                          showDialog(
+                            context: context,
+                            builder:
+                                (ctx) => AlertDialog(
+                                  title: const Text('AI Accounting Assistant'),
+                                  content: const Text(
+                                    'Your detailed AI-powered accounting report will appear here. (Feature coming soon!)',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(ctx).pop(),
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
+                                ),
+                          );
+                        }
+                        : () {
+                          showDialog(
+                            context: context,
+                            builder:
+                                (ctx) => AlertDialog(
+                                  title: const Text('Premium Feature'),
+                                  content: const Text(
+                                    'Upgrade to premium to access AI accounting reports.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(ctx).pop(),
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
+                                ),
+                          );
+                        },
+                icon: const Icon(Icons.smart_toy),
+                label: const Text('Get Detailed AI Accounting Report'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isPremium ? Colors.green : Colors.grey,
+                ),
+              ),
+            ],
+            if (!(currentUser != null &&
+                currentUser.hasPermission(UserPermissions.viewReports) &&
+                currentUser.hasPermission(UserPermissions.all)))
+              const Text('You do not have permission to view reports.'),
           ],
         ),
       ),

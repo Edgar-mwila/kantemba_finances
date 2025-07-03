@@ -13,7 +13,6 @@ class SalesScreen extends StatelessWidget {
     final sales = salesData.sales;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Sales'), centerTitle: true),
       body: ListView.builder(
         itemCount: sales.length,
         itemBuilder:

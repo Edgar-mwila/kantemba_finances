@@ -13,7 +13,6 @@ class InventoryScreen extends StatelessWidget {
     final items = inventoryData.items;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Inventory'), centerTitle: true),
       body: ListView.builder(
         itemCount: items.length,
         itemBuilder:

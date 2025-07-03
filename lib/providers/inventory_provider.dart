@@ -1,35 +1,81 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:kantemba_finances/helpers/api_service.dart';
 import 'package:kantemba_finances/models/inventory_item.dart';
-import 'package:kantemba_finances/helpers/db_helper.dart';
 
 class InventoryProvider with ChangeNotifier {
   List<InventoryItem> _items = [];
 
   List<InventoryItem> get items => [..._items];
 
-  Future<void> fetchAndSetItems() async {
-    final dataList = await DBHelper.getData('inventory');
-    _items =
-        dataList
-            .map(
-              (item) => InventoryItem(
+  Future<void> fetchAndSetItems(String businessId) async {
+    final response = await ApiService.get('inventory?businessId=$businessId');
+    if (response.statusCode != 200) {
+      //Return some error.
+    }
+    if (kDebugMode) {
+      print('Inventory API response: ${response.body}');
+    }
+    dynamic data = json.decode(response.body);
+    List<dynamic> dataList;
+
+    if (data is List) {
+      dataList = data;
+    } else if (data is Map) {
+      dataList = [data];
+    } else if (data is String && data.trim().isNotEmpty) {
+      // Try to decode again if it's a JSON string
+      var decoded = json.decode(data);
+      if (decoded is List) {
+        dataList = decoded;
+      } else if (decoded is Map) {
+        dataList = [decoded];
+      } else {
+        dataList = [];
+      }
+    } else {
+      dataList = [];
+    }
+    try {
+      _items =
+          dataList.map((item) {
+            try {
+              return InventoryItem(
                 id: item['id'],
                 name: item['name'],
-                price: item['price'],
+                price: (item['price'] as num).toDouble(),
                 quantity: item['quantity'],
                 lowStockThreshold: item['lowStockThreshold'],
                 createdBy: item['createdBy'],
-              ),
-            )
-            .toList();
+              );
+            } catch (e, stack) {
+              if (kDebugMode) {
+                print('Error mapping item: $item');
+                print('Error: $e');
+                print('Stack: $stack');
+              }
+              rethrow;
+            }
+          }).toList();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error in mapping dataList: $e');
+      }
+      rethrow;
+    }
     notifyListeners();
   }
 
-  Future<void> addInventoryItem(InventoryItem item, String createdBy) async {
+  Future<void> addInventoryItem(
+    InventoryItem item,
+    String businessId,
+    String createdBy,
+  ) async {
     final newItem = InventoryItem(
-      id: DateTime.now().toString(),
+      id: '${businessId}_${DateTime.now().toString()}',
       name: item.name,
-      price: item.price,
+      price: (item.price as num).toDouble(),
       quantity: item.quantity,
       lowStockThreshold: item.lowStockThreshold,
       createdBy: createdBy,
@@ -37,13 +83,14 @@ class InventoryProvider with ChangeNotifier {
     _items.add(newItem);
     notifyListeners();
 
-    await DBHelper.insert('inventory', {
+    await ApiService.post('inventory', {
       'id': newItem.id,
       'name': newItem.name,
       'price': newItem.price,
       'quantity': newItem.quantity,
       'lowStockThreshold': newItem.lowStockThreshold,
-      'createdBy': createdBy,
+      'businessId': businessId,
+      'createdBy': newItem.createdBy,
     });
   }
 
@@ -58,14 +105,15 @@ class InventoryProvider with ChangeNotifier {
       final updatedItem = InventoryItem(
         id: item.id,
         name: item.name,
-        price: item.price,
+        price: (item.price as num).toDouble(),
         quantity: newQuantity,
         lowStockThreshold: item.lowStockThreshold,
         createdBy: item.createdBy,
       );
       _items[itemIndex] = updatedItem;
       notifyListeners();
-      await DBHelper.update('inventory', {'quantity': newQuantity}, item.id);
+      final id = item.id;
+      await ApiService.put('inventory/$id', {'quantity': newQuantity});
     }
   }
 
@@ -77,15 +125,16 @@ class InventoryProvider with ChangeNotifier {
       final updatedItem = InventoryItem(
         id: item.id,
         name: item.name,
-        price: item.price,
+        price: (item.price as num).toDouble(),
         quantity: newQuantity,
         lowStockThreshold: item.lowStockThreshold,
         createdBy: item.createdBy,
       );
       _items[itemIndex] = updatedItem;
       notifyListeners();
+      final id = item.id;
 
-      await DBHelper.update('inventory', {'quantity': newQuantity}, item.id);
+      await ApiService.put('inventory/$id', {'quantity': newQuantity});
     }
   }
 
@@ -100,17 +149,18 @@ class InventoryProvider with ChangeNotifier {
       final updatedItem = InventoryItem(
         id: item.id,
         name: item.name,
-        price: newUnitPrice,
+        price: (newUnitPrice as num).toDouble(),
         quantity: item.quantity + additionalUnits,
         lowStockThreshold: item.lowStockThreshold,
         createdBy: item.createdBy,
       );
       _items[itemIndex] = updatedItem;
       notifyListeners();
-      await DBHelper.update('inventory', {
+      final id = item.id;
+      await ApiService.put('inventory/$id', {
         'quantity': updatedItem.quantity,
         'price': updatedItem.price,
-      }, item.id);
+      });
     }
   }
 
@@ -132,7 +182,8 @@ class InventoryProvider with ChangeNotifier {
       );
       _items[itemIndex] = updatedItem;
       notifyListeners();
-      await DBHelper.update('inventory', {'quantity': newQuantity}, item.id);
+      final id = item.id;
+      await ApiService.put('inventory/$id', {'quantity': newQuantity});
     }
   }
 }

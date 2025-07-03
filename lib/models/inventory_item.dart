@@ -14,4 +14,4 @@ class InventoryItem {
     this.lowStockThreshold = 5,
     required this.createdBy,
   });
-} 
+}

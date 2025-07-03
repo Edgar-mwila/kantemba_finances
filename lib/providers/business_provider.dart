@@ -1,43 +1,86 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
-import 'package:kantemba_finances/helpers/db_helper.dart';
+import 'package:kantemba_finances/helpers/api_service.dart';
 
 class BusinessProvider with ChangeNotifier {
+  String? id;
   String? businessName;
-  bool isMultiShop = false;
-  bool isVatRegistered = false;
-  bool isTurnoverTaxApplicable = false;
+  String? street;
+  String? township;
+  String? city;
+  String? province;
+  String? country;
+  String? businessContact;
+  String? ownerName;
+  String? ownerContact;
+  bool isPremium = false;
 
   Future<bool> isBusinessSetup() async {
-    final data = await DBHelper.getData('business');
-    if (data.isNotEmpty) {
-      final businessData = data.first;
-      businessName = businessData['name'];
-      isMultiShop = businessData['isMultiShop'] == 1;
-      isVatRegistered = businessData['isVatRegistered'] == 1;
-      isTurnoverTaxApplicable = businessData['isTurnoverTaxApplicable'] == 1;
+    if (id != null) {
       return true;
     }
     return false;
   }
 
-  Future<void> setupBusiness({
+  Future<String> createBusiness({
     required String name,
-    required bool multiShop,
-    required bool vatRegistered,
-    required bool turnoverTaxApplicable,
+    required String street,
+    required String township,
+    required String city,
+    required String province,
+    required String country,
+    required String businessContact,
+    required String ownerName,
+    required String ownerContact,
+    bool isPremium = false,
   }) async {
     businessName = name;
-    isMultiShop = multiShop;
-    isVatRegistered = vatRegistered;
-    isTurnoverTaxApplicable = turnoverTaxApplicable;
-    
-    await DBHelper.insert('business', {
-      'id': 'main_business',
+    this.street = street;
+    this.township = township;
+    this.city = city;
+    this.province = province;
+    this.country = country;
+    this.businessContact = businessContact;
+    this.ownerName = ownerName;
+    this.ownerContact = ownerContact;
+    this.isPremium = isPremium;
+
+    String id =
+        '${name}_${ownerName.substring(0, 2)}_${DateTime.now().millisecondsSinceEpoch}';
+
+    await ApiService.post('business', {
+      'id': id,
       'name': name,
-      'isMultiShop': multiShop ? 1 : 0,
-      'isVatRegistered': vatRegistered ? 1 : 0,
-      'isTurnoverTaxApplicable': turnoverTaxApplicable ? 1 : 0,
+      'street': street,
+      'township': township,
+      'city': city,
+      'province': province,
+      'country': country,
+      'businessContact': businessContact,
+      'ownerName': ownerName,
+      'ownerContact': ownerContact,
+      'isPremium': isPremium ? 1 : 0,
     });
     notifyListeners();
+    return id;
   }
-} 
+
+  Future<void> setBusiness(String businessId) async {
+    final response = await ApiService.get("business/$businessId");
+    if (response.statusCode == 200) {
+      final businessData = json.decode(response.body);
+      id = businessData['id'];
+      businessName = businessData['name'];
+      street = businessData['street'];
+      township = businessData['township'];
+      city = businessData['city'];
+      province = businessData['province'];
+      country = businessData['country'];
+      businessContact = businessData['businessContact'];
+      ownerName = businessData['ownerName'];
+      ownerContact = businessData['ownerContact'];
+      isPremium = (businessData['isPremium'] ?? 0) == 1;
+    }
+  }
+}

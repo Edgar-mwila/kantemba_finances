@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:kantemba_finances/screens/initial_choice_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:kantemba_finances/providers/business_provider.dart';
 import 'package:kantemba_finances/providers/expenses_provider.dart';
 import 'package:kantemba_finances/providers/inventory_provider.dart';
 import 'package:kantemba_finances/providers/sales_provider.dart';
@@ -15,6 +17,7 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (ctx) => BusinessProvider()),
         ChangeNotifierProvider(create: (ctx) => UsersProvider()),
         ChangeNotifierProvider(create: (ctx) => SalesProvider()),
         ChangeNotifierProvider(create: (ctx) => ExpensesProvider()),
@@ -33,46 +36,6 @@ class KantembaFinancesApp extends StatefulWidget {
 }
 
 class _KantembaFinancesAppState extends State<KantembaFinancesApp> {
-  int _selectedIndex = 0;
-
-  static const List<Widget> _screens = <Widget>[
-    HomeScreen(),
-    InventoryScreen(),
-    ExpensesScreen(),
-    ReportsScreen(),
-    ManageUsersScreen(),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    // Fetch initial data
-    Future.microtask(() async {
-      await Provider.of<UsersProvider>(
-        context,
-        listen: false,
-      ).fetchAndSetUsers();
-      await Provider.of<InventoryProvider>(
-        context,
-        listen: false,
-      ).fetchAndSetItems();
-      await Provider.of<ExpensesProvider>(
-        context,
-        listen: false,
-      ).fetchAndSetExpenses();
-      await Provider.of<SalesProvider>(
-        context,
-        listen: false,
-      ).fetchAndSetSales();
-    });
-  }
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -85,12 +48,99 @@ class _KantembaFinancesAppState extends State<KantembaFinancesApp> {
           foregroundColor: Colors.white,
         ),
       ),
-      home: Scaffold(
-        body: _screens[_selectedIndex],
-        bottomNavigationBar: CustomBottomNavBar(
-          selectedIndex: _selectedIndex,
-          onItemTapped: _onItemTapped,
-        ),
+      home: const AuthWrapper(),
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final usersProvider = Provider.of<UsersProvider>(context);
+
+    if (usersProvider.currentUser == null) {
+      return const InitialChoiceScreen();
+    }
+
+    return const MainAppScreen();
+  }
+}
+
+class MainAppScreen extends StatefulWidget {
+  const MainAppScreen({super.key});
+
+  @override
+  State<MainAppScreen> createState() => _MainAppScreenState();
+}
+
+class _MainAppScreenState extends State<MainAppScreen> {
+  int _selectedIndex = 0;
+
+  static const List<Widget> _screens = <Widget>[
+    HomeScreen(),
+    InventoryScreen(),
+    ExpensesScreen(),
+    ReportsScreen(),
+    ManageUsersScreen(),
+  ];
+
+  static const List<String> _screenTitles = <String>[
+    'Home',
+    'Inventory',
+    'Expenses',
+    'Reports',
+    'Manage Users',
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final usersProvider = Provider.of<UsersProvider>(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_screenTitles[_selectedIndex]),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Log out',
+            onPressed: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder:
+                    (ctx) => AlertDialog(
+                      title: const Text('Log out'),
+                      content: const Text('Are you sure you want to log out?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(true),
+                          child: const Text('Log out'),
+                        ),
+                      ],
+                    ),
+              );
+              if (confirm == true) {
+                await usersProvider.logout();
+              }
+            },
+          ),
+        ],
+      ),
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: CustomBottomNavBar(
+        selectedIndex: _selectedIndex,
+        onItemTapped: _onItemTapped,
       ),
     );
   }

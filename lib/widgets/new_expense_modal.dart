@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kantemba_finances/providers/business_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/models/expense.dart';
 import 'package:kantemba_finances/providers/expenses_provider.dart';
@@ -226,6 +227,10 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
       context,
       listen: false,
     );
+    final businessProvider = Provider.of<BusinessProvider>(
+      context,
+      listen: false,
+    );
 
     if (_isGoodsDamaged && _selectedItemId != null) {
       // Calculate amount and update inventory
@@ -247,7 +252,11 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
       category: _isGoodsDamaged ? 'Goods Damaged' : _category,
       createdBy: currentUser.id,
     );
-    await expensesProvider.addExpense(expense, currentUser.id);
+    await expensesProvider.addExpense(
+      expense,
+      businessProvider.id!,
+      currentUser.id,
+    );
 
     setState(() {
       _isLoading = false;

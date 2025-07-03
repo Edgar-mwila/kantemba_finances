@@ -5,6 +5,7 @@ import 'package:kantemba_finances/providers/users_provider.dart';
 import 'package:kantemba_finances/screens/settings/backup_settings_screen.dart';
 import 'package:kantemba_finances/screens/settings/security_settings_screen.dart';
 import 'package:kantemba_finances/screens/settings/tax_compliance_settings_screen.dart';
+import 'package:kantemba_finances/providers/business_provider.dart';
 
 class ManageUsersScreen extends StatelessWidget {
   const ManageUsersScreen({super.key});
@@ -14,9 +15,10 @@ class ManageUsersScreen extends StatelessWidget {
     final usersProvider = Provider.of<UsersProvider>(context);
     final users = usersProvider.users;
     final currentUser = usersProvider.currentUser;
+    final businessProvider = Provider.of<BusinessProvider>(context);
+    final isPremium = businessProvider.isPremium;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Manage Users'), centerTitle: true),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -74,6 +76,7 @@ class ManageUsersScreen extends StatelessWidget {
                                   () => _showUserDialog(
                                     context,
                                     usersProvider,
+                                    businessProvider,
                                     user: users[i],
                                   ),
                             ),
@@ -98,14 +101,47 @@ class ManageUsersScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () => _showUserDialog(context, usersProvider),
+                onPressed:
+                    isPremium
+                        ? () => _showUserDialog(
+                          context,
+                          usersProvider,
+                          businessProvider,
+                        )
+                        : () => _showUpgradeDialog(context),
                 icon: const Icon(Icons.add, color: Colors.white),
                 label: const Text(
-                  'Add User',
+                  'Add User (Employee)',
                   style: TextStyle(fontSize: 18, color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700,
+                  backgroundColor:
+                      isPremium ? Colors.green.shade700 : Colors.grey,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed:
+                    isPremium
+                        ? () {
+                          /* TODO: Add multi-shop logic */
+                        }
+                        : () => _showUpgradeDialog(context),
+                icon: const Icon(Icons.store, color: Colors.white),
+                label: const Text(
+                  'Add Shop (Multi-Shop)',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      isPremium ? Colors.blue.shade700 : Colors.grey,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -124,13 +160,28 @@ class ManageUsersScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             _buildSettingItem(context, Icons.cloud_upload, 'Data & Backup', () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BackupSettingsScreen()));
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const BackupSettingsScreen()),
+              );
             }),
-            _buildSettingItem(context, Icons.receipt_long, 'Tax Compliance Settings', () {
-               Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TaxComplianceSettingsScreen()));
-            }),
+            _buildSettingItem(
+              context,
+              Icons.receipt_long,
+              'Tax Compliance Settings',
+              () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const TaxComplianceSettingsScreen(),
+                  ),
+                );
+              },
+            ),
             _buildSettingItem(context, Icons.security, 'Security Settings', () {
-               Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SecuritySettingsScreen()));
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const SecuritySettingsScreen(),
+                ),
+              );
             }),
           ],
         ),
@@ -140,100 +191,262 @@ class ManageUsersScreen extends StatelessWidget {
 
   void _showUserDialog(
     BuildContext context,
-    UsersProvider usersProvider, {
+    UsersProvider usersProvider,
+    BusinessProvider businessProvider, {
     User? user,
   }) {
     final nameController = TextEditingController(text: user?.name ?? '');
+    final passwordController = TextEditingController();
+    final contactController = TextEditingController();
     UserRole role = user?.role ?? UserRole.employee;
     final permissions = Set<String>.from(user?.permissions ?? ['sales']);
+    bool obscurePassword = true;
+
     showDialog(
       context: context,
       builder:
-          (ctx) => AlertDialog(
-            title: Text(user == null ? 'Add User' : 'Edit User'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                ),
-                const SizedBox(height: 10),
-                DropdownButton<UserRole>(
-                  value: role,
-                  items:
-                      UserRole.values
-                          .map(
-                            (r) => DropdownMenuItem(
-                              value: r,
-                              child: Text(r.name.toUpperCase()),
+          (ctx) => StatefulBuilder(
+            builder:
+                (context, setState) => AlertDialog(
+                  title: Text(user == null ? 'Add User' : 'Edit User'),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(
+                          controller: nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Name',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        if (user == null) ...[
+                          TextField(
+                            controller: contactController,
+                            decoration: const InputDecoration(
+                              labelText: 'Contact (Phone/Email)',
+                              border: OutlineInputBorder(),
+                              hintText: 'Enter phone number or email',
                             ),
-                          )
-                          .toList(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      role = val;
-                    }
-                  },
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    _buildPermissionChip('sales', permissions),
-                    _buildPermissionChip('inventory', permissions),
-                    _buildPermissionChip('expenses', permissions),
-                    _buildPermissionChip('reports', permissions),
-                    _buildPermissionChip('users', permissions),
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: passwordController,
+                            obscureText: obscurePassword,
+                            decoration: InputDecoration(
+                              labelText: 'Password',
+                              border: const OutlineInputBorder(),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  obscurePassword
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    obscurePassword = !obscurePassword;
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        DropdownButtonFormField<UserRole>(
+                          value: role,
+                          decoration: const InputDecoration(
+                            labelText: 'Role',
+                            border: OutlineInputBorder(),
+                          ),
+                          items:
+                              UserRole.values
+                                  .map(
+                                    (r) => DropdownMenuItem(
+                                      value: r,
+                                      child: Text(r.name.toUpperCase()),
+                                    ),
+                                  )
+                                  .toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                role = val;
+                              });
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Permissions:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            _buildPermissionChip(
+                              'sales',
+                              permissions,
+                              setState,
+                            ),
+                            _buildPermissionChip(
+                              'inventory',
+                              permissions,
+                              setState,
+                            ),
+                            _buildPermissionChip(
+                              'expenses',
+                              permissions,
+                              setState,
+                            ),
+                            _buildPermissionChip(
+                              'reports',
+                              permissions,
+                              setState,
+                            ),
+                            _buildPermissionChip(
+                              'users',
+                              permissions,
+                              setState,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Validation
+                        if (nameController.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please enter a name'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (user == null) {
+                          // For new users, validate required fields
+                          if (contactController.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Please enter contact information',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                          if (passwordController.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please enter a password'),
+                              ),
+                            );
+                            return;
+                          }
+                        }
+
+                        final newUser = User(
+                          id:
+                              user?.id ??
+                              DateTime.now().millisecondsSinceEpoch.toString(),
+                          name: nameController.text.trim(),
+                          role: role,
+                          permissions: permissions.toList(),
+                        );
+
+                        if (user == null) {
+                          // Adding new user
+                          final businessId = businessProvider.id ?? '';
+                          if (businessId.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('No business selected'),
+                              ),
+                            );
+                            return;
+                          }
+                          usersProvider.addUser(
+                            newUser,
+                            passwordController.text.trim(),
+                            contactController.text.trim(),
+                            businessId,
+                          );
+                        } else {
+                          // Editing existing user
+                          usersProvider.editUser(user.id, newUser);
+                        }
+                        Navigator.of(ctx).pop();
+                      },
+                      child: Text(user == null ? 'Add' : 'Save'),
+                    ),
                   ],
                 ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  final newUser = User(
-                    id:
-                        user?.id ??
-                        DateTime.now().millisecondsSinceEpoch.toString(),
-                    name: nameController.text,
-                    role: role,
-                    permissions: permissions.toList(),
-                  );
-                  if (user == null) {
-                    usersProvider.addUser(newUser, "user");
-                  } else {
-                    usersProvider.editUser(user.id, newUser);
-                  }
-                  Navigator.of(ctx).pop();
-                },
-                child: Text(user == null ? 'Add' : 'Save'),
-              ),
-            ],
           ),
     );
   }
 
-  Widget _buildPermissionChip(String permission, Set<String> permissions) {
+  Widget _buildPermissionChip(
+    String permission,
+    Set<String> selected,
+    StateSetter setState,
+  ) {
+    final label = () {
+      switch (permission) {
+        case 'all':
+          return 'All Permissions';
+        case 'sales':
+          return 'Sales';
+        case 'inventory':
+          return 'Inventory';
+        case 'expenses':
+          return 'Expenses';
+        case 'reports':
+          return 'Reports';
+        case 'users':
+          return 'Manage Users';
+        default:
+          return permission;
+      }
+    }();
+
     return FilterChip(
-      label: Text(permission),
-      selected: permissions.contains(permission) || permissions.contains('all'),
-      onSelected: (selected) {
-        if (permissions.contains('all')) return;
-        if (selected) {
-          permissions.add(permission);
-        } else {
-          permissions.remove(permission);
-        }
+      label: Text(label),
+      selected: selected.contains(permission),
+      onSelected: (val) {
+        setState(() {
+          if (val) {
+            selected.add(permission);
+          } else {
+            selected.remove(permission);
+          }
+        });
       },
     );
   }
 
-  Widget _buildSettingItem(BuildContext context, IconData icon, String title, VoidCallback onTap) {
+  Widget _buildSettingItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    VoidCallback onTap,
+  ) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6.0),
       elevation: 1,
@@ -244,6 +457,23 @@ class ManageUsersScreen extends StatelessWidget {
         trailing: const Icon(Icons.arrow_forward_ios, size: 14),
         onTap: onTap,
       ),
+    );
+  }
+
+  void _showUpgradeDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Premium Feature'),
+            content: const Text('Upgrade to premium to access this feature.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
     );
   }
 }
