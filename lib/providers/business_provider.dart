@@ -33,10 +33,6 @@ class BusinessProvider with ChangeNotifier {
 
   Future<String> createBusiness({
     required String name,
-    // required String street,
-    // required String township,
-    // required String city,
-    // required String province,
     required String country,
     required String businessContact,
     required String adminName,
@@ -44,10 +40,6 @@ class BusinessProvider with ChangeNotifier {
     bool isPremium = false,
   }) async {
     businessName = name;
-    // this.street = street;
-    // this.township = township;
-    // this.city = city;
-    // this.province = province;
     this.country = country;
     this.businessContact = businessContact;
     this.adminName = adminName;
@@ -57,38 +49,64 @@ class BusinessProvider with ChangeNotifier {
     String id =
         '${name}_${adminName.substring(0, 2)}_${DateTime.now().millisecondsSinceEpoch}';
     this.id = id;
+    if (!isPremium || !(await ApiService.isOnline())) {
+      await DBHelper.insert('businesses', {
+        'id': id,
+        'name': name,
+        'country': country,
+        'businessContact': businessContact,
+        'adminName': adminName,
+        'adminContact': adminContact,
+        'isPremium': isPremium ? 1 : 0,
+        'synced': 0,
+      });
+      notifyListeners();
+      return id;
+    }
     await ApiService.post('business', {
       'id': id,
       'name': name,
-      // 'street': street,
-      // 'township': township,
-      // 'city': city,
-      // 'province': province,
       'country': country,
       'businessContact': businessContact,
       'adminName': adminName,
       'adminContact': adminContact,
-      'isPremium': isPremium,
+      'isPremium': isPremium ? 1 : 0,
     });
     notifyListeners();
     return id;
   }
 
   Future<void> setBusiness(String businessId) async {
+    if (!isPremium || !(await ApiService.isOnline())) {
+      final localBusiness = await DBHelper.getData('businesses');
+      if (localBusiness.isEmpty) return;
+      final businessData = localBusiness.firstWhere(
+        (b) => b['id'] == businessId,
+        orElse: () => localBusiness.first,
+      );
+      id = businessData['id'];
+      businessName = businessData['name'];
+      country = businessData['country'];
+      businessContact = businessData['businessContact'];
+      adminName = businessData['adminName'];
+      adminContact = businessData['adminContact'];
+      isPremium =
+          businessData['isPremium'] == true ||
+          businessData['isPremium'] == 1 ||
+          businessData['isPremium'] == '1' ||
+          businessData['isPremium'].toString().toLowerCase() == 'true';
+      notifyListeners();
+      return;
+    }
     final response = await ApiService.get("business/$businessId");
     if (response.statusCode == 200) {
       final businessData = json.decode(response.body);
       id = businessData['id'];
       businessName = businessData['name'];
-      // street = businessData['street'];
-      // township = businessData['township'];
-      // city = businessData['city'];
-      // province = businessData['province'];
       country = businessData['country'];
       businessContact = businessData['businessContact'];
       adminName = businessData['adminName'];
       adminContact = businessData['adminContact'];
-      // Handle different possible types for isPremium
       final premiumValue = businessData['isPremium'];
       if (premiumValue is bool) {
         isPremium = premiumValue;
@@ -99,6 +117,7 @@ class BusinessProvider with ChangeNotifier {
       } else {
         isPremium = false;
       }
+      notifyListeners();
     }
   }
 
@@ -170,12 +189,20 @@ class BusinessProvider with ChangeNotifier {
   }
 
   Future<void> updateBusinessHybrid(BusinessProvider business) async {
+    if (business.id == null) {
+      throw Exception('Business ID cannot be null');
+    }
     if (!isPremium || !(await ApiService.isOnline())) {
-      await DBHelper.insert('business', {
-        // ...all business fields...
+      await DBHelper.update('businesses', {
+        'id': business.id ?? '',
+        'name': business.businessName ?? '',
+        'country': business.country ?? '',
+        'businessContact': business.businessContact ?? '',
+        'adminName': business.adminName ?? '',
+        'adminContact': business.adminContact ?? '',
+        'isPremium': business.isPremium,
         'synced': 0,
-      });
-      // ...update _business...
+      }, business.id!);
       notifyListeners();
       return;
     }

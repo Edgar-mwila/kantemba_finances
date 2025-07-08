@@ -39,6 +39,19 @@ class Sale {
       createdBy: json['createdBy'] as String,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'items': items.map((item) => item.toJson()).toList(),
+    'totalAmount': totalAmount,
+    'grandTotal': grandTotal,
+    'vat': vat,
+    'turnoverTax': turnoverTax,
+    'levy': levy,
+    'date': date.toIso8601String(),
+    'shopId': shopId,
+    'createdBy': createdBy,
+  };
 }
 
 class SaleItem {
@@ -46,4 +59,9 @@ class SaleItem {
   int quantity;
 
   SaleItem({required this.product, this.quantity = 1});
+
+  Map<String, dynamic> toJson() => {
+    'product': product.toJson(),
+    'quantity': quantity,
+  };
 }

@@ -115,32 +115,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   Future<void> _initializeApp() async {
     final usersProvider = Provider.of<UsersProvider>(context, listen: false);
-    final businessProvider = Provider.of<BusinessProvider>(
-      context,
-      listen: false,
-    );
-    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
-    final salesProvider = Provider.of<SalesProvider>(context, listen: false);
-    final expensesProvider = Provider.of<ExpensesProvider>(
-      context,
-      listen: false,
-    );
-    final inventoryProvider = Provider.of<InventoryProvider>(
-      context,
-      listen: false,
-    );
-    final returnsProvider = Provider.of<ReturnsProvider>(
-      context,
-      listen: false,
-    );
     await usersProvider.initialize(context);
-    await businessProvider.fetchAndSetBusinessHybrid(businessProvider.id!);
-    await usersProvider.fetchAndSetUsersHybrid(businessProvider);
-    await shopProvider.fetchAndSetShopsHybrid(businessProvider);
-    await salesProvider.fetchAndSetSalesHybrid(businessProvider);
-    await expensesProvider.fetchAndSetExpensesHybrid(businessProvider);
-    await inventoryProvider.fetchAndSetInventoryHybrid(businessProvider);
-    await returnsProvider.fetchAndSetReturnsHybrid(businessProvider);
     setState(() {
       _isInitializing = false;
     });
@@ -210,12 +185,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
-                'Loading...',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
               const SizedBox(height: 32),
-              const CircularProgressIndicator(),
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+              ),
             ],
           ),
         ),

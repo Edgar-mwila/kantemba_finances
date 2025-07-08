@@ -13,6 +13,12 @@ class ShopProvider with ChangeNotifier {
   Shop? get currentShop => _currentShop;
 
   Future<void> fetchShops(String businessId, {List<String>? shopIds}) async {
+    if (!(await ApiService.isOnline())) {
+      final localShops = await DBHelper.getData('shops');
+      _shops = localShops.map((json) => Shop.fromJson(json)).toList();
+      notifyListeners();
+      return;
+    }
     if (shopIds != null && shopIds.isNotEmpty) {
       // If only one shopId, fetch that shop
       if (shopIds.length == 1) {
@@ -66,6 +72,17 @@ class ShopProvider with ChangeNotifier {
   }
 
   Future<void> addShop(Shop shop) async {
+    if (!(await ApiService.isOnline())) {
+      await DBHelper.insert('shops', {
+        'id': shop.id,
+        'name': shop.name,
+        'businessId': shop.businessId,
+        'synced': 0,
+      });
+      _shops.add(shop);
+      notifyListeners();
+      return;
+    }
     try {
       final response = await ApiService.post('shops', {
         'id': shop.id,

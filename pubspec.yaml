@@ -46,6 +46,8 @@ dependencies:
   url_launcher: ^6.0.20
   intl: ^0.18.0
   flutter_local_notifications: ^17.2.3
+  csv: ^5.0.2
+  file_picker: ^10.2.0
 
 dev_dependencies:
   flutter_test:

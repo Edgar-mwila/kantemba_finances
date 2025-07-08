@@ -4,6 +4,7 @@ import 'package:kantemba_finances/models/sale.dart';
 import 'package:kantemba_finances/models/return.dart';
 import 'package:kantemba_finances/providers/returns_provider.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
+import 'package:kantemba_finances/providers/business_provider.dart';
 
 class ReturnModal extends StatefulWidget {
   final Sale sale;
@@ -115,18 +116,32 @@ class _ReturnModalState extends State<ReturnModal> {
         listen: false,
       );
       final userProvider = Provider.of<UsersProvider>(context, listen: false);
+      final businessProvider = Provider.of<BusinessProvider>(context, listen: false);
       final currentUser = userProvider.currentUser;
 
       if (currentUser == null) {
         throw Exception('User not authenticated');
       }
 
-      await returnsProvider.createReturn(
-        widget.sale,
-        _selectedItems,
-        _reasonController.text.trim(),
-        currentUser.id,
-        widget.sale.shopId,
+      final ret = Return(
+        id: 'RET_${DateTime.now().millisecondsSinceEpoch}',
+        originalSaleId: widget.sale.id,
+        items: _selectedItems,
+        totalReturnAmount: _totalReturnAmount,
+        grandReturnAmount: 0, // Will be calculated in provider if needed
+        vat: 0,
+        turnoverTax: 0,
+        levy: 0,
+        date: DateTime.now(),
+        shopId: widget.sale.shopId,
+        createdBy: currentUser.id,
+        reason: _reasonController.text.trim(),
+        status: 'approved', // Always approved
+      );
+
+      await returnsProvider.addReturnHybrid(
+        ret,
+        businessProvider,
       );
 
       if (mounted) {

@@ -211,7 +211,7 @@ class EmployeeManagementScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                user.role.name.toUpperCase(),
+                                user.role.toUpperCase(),
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -383,7 +383,7 @@ class EmployeeManagementScreen extends StatelessWidget {
                                   ),
                                 ),
                                 Text(
-                                  user.role.name.toUpperCase(),
+                                  user.role.toUpperCase(),
                                   style: TextStyle(
                                     fontSize: 16,
                                     color: _getRoleColor(user.role),
@@ -601,25 +601,29 @@ class EmployeeManagementScreen extends StatelessWidget {
     );
   }
 
-  Color _getRoleColor(UserRole role) {
+  Color _getRoleColor(String role) {
     switch (role) {
-      case UserRole.admin:
+      case "admin":
         return Colors.green;
-      case UserRole.manager:
+      case "manager":
         return Colors.orange;
-      case UserRole.employee:
+      case "employee":
         return Colors.blue;
+      default:
+        return Colors.grey;
     }
   }
 
-  IconData _getRoleIcon(UserRole role) {
+  IconData _getRoleIcon(String role) {
     switch (role) {
-      case UserRole.admin:
+      case "admin":
         return Icons.verified_user;
-      case UserRole.manager:
+      case "manager":
         return Icons.manage_accounts;
-      case UserRole.employee:
+      case "employee":
         return Icons.person;
+      default:
+        return Icons.person_outline;
     }
   }
 
@@ -633,7 +637,7 @@ class EmployeeManagementScreen extends StatelessWidget {
     final nameController = TextEditingController(text: user?.name ?? '');
     final passwordController = TextEditingController();
     final contactController = TextEditingController(text: user?.contact ?? '');
-    UserRole role = user?.role ?? UserRole.employee;
+    String role = user?.role ?? 'employee';
     final permissions = Set<String>.from(user?.permissions ?? ['sales']);
     String? selectedShopId = user?.shopId;
     bool obscurePassword = true;
@@ -690,18 +694,18 @@ class EmployeeManagementScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
                         ],
-                        DropdownButtonFormField<UserRole>(
+                        DropdownButtonFormField<String>(
                           value: role,
                           decoration: const InputDecoration(
                             labelText: 'Role',
                             border: OutlineInputBorder(),
                           ),
                           items:
-                              UserRole.values
+                              ['admin', 'manager', 'employee']
                                   .map(
                                     (r) => DropdownMenuItem(
                                       value: r,
-                                      child: Text(r.name.toUpperCase()),
+                                      child: Text(r.toUpperCase()),
                                     ),
                                   )
                                   .toList(),
@@ -709,8 +713,7 @@ class EmployeeManagementScreen extends StatelessWidget {
                             if (val != null) {
                               setState(() {
                                 role = val;
-                                // Clear shop selection if role is admin
-                                if (val == UserRole.admin) {
+                                if (val == "admin") {
                                   selectedShopId = null;
                                 }
                               });
@@ -718,8 +721,7 @@ class EmployeeManagementScreen extends StatelessWidget {
                           },
                         ),
                         const SizedBox(height: 16),
-                        if (role == UserRole.manager ||
-                            role == UserRole.employee)
+                        if (role == "manager" || role == "employee")
                           DropdownButtonFormField<String>(
                             value: selectedShopId,
                             decoration: const InputDecoration(
@@ -847,8 +849,7 @@ class EmployeeManagementScreen extends StatelessWidget {
                         }
 
                         // Validate shop assignment for manager/employee
-                        if ((role == UserRole.manager ||
-                                role == UserRole.employee) &&
+                        if ((role == "manager" || role == "employee") &&
                             selectedShopId == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -869,8 +870,7 @@ class EmployeeManagementScreen extends StatelessWidget {
                           role: role,
                           permissions: permissions.toList(),
                           shopId:
-                              (role == UserRole.manager ||
-                                      role == UserRole.employee)
+                              (role == "manager" || role == "employee")
                                   ? selectedShopId
                                   : null,
                           businessId: businessProvider.id!,

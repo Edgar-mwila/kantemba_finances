@@ -69,7 +69,7 @@ class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           name: _adminNameController.text,
           contact: _adminContactController.text,
-          role: UserRole.admin,
+          role: 'admin',
           permissions: [UserPermissions.all],
           shopId: null, // Admin has global access, no specific shop
           businessId: businessId,
@@ -85,7 +85,7 @@ class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           name: _adminNameController.text,
           contact: _adminContactController.text,
-          role: UserRole.admin,
+          role: 'admin',
           permissions: [UserPermissions.all],
           shopId: null, // Admin has global access
           businessId: businessId,
@@ -100,119 +100,147 @@ class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final green = Colors.green;
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Form(
             key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Setup Your Business',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 30),
-                TextFormField(
-                  controller: _businessNameController,
-                  decoration: const InputDecoration(labelText: 'Business Name'),
-                  validator:
-                      (value) =>
-                          value!.isEmpty
-                              ? 'Please enter a business name'
-                              : null,
-                ),
-                const SizedBox(height: 16),
-                // TextFormField(
-                //   controller: _streetController,
-                //   decoration: const InputDecoration(labelText: 'Street'),
-                //   validator:
-                //       (value) =>
-                //           value!.isEmpty ? 'Please enter a street' : null,
-                // ),
-                // const SizedBox(height: 16),
-                // TextFormField(
-                //   controller: _townshipController,
-                //   decoration: const InputDecoration(labelText: 'Township'),
-                //   validator:
-                //       (value) =>
-                //           value!.isEmpty ? 'Please enter a township' : null,
-                // ),
-                // const SizedBox(height: 16),
-                // TextFormField(
-                //   controller: _cityController,
-                //   decoration: const InputDecoration(labelText: 'City'),
-                //   validator:
-                //       (value) => value!.isEmpty ? 'Please enter a city' : null,
-                // ),
-                // const SizedBox(height: 16),
-                // TextFormField(
-                //   controller: _provinceController,
-                //   decoration: const InputDecoration(
-                //     labelText: 'Province/State',
-                //   ),
-                //   validator:
-                //       (value) =>
-                //           value!.isEmpty
-                //               ? 'Please enter a province/state'
-                //               : null,
-                // ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _countryController,
-                  decoration: const InputDecoration(labelText: 'Country'),
-                  validator:
-                      (value) =>
-                          value!.isEmpty ? 'Please enter a country' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _businessContactController,
-                  decoration: const InputDecoration(
-                    labelText: 'Business Contact (Phone + Country Code)',
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: Theme.of(
+                  context,
+                ).colorScheme.copyWith(primary: green, secondary: green),
+                inputDecorationTheme: const InputDecorationTheme(
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.green),
                   ),
-                  validator:
-                      (value) =>
-                          value!.isEmpty
-                              ? 'Please enter a business contact'
-                              : null,
+                  labelStyle: TextStyle(color: Colors.green),
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _adminNameController,
-                  decoration: const InputDecoration(labelText: 'admin Name'),
-                  validator:
-                      (value) =>
-                          value!.isEmpty ? 'Please enter the admin name' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _adminContactController,
-                  decoration: const InputDecoration(labelText: 'admin Contact'),
-                  validator:
-                      (value) =>
-                          value!.isEmpty
-                              ? 'Please enter the admin contact'
-                              : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _adminPasswordController,
-                  decoration: const InputDecoration(
-                    labelText: 'admin Password',
+                elevatedButtonTheme: ElevatedButtonThemeData(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
                   ),
-                  obscureText: true,
-                  validator:
-                      (value) =>
-                          value!.isEmpty ? 'Please enter a password' : null,
                 ),
-                const SizedBox(height: 30),
-                ElevatedButton(
-                  onPressed: _submit,
-                  child: const Text('Complete Setup'),
-                ),
-              ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Setup Your Business',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 30),
+                  TextFormField(
+                    controller: _businessNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Business Name',
+                    ),
+                    validator:
+                        (value) =>
+                            value!.isEmpty
+                                ? 'Please enter a business name'
+                                : null,
+                  ),
+                  const SizedBox(height: 16),
+                  // TextFormField(
+                  //   controller: _streetController,
+                  //   decoration: const InputDecoration(labelText: 'Street'),
+                  //   validator:
+                  //       (value) =>
+                  //           value!.isEmpty ? 'Please enter a street' : null,
+                  // ),
+                  // const SizedBox(height: 16),
+                  // TextFormField(
+                  //   controller: _townshipController,
+                  //   decoration: const InputDecoration(labelText: 'Township'),
+                  //   validator:
+                  //       (value) =>
+                  //           value!.isEmpty ? 'Please enter a township' : null,
+                  // ),
+                  // const SizedBox(height: 16),
+                  // TextFormField(
+                  //   controller: _cityController,
+                  //   decoration: const InputDecoration(labelText: 'City'),
+                  //   validator:
+                  //       (value) => value!.isEmpty ? 'Please enter a city' : null,
+                  // ),
+                  // const SizedBox(height: 16),
+                  // TextFormField(
+                  //   controller: _provinceController,
+                  //   decoration: const InputDecoration(
+                  //     labelText: 'Province/State',
+                  //   ),
+                  //   validator:
+                  //       (value) =>
+                  //           value!.isEmpty
+                  //               ? 'Please enter a province/state'
+                  //               : null,
+                  // ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _countryController,
+                    decoration: const InputDecoration(labelText: 'Country'),
+                    validator:
+                        (value) =>
+                            value!.isEmpty ? 'Please enter a country' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _businessContactController,
+                    decoration: const InputDecoration(
+                      labelText: 'Business Contact (Phone + Country Code)',
+                    ),
+                    validator:
+                        (value) =>
+                            value!.isEmpty
+                                ? 'Please enter a business contact'
+                                : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _adminNameController,
+                    decoration: const InputDecoration(labelText: 'admin Name'),
+                    validator:
+                        (value) =>
+                            value!.isEmpty
+                                ? 'Please enter the admin name'
+                                : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _adminContactController,
+                    decoration: const InputDecoration(
+                      labelText: 'admin Contact',
+                    ),
+                    validator:
+                        (value) =>
+                            value!.isEmpty
+                                ? 'Please enter the admin contact'
+                                : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _adminPasswordController,
+                    decoration: const InputDecoration(
+                      labelText: 'admin Password',
+                    ),
+                    obscureText: true,
+                    validator:
+                        (value) =>
+                            value!.isEmpty ? 'Please enter a password' : null,
+                  ),
+                  const SizedBox(height: 30),
+                  ElevatedButton(
+                    onPressed: _submit,
+                    child: const Text(
+                      'Complete Setup',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

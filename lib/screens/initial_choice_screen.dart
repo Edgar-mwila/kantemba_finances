@@ -14,9 +14,21 @@ class InitialChoiceScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Icon(
+                Icons.account_balance,
+                size: 120,
+                color: Colors.green.shade700,
+              ),
               Text(
-                'Welcome to Kantemba Finances',
+                'Welcome to',
                 style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              Text(
+                'Kantemba Finances',
+                style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green.shade700,
+                ),
               ),
               const SizedBox(height: 32),
               ElevatedButton(
@@ -27,9 +39,12 @@ class InitialChoiceScreen extends StatelessWidget {
                     ),
                   );
                 },
-                child: const Text('Sign up business'),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
+                ),
+                child: const Text(
+                  'Sign up business',
+                  style: TextStyle(color: Colors.green),
                 ),
               ),
               const SizedBox(height: 16),
@@ -39,9 +54,12 @@ class InitialChoiceScreen extends StatelessWidget {
                     MaterialPageRoute(builder: (_) => const LoginScreen()),
                   );
                 },
-                child: const Text('Log in'),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
+                ),
+                child: const Text(
+                  'Log in',
+                  style: TextStyle(color: Colors.green),
                 ),
               ),
             ],

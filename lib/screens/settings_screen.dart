@@ -18,11 +18,7 @@ class SettingsScreen extends StatelessWidget {
     final businessProvider = Provider.of<BusinessProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: Colors.green.shade700,
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: const Text('Settings')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

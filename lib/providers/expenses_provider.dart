@@ -136,27 +136,34 @@ class ExpensesProvider with ChangeNotifier {
     String createdBy,
     String shopId,
   ) async {
-    final newExpense = Expense(
-      id: '${shopId}_${DateTime.now().toString()}',
-      description: expense.description,
-      amount: (expense.amount as num).toDouble(),
-      date: expense.date,
-      category: expense.category,
-      createdBy: createdBy,
-      shopId: shopId,
-    );
-    _expenses.add(newExpense);
-    notifyListeners();
-
+    final businessProvider = BusinessProvider();
+    if (!businessProvider.isPremium || !(await ApiService.isOnline())) {
+      await DBHelper.insert('expenses', {
+        'id': expense.id,
+        'description': expense.description,
+        'amount': expense.amount,
+        'date': expense.date.toIso8601String(),
+        'category': expense.category,
+        'createdBy': createdBy,
+        'shopId': shopId,
+        'synced': 0,
+      });
+      _expenses.add(expense);
+      notifyListeners();
+      return;
+    }
+    // Online: use API
     await ApiService.post('expenses', {
-      'id': newExpense.id,
-      'description': newExpense.description,
-      'amount': (newExpense.amount as num).toDouble(),
-      'date': newExpense.date.toIso8601String(),
-      'category': newExpense.category,
-      'createdBy': newExpense.createdBy,
+      'id': expense.id,
+      'description': expense.description,
+      'amount': expense.amount,
+      'date': expense.date.toIso8601String(),
+      'category': expense.category,
+      'createdBy': createdBy,
       'shopId': shopId,
     });
+    _expenses.add(expense);
+    notifyListeners();
   }
 
   Future<void> fetchAndSetExpensesHybrid(

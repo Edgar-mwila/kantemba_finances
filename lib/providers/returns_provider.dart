@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:kantemba_finances/helpers/api_service.dart';
+import 'package:kantemba_finances/models/inventory_item.dart';
 import 'package:kantemba_finances/models/return.dart';
 import 'package:kantemba_finances/models/sale.dart';
 import 'package:kantemba_finances/models/shop.dart';
@@ -112,7 +113,7 @@ class ReturnsProvider with ChangeNotifier {
         shopId: shopId,
         createdBy: createdBy,
         reason: reason,
-        status: 'pending',
+        status: 'approved', // Always approved
       );
 
       // Add to local list
@@ -133,81 +134,6 @@ class ReturnsProvider with ChangeNotifier {
       await _updateInventoryForReturn(returnItems, shopId);
     } catch (e) {
       debugPrint('Error creating return: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> approveReturn(String returnId, String approvedBy) async {
-    try {
-      final returnIndex = _returns.indexWhere((ret) => ret.id == returnId);
-      if (returnIndex == -1) return;
-
-      final updatedReturn = Return(
-        id: _returns[returnIndex].id,
-        originalSaleId: _returns[returnIndex].originalSaleId,
-        items: _returns[returnIndex].items,
-        totalReturnAmount: _returns[returnIndex].totalReturnAmount,
-        grandReturnAmount: _returns[returnIndex].grandReturnAmount,
-        vat: _returns[returnIndex].vat,
-        turnoverTax: _returns[returnIndex].turnoverTax,
-        levy: _returns[returnIndex].levy,
-        date: _returns[returnIndex].date,
-        shopId: _returns[returnIndex].shopId,
-        createdBy: _returns[returnIndex].createdBy,
-        reason: _returns[returnIndex].reason,
-        status: 'approved',
-      );
-
-      _returns[returnIndex] = updatedReturn;
-      notifyListeners();
-
-      // Update API
-      await ApiService.put('returns/$returnId', {
-        'status': 'approved',
-        'approvedBy': approvedBy,
-      });
-    } catch (e) {
-      debugPrint('Error approving return: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> rejectReturn(
-    String returnId,
-    String rejectedBy,
-    String reason,
-  ) async {
-    try {
-      final returnIndex = _returns.indexWhere((ret) => ret.id == returnId);
-      if (returnIndex == -1) return;
-
-      final updatedReturn = Return(
-        id: _returns[returnIndex].id,
-        originalSaleId: _returns[returnIndex].originalSaleId,
-        items: _returns[returnIndex].items,
-        totalReturnAmount: _returns[returnIndex].totalReturnAmount,
-        grandReturnAmount: _returns[returnIndex].grandReturnAmount,
-        vat: _returns[returnIndex].vat,
-        turnoverTax: _returns[returnIndex].turnoverTax,
-        levy: _returns[returnIndex].levy,
-        date: _returns[returnIndex].date,
-        shopId: _returns[returnIndex].shopId,
-        createdBy: _returns[returnIndex].createdBy,
-        reason: _returns[returnIndex].reason,
-        status: 'rejected',
-      );
-
-      _returns[returnIndex] = updatedReturn;
-      notifyListeners();
-
-      // Update API
-      await ApiService.put('returns/$returnId', {
-        'status': 'rejected',
-        'rejectedBy': rejectedBy,
-        'rejectionReason': reason,
-      });
-    } catch (e) {
-      debugPrint('Error rejecting return: $e');
       rethrow;
     }
   }
@@ -270,12 +196,47 @@ class ReturnsProvider with ChangeNotifier {
   ) async {
     if (!businessProvider.isPremium) {
       final localReturns = await DBHelper.getData('returns');
-      _returns = localReturns.map((json) => Return.fromJson(json)).toList();
-      if (_returns.isEmpty) {
-        // If no local returns data, return early
-        notifyListeners();
-        return;
+      final localReturnItems = await DBHelper.getData('return_items');
+      // Map returnId to items
+      final Map<String, List<ReturnItem>> itemsByReturnId = {};
+      for (final item in localReturnItems) {
+        final returnId = item['returnId'] as String;
+        itemsByReturnId.putIfAbsent(returnId, () => []);
+        itemsByReturnId[returnId]!.add(
+          ReturnItem(
+            product: InventoryItem(
+              id: item['productId'],
+              name: item['productName'],
+              price: (item['originalPrice'] as num).toDouble(),
+              quantity: 0,
+              shopId: item['shopId'],
+              createdBy: '',
+            ),
+            quantity: item['quantity'] as int,
+            originalPrice: (item['originalPrice'] as num).toDouble(),
+            reason: item['reason'] ?? '',
+          ),
+        );
       }
+      _returns =
+          localReturns.map((json) {
+            final ret = Return.fromJson(json);
+            return Return(
+              id: ret.id,
+              originalSaleId: ret.originalSaleId,
+              items: itemsByReturnId[ret.id] ?? [],
+              totalReturnAmount: ret.totalReturnAmount,
+              grandReturnAmount: ret.grandReturnAmount,
+              vat: ret.vat,
+              turnoverTax: ret.turnoverTax,
+              levy: ret.levy,
+              date: ret.date,
+              shopId: ret.shopId,
+              createdBy: ret.createdBy,
+              reason: ret.reason,
+              status: ret.status,
+            );
+          }).toList();
       notifyListeners();
       return;
     }
@@ -284,10 +245,47 @@ class ReturnsProvider with ChangeNotifier {
       // Optionally, update local DB with latest online data
     } else {
       final localReturns = await DBHelper.getData('returns');
-      _returns = localReturns.map((json) => Return.fromJson(json)).toList();
-      if (_returns.isEmpty) {
-        notifyListeners();
+      final localReturnItems = await DBHelper.getData('return_items');
+      final Map<String, List<ReturnItem>> itemsByReturnId = {};
+      for (final item in localReturnItems) {
+        final returnId = item['returnId'] as String;
+        itemsByReturnId.putIfAbsent(returnId, () => []);
+        itemsByReturnId[returnId]!.add(
+          ReturnItem(
+            product: InventoryItem(
+              id: item['productId'],
+              name: item['productName'],
+              price: (item['originalPrice'] as num).toDouble(),
+              quantity: 0,
+              shopId: item['shopId'],
+              createdBy: '',
+            ),
+            quantity: item['quantity'] as int,
+            originalPrice: (item['originalPrice'] as num).toDouble(),
+            reason: item['reason'] ?? '',
+          ),
+        );
       }
+      _returns =
+          localReturns.map((json) {
+            final ret = Return.fromJson(json);
+            return Return(
+              id: ret.id,
+              originalSaleId: ret.originalSaleId,
+              items: itemsByReturnId[ret.id] ?? [],
+              totalReturnAmount: ret.totalReturnAmount,
+              grandReturnAmount: ret.grandReturnAmount,
+              vat: ret.vat,
+              turnoverTax: ret.turnoverTax,
+              levy: ret.levy,
+              date: ret.date,
+              shopId: ret.shopId,
+              createdBy: ret.createdBy,
+              reason: ret.reason,
+              status: ret.status,
+            );
+          }).toList();
+      notifyListeners();
     }
   }
 
@@ -299,15 +297,31 @@ class ReturnsProvider with ChangeNotifier {
       await DBHelper.insert('returns', {
         'id': ret.id,
         'originalSaleId': ret.originalSaleId,
-        'items': jsonEncode(ret.items.map((item) => item.toJson()).toList()),
         'totalReturnAmount': ret.totalReturnAmount,
         'grandReturnAmount': ret.grandReturnAmount,
         'vat': ret.vat,
         'turnoverTax': ret.turnoverTax,
         'levy': ret.levy,
-
+        'date': ret.date.toIso8601String(),
+        'shopId': ret.shopId,
+        'createdBy': ret.createdBy,
+        'reason': ret.reason,
+        'status': ret.status,
         'synced': 0,
       });
+      // Insert each return item into return_items table
+      for (final item in ret.items) {
+        await DBHelper.insert('return_items', {
+          'returnId': ret.id,
+          'productId': item.product.id,
+          'productName': item.product.name,
+          'quantity': item.quantity,
+          'originalPrice': item.originalPrice,
+          'reason': item.reason,
+          'shopId': ret.shopId,
+          'synced': 0,
+        });
+      }
       notifyListeners();
       return;
     }

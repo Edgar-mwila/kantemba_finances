@@ -1,18 +1,3 @@
-enum UserRole { admin, manager, employee }
-
-extension UserRoleExtension on UserRole {
-  String get value {
-    switch (this) {
-      case UserRole.admin:
-        return 'admin';
-      case UserRole.manager:
-        return 'manager';
-      case UserRole.employee:
-        return 'employee';
-    }
-  }
-}
-
 class UserPermissions {
   static const String all = 'all';
   static const String viewSales = 'view_sales';
@@ -30,7 +15,7 @@ class User {
   final String id;
   final String name;
   final String contact;
-  final UserRole role;
+  final String role; // 'admin' | 'manager' | 'employee'
   final List<String> permissions;
   final String? shopId;
   final String businessId;
@@ -48,5 +33,29 @@ class User {
   bool hasPermission(String permission) {
     return permissions.contains(UserPermissions.all) ||
         permissions.contains(permission);
+  }
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      contact: json['contact'] as String,
+      role: json['role'] as String,
+      permissions: List<String>.from(json['permissions'] ?? []),
+      shopId: json['shopId'] as String?,
+      businessId: json['businessId'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'contact': contact,
+      'role': role,
+      'permissions': permissions,
+      'shopId': shopId,
+      'businessId': businessId,
+    };
   }
 }

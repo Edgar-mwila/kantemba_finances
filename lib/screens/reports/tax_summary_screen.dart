@@ -46,29 +46,29 @@ class TaxSummaryScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Show current filter status
-                if (shopProvider.currentShop != null)
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    color: Colors.blue.shade50,
-                    child: Row(
-                      children: [
-                        const Icon(Icons.filter_list, size: 16),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Filtered by: ${shopProvider.currentShop!.name}',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () => shopProvider.setCurrentShop(null),
-                          child: const Text(
-                            'Clear',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                // if (shopProvider.currentShop != null)
+                //   Container(
+                //     padding: const EdgeInsets.all(8),
+                //     color: Colors.blue.shade50,
+                //     child: Row(
+                //       children: [
+                //         const Icon(Icons.filter_list, size: 16),
+                //         const SizedBox(width: 8),
+                //         Text(
+                //           'Filtered by: ${shopProvider.currentShop!.name}',
+                //           style: const TextStyle(fontSize: 12),
+                //         ),
+                //         const Spacer(),
+                //         TextButton(
+                //           onPressed: () => shopProvider.setCurrentShop(null),
+                //           child: const Text(
+                //             'Clear',
+                //             style: TextStyle(fontSize: 12),
+                //           ),
+                //         ),
+                //       ],
+                //     ),
+                //   ),
                 const SizedBox(height: 16),
                 Row(
                   children: [

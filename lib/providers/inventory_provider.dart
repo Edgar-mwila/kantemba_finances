@@ -132,27 +132,34 @@ class InventoryProvider with ChangeNotifier {
     String createdBy,
     String shopId,
   ) async {
-    final newItem = InventoryItem(
-      id: '${shopId}_${DateTime.now().toString()}',
-      name: item.name,
-      price: (item.price as num).toDouble(),
-      quantity: item.quantity,
-      lowStockThreshold: item.lowStockThreshold,
-      createdBy: createdBy,
-      shopId: shopId,
-    );
-    _items.add(newItem);
-    notifyListeners();
-
+    final businessProvider = BusinessProvider();
+    if (!businessProvider.isPremium || !(await ApiService.isOnline())) {
+      await DBHelper.insert('inventories', {
+        'id': item.id,
+        'name': item.name,
+        'price': item.price,
+        'quantity': item.quantity,
+        'lowStockThreshold': item.lowStockThreshold,
+        'createdBy': createdBy,
+        'shopId': shopId,
+        'synced': 0,
+      });
+      _items.add(item);
+      notifyListeners();
+      return;
+    }
+    // Online: use API
     await ApiService.post('inventory', {
-      'id': newItem.id,
-      'name': newItem.name,
-      'price': newItem.price,
-      'quantity': newItem.quantity,
-      'lowStockThreshold': newItem.lowStockThreshold,
-      'createdBy': newItem.createdBy,
+      'id': item.id,
+      'name': item.name,
+      'price': item.price,
+      'quantity': item.quantity,
+      'lowStockThreshold': item.lowStockThreshold,
+      'createdBy': createdBy,
       'shopId': shopId,
     });
+    _items.add(item);
+    notifyListeners();
   }
 
   Future<void> saleStock(String productId, int quantitySold) async {
@@ -202,30 +209,37 @@ class InventoryProvider with ChangeNotifier {
   }
 
   Future<void> increaseStockAndUpdatePrice(
-    String productId,
+    String itemId,
     int additionalUnits,
     double newUnitPrice,
   ) async {
-    final itemIndex = _items.indexWhere((item) => item.id == productId);
-    if (itemIndex >= 0) {
-      final item = _items[itemIndex];
-      final updatedItem = InventoryItem(
-        id: item.id,
-        name: item.name,
-        price: (newUnitPrice as num).toDouble(),
-        quantity: item.quantity + additionalUnits,
-        lowStockThreshold: item.lowStockThreshold,
-        shopId: item.shopId,
-        createdBy: item.createdBy,
+    final businessProvider = BusinessProvider();
+    final itemIndex = _items.indexWhere((item) => item.id == itemId);
+    if (itemIndex < 0) return;
+    final item = _items[itemIndex];
+    final updatedItem = InventoryItem(
+      id: item.id,
+      name: item.name,
+      price: newUnitPrice,
+      quantity: item.quantity + additionalUnits,
+      lowStockThreshold: item.lowStockThreshold,
+      shopId: item.shopId,
+      createdBy: item.createdBy,
+    );
+    _items[itemIndex] = updatedItem;
+    notifyListeners();
+    if (!businessProvider.isPremium || !(await ApiService.isOnline())) {
+      await DBHelper.update(
+        'inventories',
+        Map<String, Object>.from(updatedItem.toJson()),
+        itemId,
       );
-      _items[itemIndex] = updatedItem;
-      notifyListeners();
-      final id = item.id;
-      await ApiService.put('inventory/$id', {
-        'quantity': updatedItem.quantity,
-        'price': updatedItem.price,
-      });
+      return;
     }
+    await ApiService.put('inventory/$itemId', {
+      'price': newUnitPrice,
+      'quantity': updatedItem.quantity,
+    });
   }
 
   Future<void> decreaseStockForDamagedGoods(

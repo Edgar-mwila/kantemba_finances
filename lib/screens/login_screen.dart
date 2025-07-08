@@ -60,59 +60,86 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final green = Colors.green;
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Form(
             key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Login', style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 24),
-                TextFormField(
-                  controller: _businessIdController,
-                  decoration: const InputDecoration(labelText: 'Business ID'),
-                  validator:
-                      (value) =>
-                          value == null || value.isEmpty
-                              ? 'Enter business ID'
-                              : null,
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: Theme.of(
+                  context,
+                ).colorScheme.copyWith(primary: green, secondary: green),
+                inputDecorationTheme: const InputDecorationTheme(
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.green),
+                  ),
+                  labelStyle: TextStyle(color: Colors.green),
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _userContactController,
-                  decoration: const InputDecoration(labelText: 'Phone'),
-                  validator:
-                      (value) =>
-                          value == null || value.isEmpty ? 'Enter phone' : null,
+                elevatedButtonTheme: ElevatedButtonThemeData(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                  ),
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(labelText: 'Password'),
-                  obscureText: true,
-                  validator:
-                      (value) =>
-                          value == null || value.isEmpty
-                              ? 'Enter password'
-                              : null,
-                ),
-                const SizedBox(height: 24),
-                if (_error != null)
-                  Text(_error!, style: const TextStyle(color: Colors.red)),
-                const SizedBox(height: 8),
-                _isLoading
-                    ? const CircularProgressIndicator()
-                    : SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _submit,
-                        child: const Text('Log In'),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Login',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 24),
+                  TextFormField(
+                    controller: _businessIdController,
+                    decoration: const InputDecoration(labelText: 'Business ID'),
+                    validator:
+                        (value) =>
+                            value == null || value.isEmpty
+                                ? 'Enter business ID'
+                                : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _userContactController,
+                    decoration: const InputDecoration(labelText: 'Phone'),
+                    validator:
+                        (value) =>
+                            value == null || value.isEmpty
+                                ? 'Enter phone'
+                                : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: const InputDecoration(labelText: 'Password'),
+                    obscureText: true,
+                    validator:
+                        (value) =>
+                            value == null || value.isEmpty
+                                ? 'Enter password'
+                                : null,
+                  ),
+                  const SizedBox(height: 24),
+                  if (_error != null)
+                    Text(_error!, style: const TextStyle(color: Colors.red)),
+                  const SizedBox(height: 8),
+                  _isLoading
+                      ? const CircularProgressIndicator()
+                      : SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _submit,
+                          child: const Text(
+                            'Log In',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
                       ),
-                    ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

@@ -426,10 +426,8 @@ class SalesProvider with ChangeNotifier {
     BusinessProvider businessProvider,
   ) async {
     if (!businessProvider.isPremium || !(await ApiService.isOnline())) {
-      // Local only or offline: save to local DB, mark as unsynced
       await DBHelper.insert('sales', {
         'id': sale.id,
-        'items': jsonEncode(sale.items.map((item) => item).toList()),
         'totalAmount': sale.totalAmount,
         'grandTotal': sale.grandTotal,
         'vat': sale.vat,
@@ -440,6 +438,18 @@ class SalesProvider with ChangeNotifier {
         'shopId': shopId,
         'synced': 0,
       });
+      // Insert each sale item into sale_items table
+      for (final item in sale.items) {
+        await DBHelper.insert('sale_items', {
+          'saleId': sale.id,
+          'productId': item.product.id,
+          'productName': item.product.name,
+          'price': item.product.price,
+          'quantity': item.quantity,
+          'shopId': shopId,
+          'synced': 0,
+        });
+      }
       _sales.add(sale);
       notifyListeners();
       return;

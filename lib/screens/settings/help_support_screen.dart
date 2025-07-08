@@ -13,37 +13,49 @@ class HelpSupportScreen extends StatelessWidget {
     if (await canLaunchUrl(email)) {
       await launchUrl(email);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open email app.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open email app.')),
+      );
     }
   }
 
   void _contactWhatsApp(BuildContext context) async {
-    final whatsapp = Uri.parse('https://wa.me/260971234567?text=Hello%20Kantemba%20Support');
+    final whatsapp = Uri.parse(
+      'https://wa.me/260971234567?text=Hello%20Kantemba%20Support',
+    );
     if (await canLaunchUrl(whatsapp)) {
       await launchUrl(whatsapp);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open WhatsApp.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not open WhatsApp.')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Help & Support'),
-        backgroundColor: Colors.green.shade700,
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: const Text('Help & Support')),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
-          const Text('Frequently Asked Questions', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text(
+            'Frequently Asked Questions',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
-          const Text('Q: How do I upgrade to premium?\nA: Go to the Premium screen and follow the instructions.'),
+          const Text(
+            'Q: How do I upgrade to premium?\nA: Go to the Premium screen and follow the instructions.',
+          ),
           const SizedBox(height: 8),
-          const Text('Q: How do I restore my data?\nA: Use the Backup & Data settings to import a backup.'),
+          const Text(
+            'Q: How do I restore my data?\nA: Use the Backup & Data settings to import a backup.',
+          ),
           const SizedBox(height: 24),
-          const Text('Contact Support', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text(
+            'Contact Support',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
           ElevatedButton.icon(
             icon: const Icon(Icons.email),
@@ -59,9 +71,11 @@ class HelpSupportScreen extends StatelessWidget {
           const SizedBox(height: 24),
           const Text('About', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Kantemba Finances v1.0.0\nA comprehensive business finance management app.'),
+          const Text(
+            'Kantemba Finances v1.0.0\nA comprehensive business finance management app.',
+          ),
         ],
       ),
     );
   }
-} 
+}

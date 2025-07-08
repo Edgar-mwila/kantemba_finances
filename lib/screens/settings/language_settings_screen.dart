@@ -32,17 +32,15 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('app_language', _selectedLanguage);
     await prefs.setString('app_region', _selectedRegion);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Language & region saved.')));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Language & region saved.')));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Language & Region'),
-        backgroundColor: Colors.green.shade700,
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: const Text('Language & Region')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -51,24 +49,32 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
             const Text('App Language'),
             DropdownButton<String>(
               value: _selectedLanguage,
-              items: _languages.map((lang) => DropdownMenuItem(value: lang, child: Text(lang))).toList(),
+              items:
+                  _languages
+                      .map(
+                        (lang) =>
+                            DropdownMenuItem(value: lang, child: Text(lang)),
+                      )
+                      .toList(),
               onChanged: (v) => setState(() => _selectedLanguage = v!),
             ),
             const SizedBox(height: 24),
             const Text('Region/Currency'),
             DropdownButton<String>(
               value: _selectedRegion,
-              items: _regions.map((reg) => DropdownMenuItem(value: reg, child: Text(reg))).toList(),
+              items:
+                  _regions
+                      .map(
+                        (reg) => DropdownMenuItem(value: reg, child: Text(reg)),
+                      )
+                      .toList(),
               onChanged: (v) => setState(() => _selectedRegion = v!),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _saveSettings,
-              child: const Text('Save'),
-            ),
+            ElevatedButton(onPressed: _saveSettings, child: const Text('Save')),
           ],
         ),
       ),
     );
   }
-} 
+}

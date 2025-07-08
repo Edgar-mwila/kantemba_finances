@@ -116,7 +116,7 @@ class UsersProvider with ChangeNotifier {
           final shopData = json.decode(shopResponse.body);
           shops = [Shop.fromJson(shopData)];
         }
-      } else if (_currentUser!.role == UserRole.manager) {
+      } else if (_currentUser!.role == 'manager') {
         // Manager: fetch assigned shopIds from backend
         final managerShopsResponse = await ApiService.get(
           'shops?userId=${_currentUser!.id}',
@@ -135,7 +135,7 @@ class UsersProvider with ChangeNotifier {
             }
           }
         }
-      } else if (_currentUser!.role == UserRole.admin) {
+      } else if (_currentUser!.role == 'admin') {
         // Admin: fetch all shopIds for the business
         final shopsResponse = await ApiService.get(
           'shops?businessId=$businessId',
@@ -185,7 +185,7 @@ class UsersProvider with ChangeNotifier {
         'id': user.id,
         'name': user.name,
         'contact': user.contact,
-        'role': user.role.toString(),
+        'role': user.role,
         'permissions': user.permissions,
         'shopId': user.shopId,
         'businessId': user.businessId,
@@ -276,7 +276,7 @@ class UsersProvider with ChangeNotifier {
             final shopData = json.decode(shopResponse.body);
             shops = [Shop.fromJson(shopData)];
           }
-        } else if (user.role == UserRole.manager) {
+        } else if (user.role == 'manager') {
           // Manager: fetch assigned shopIds from backend
           final managerShopsResponse = await ApiService.get(
             'shops?userId=${user.id}',
@@ -295,7 +295,7 @@ class UsersProvider with ChangeNotifier {
               }
             }
           }
-        } else if (user.role == UserRole.admin) {
+        } else if (user.role == 'admin') {
           // Admin: fetch all shopIds for the business
           final shopsResponse = await ApiService.get(
             'shops?businessId=$businessId',
@@ -360,27 +360,36 @@ class UsersProvider with ChangeNotifier {
     String contact,
     String businessId,
   ) async {
-    final newUser = User(
-      id: user.id,
-      name: user.name,
-      contact: contact,
-      role: user.role,
-      permissions: user.permissions,
-      shopId: user.shopId,
-      businessId: businessId,
-    );
-    _users.add(newUser);
-    notifyListeners();
+    final businessProvider = BusinessProvider();
+    if (!businessProvider.isPremium || !(await ApiService.isOnline())) {
+      await DBHelper.insert('users', {
+        'id': user.id,
+        'name': user.name,
+        'contact': user.contact,
+        'role': user.role,
+        'permissions': user.permissions,
+        'shopId': user.shopId ?? '',
+        'businessId': user.businessId,
+        'password': password,
+        'synced': 0,
+      });
+      _users.add(user);
+      notifyListeners();
+      return;
+    }
+    // Online: use API
     await ApiService.post('users', {
-      'id': newUser.id,
-      'name': newUser.name,
+      'id': user.id,
+      'name': user.name,
+      'contact': user.contact,
+      'role': user.role,
+      'permissions': user.permissions,
+      'shopId': user.shopId,
+      'businessId': user.businessId,
       'password': password,
-      'role': newUser.role.toString(),
-      'permissions': json.encode(newUser.permissions),
-      'contact': contact,
-      'shopId': newUser.shopId,
-      'businessId': businessId,
     });
+    _users.add(user);
+    notifyListeners();
   }
 
   void setCurrentUser(User user) {
@@ -398,7 +407,7 @@ class UsersProvider with ChangeNotifier {
       await ApiService.put('users/$id', {
         'id': updatedUser.id,
         'name': updatedUser.name,
-        'role': updatedUser.role.toString(),
+        'role': updatedUser.role,
         'contact': updatedUser.contact,
         'shopId': updatedUser.shopId,
         'permissions': json.encode(updatedUser.permissions),
@@ -421,59 +430,15 @@ class UsersProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  User _userFromMap(Map<String, dynamic> item) {
-    dynamic perms = item['permissions'];
-    List<String> permissionsList;
-
-    // Handle cases where permissions are stored as a double-encoded JSON string,
-    // e.g. "\"[\\\"all\\\"]\""
-    if (perms is String) {
-      dynamic decoded = perms;
-      // Keep decoding while the string looks like a JSON array
-      while (decoded is String && decoded.trim().startsWith('[') ||
-          (decoded is String && decoded.trim().startsWith('"['))) {
-        try {
-          decoded = json.decode(decoded);
-        } catch (_) {
-          break;
-        }
-      }
-      if (decoded is List) {
-        permissionsList = List<String>.from(decoded);
-      } else if (decoded is String) {
-        permissionsList = [decoded];
-      } else {
-        permissionsList = [];
-      }
-    } else if (perms is List) {
-      permissionsList = List<String>.from(perms);
-    } else {
-      permissionsList = [];
-    }
-
-    // Handle empty role string - default to admin for business owners
-    String roleString = item['role'] ?? '';
-    if (roleString.isEmpty) {
-      // If role is empty but user has "all" permissions, they're likely an admin/owner
-      if (permissionsList.contains('all') ||
-          permissionsList.contains(UserPermissions.all)) {
-        roleString = 'admin';
-      } else {
-        roleString = 'employee'; // Default fallback
-      }
-    }
-
+  User _userFromMap(Map<String, dynamic> map) {
     return User(
-      id: item['id'],
-      name: item['name'],
-      contact: item['contact'],
-      role: UserRole.values.firstWhere(
-        (e) => e.value == roleString,
-        orElse: () => UserRole.admin,
-      ),
-      permissions: permissionsList,
-      shopId: item['shopId'], // This can be null, which is fine
-      businessId: item['businessId'],
+      id: map['id'] as String,
+      name: map['name'] as String,
+      contact: map['contact'] as String,
+      role: map['role'] as String,
+      permissions: List<String>.from(map['permissions'] ?? []),
+      shopId: map['shopId'] as String?,
+      businessId: map['businessId'] as String,
     );
   }
 
@@ -508,10 +473,11 @@ class UsersProvider with ChangeNotifier {
         'id': user.id,
         'name': user.name,
         'contact': contact,
-        'role': user.role.toString(),
+        'role': user.role,
         'permissions': json.encode(user.permissions),
         'shopId': user.shopId!,
         'businessId': businessId,
+        'password': password,
         'synced': 0,
       });
       _users.add(user);

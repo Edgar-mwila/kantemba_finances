@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kantemba_finances/providers/business_provider.dart';
 import 'package:kantemba_finances/providers/shop_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/models/inventory_item.dart';
@@ -215,6 +216,17 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
       listen: false,
     );
 
+    final currentShop = shopProvider.currentShop;
+    if (currentShop == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No shop is selected!')));
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
     if (_isExistingItem && _selectedItemId != null) {
       // Update stock and price for existing item
       await inventoryProvider.increaseStockAndUpdatePrice(
@@ -230,13 +242,14 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
         price: _unitPrice,
         quantity: _units,
         lowStockThreshold: _lowStockThreshold,
-        shopId: shopProvider.currentShop!.id,
+        shopId: currentShop.id,
         createdBy: currentUser.id,
       );
-      await inventoryProvider.addInventoryItem(
+      await inventoryProvider.addInventoryItemHybrid(
         newItem,
         currentUser.id,
-        shopProvider.currentShop!.id,
+        currentShop.id,
+        Provider.of<BusinessProvider>(context, listen: false),
       );
     }
 
@@ -248,13 +261,14 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
       amount: _bulkPrice,
       date: DateTime.now(),
       category: 'Purchases',
-      shopId: shopProvider.currentShop!.id,
+      shopId: currentShop.id,
       createdBy: currentUser.id,
     );
-    await expensesProvider.addExpense(
+    await expensesProvider.addExpenseHybrid(
       expense,
       currentUser.id,
-      shopProvider.currentShop!.id,
+      currentShop.id,
+      Provider.of<BusinessProvider>(context, listen: false),
     );
 
     setState(() {

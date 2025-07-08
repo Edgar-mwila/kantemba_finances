@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kantemba_finances/providers/business_provider.dart';
 import 'package:kantemba_finances/providers/shop_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/models/expense.dart';
@@ -229,6 +230,17 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
       listen: false,
     );
 
+    final currentShop = shopProvider.currentShop;
+    if (currentShop == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No shop is selected!')));
+      setState(() {
+        _isLoading = false;
+      });
+      return;
+    }
+
     if (_isGoodsDamaged && _selectedItemId != null) {
       // Calculate amount and update inventory
       final item = inventoryProvider.items.firstWhere(
@@ -247,13 +259,14 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
       amount: _amount,
       date: _date,
       category: _isGoodsDamaged ? 'Goods Damaged' : _category,
-      shopId: shopProvider.currentShop!.id,
+      shopId: currentShop.id,
       createdBy: currentUser.id,
     );
-    await expensesProvider.addExpense(
+    await expensesProvider.addExpenseHybrid(
       expense,
       currentUser.id,
-      shopProvider.currentShop!.id,
+      currentShop.id,
+      Provider.of<BusinessProvider>(context, listen: false),
     );
 
     setState(() {

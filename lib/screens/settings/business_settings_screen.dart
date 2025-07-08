@@ -22,10 +22,16 @@ class _BusinessSettingsScreenState extends State<BusinessSettingsScreen> {
     super.initState();
     final business = Provider.of<BusinessProvider>(context, listen: false);
     _nameController = TextEditingController(text: business.businessName ?? '');
-    _contactController = TextEditingController(text: business.businessContact ?? '');
+    _contactController = TextEditingController(
+      text: business.businessContact ?? '',
+    );
     _countryController = TextEditingController(text: business.country ?? '');
-    _adminNameController = TextEditingController(text: business.adminName ?? '');
-    _adminContactController = TextEditingController(text: business.adminContact ?? '');
+    _adminNameController = TextEditingController(
+      text: business.adminName ?? '',
+    );
+    _adminContactController = TextEditingController(
+      text: business.adminContact ?? '',
+    );
   }
 
   @override
@@ -46,32 +52,35 @@ class _BusinessSettingsScreenState extends State<BusinessSettingsScreen> {
     business.adminName = _adminNameController.text;
     business.adminContact = _adminContactController.text;
     await business.updateBusiness(business);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Business info saved.')));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Business info saved.')));
   }
 
   @override
   Widget build(BuildContext context) {
     final business = Provider.of<BusinessProvider>(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Business Settings'),
-        backgroundColor: Colors.green.shade700,
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: const Text('Business Settings')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              const Text('Business Info', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Business Info',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Business Name'),
               ),
               TextFormField(
                 controller: _contactController,
-                decoration: const InputDecoration(labelText: 'Business Contact'),
+                decoration: const InputDecoration(
+                  labelText: 'Business Contact',
+                ),
               ),
               TextFormField(
                 controller: _countryController,
@@ -91,12 +100,17 @@ class _BusinessSettingsScreenState extends State<BusinessSettingsScreen> {
                 child: const Text('Save'),
               ),
               const SizedBox(height: 32),
-              const Text('Subscription Status', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Subscription Status',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               ListTile(
                 title: Text(business.isPremium ? 'Premium' : 'Free'),
-                subtitle: business.isPremium && business.subscriptionExpiryDate != null
-                    ? Text('Expires: ${business.subscriptionExpiryDate}')
-                    : null,
+                subtitle:
+                    business.isPremium &&
+                            business.subscriptionExpiryDate != null
+                        ? Text('Expires: ${business.subscriptionExpiryDate}')
+                        : null,
                 leading: Icon(
                   business.isPremium ? Icons.star : Icons.lock_open,
                   color: business.isPremium ? Colors.amber : Colors.grey,
@@ -108,4 +122,4 @@ class _BusinessSettingsScreenState extends State<BusinessSettingsScreen> {
       ),
     );
   }
-} 
+}

@@ -19,9 +19,14 @@ class ProfitLossScreen extends StatelessWidget {
       builder: (context, shopProvider, child) {
         // Use filtered data based on current shop
         final sales = salesData.getSalesForShop(shopProvider.currentShop);
-        final expenses = expensesData.getExpensesForShop(shopProvider.currentShop);
+        final expenses = expensesData.getExpensesForShop(
+          shopProvider.currentShop,
+        );
 
-        final totalSales = sales.fold(0.0, (sum, sale) => sum + sale.grandTotal);
+        final totalSales = sales.fold(
+          0.0,
+          (sum, sale) => sum + sale.grandTotal,
+        );
         final cogs = expenses
             .where((exp) => exp.category.toLowerCase() == 'purchases')
             .fold(0.0, (sum, exp) => sum + exp.amount);
@@ -31,7 +36,7 @@ class ProfitLossScreen extends StatelessWidget {
             .fold(0.0, (sum, exp) => sum + exp.amount);
         final netProfit = grossProfit - totalExpenses;
 
-                return Scaffold(
+        return Scaffold(
           appBar: AppBar(title: const Text('Profit & Loss Statement')),
           body: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -39,26 +44,26 @@ class ProfitLossScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Show current filter status
-                if (shopProvider.currentShop != null)
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    color: Colors.blue.shade50,
-                    child: Row(
-                      children: [
-                        const Icon(Icons.filter_list, size: 16),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Filtered by: ${shopProvider.currentShop!.name}',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () => shopProvider.setCurrentShop(null),
-                          child: const Text('Clear', style: TextStyle(fontSize: 12)),
-                        ),
-                      ],
-                    ),
-                  ),
+                // if (shopProvider.currentShop != null)
+                //   Container(
+                //     padding: const EdgeInsets.all(8),
+                //     color: Colors.blue.shade50,
+                //     child: Row(
+                //       children: [
+                //         const Icon(Icons.filter_list, size: 16),
+                //         const SizedBox(width: 8),
+                //         Text(
+                //           'Filtered by: ${shopProvider.currentShop!.name}',
+                //           style: const TextStyle(fontSize: 12),
+                //         ),
+                //         const Spacer(),
+                //         TextButton(
+                //           onPressed: () => shopProvider.setCurrentShop(null),
+                //           child: const Text('Clear', style: TextStyle(fontSize: 12)),
+                //         ),
+                //       ],
+                //     ),
+                //   ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -80,7 +85,8 @@ class ProfitLossScreen extends StatelessWidget {
                 // Premium AI Analysis
                 Consumer<BusinessProvider>(
                   builder: (context, businessProvider, _) {
-                    if (!businessProvider.isPremium) return const SizedBox.shrink();
+                    if (!businessProvider.isPremium)
+                      return const SizedBox.shrink();
                     return FutureBuilder<Map<String, dynamic>>(
                       future: fetchAIAnalysis(
                         businessId: businessProvider.id!,
@@ -92,14 +98,17 @@ class ProfitLossScreen extends StatelessWidget {
                         },
                       ),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return const Padding(
                             padding: EdgeInsets.all(16.0),
                             child: CircularProgressIndicator(),
                           );
                         }
                         if (snapshot.hasError) {
-                          return Text('AI analysis unavailable: \\${snapshot.error}');
+                          return Text(
+                            'AI analysis unavailable: \\${snapshot.error}',
+                          );
                         }
                         final ai = snapshot.data!;
                         return Card(
@@ -112,17 +121,33 @@ class ProfitLossScreen extends StatelessWidget {
                               children: [
                                 Row(
                                   children: const [
-                                    Icon(Icons.psychology, color: Colors.green, size: 24),
+                                    Icon(
+                                      Icons.psychology,
+                                      color: Colors.green,
+                                      size: 24,
+                                    ),
                                     SizedBox(width: 8),
-                                    Text('AI Analysis', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    Text(
+                                      'AI Analysis',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
                                   ],
                                 ),
                                 const SizedBox(height: 12),
                                 Text('Trend: \\${ai['trend']}'),
-                                Text('Recommendation: \\${ai['recommendation']}'),
-                                ...?ai['insights']?.map<Widget>((i) => Text(i)).toList(),
+                                Text(
+                                  'Recommendation: \\${ai['recommendation']}',
+                                ),
+                                ...?ai['insights']
+                                    ?.map<Widget>((i) => Text(i))
+                                    .toList(),
                                 if (ai['forecast'] != null)
-                                  Text('Forecast: \\${jsonEncode(ai['forecast'])}'),
+                                  Text(
+                                    'Forecast: \\${jsonEncode(ai['forecast'])}',
+                                  ),
                               ],
                             ),
                           ),

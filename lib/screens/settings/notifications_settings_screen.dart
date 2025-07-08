@@ -5,10 +5,12 @@ class NotificationsSettingsScreen extends StatefulWidget {
   const NotificationsSettingsScreen({super.key});
 
   @override
-  State<NotificationsSettingsScreen> createState() => _NotificationsSettingsScreenState();
+  State<NotificationsSettingsScreen> createState() =>
+      _NotificationsSettingsScreenState();
 }
 
-class _NotificationsSettingsScreenState extends State<NotificationsSettingsScreen> {
+class _NotificationsSettingsScreenState
+    extends State<NotificationsSettingsScreen> {
   bool _salesNotif = false;
   bool _lowStockNotif = false;
   bool _expenseNotif = false;
@@ -36,17 +38,15 @@ class _NotificationsSettingsScreenState extends State<NotificationsSettingsScree
     await prefs.setBool('notif_low_stock', _lowStockNotif);
     await prefs.setBool('notif_expense', _expenseNotif);
     await prefs.setBool('notif_report', _reportNotif);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notification settings saved.')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Notification settings saved.')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notifications Settings'),
-        backgroundColor: Colors.green.shade700,
-        foregroundColor: Colors.white,
-      ),
+      appBar: AppBar(title: const Text('Notifications Settings')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -73,13 +73,10 @@ class _NotificationsSettingsScreenState extends State<NotificationsSettingsScree
               onChanged: (v) => setState(() => _reportNotif = v),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _saveSettings,
-              child: const Text('Save'),
-            ),
+            ElevatedButton(onPressed: _saveSettings, child: const Text('Save')),
           ],
         ),
       ),
     );
   }
-} 
+}
