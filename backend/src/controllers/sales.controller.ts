@@ -4,9 +4,9 @@ import { Sale } from '../models/sale.model';
 export const getSales = async (req: Request, res: Response) => {
   console.log('[GET] /sales', req.query);
   try {
-    const { businessId } = req.query;
-    if (!businessId) return res.status(400).json({ message: 'businessId required' });
-    const sales = await Sale.findAll({ where: { businessId: businessId as string } });
+    const { shopId } = req.query;
+    if (!shopId) return res.status(400).json({ message: 'shopId required' });
+    const sales = await Sale.findAll({ where: { shopId: shopId as string } });
     console.log('Sales found:', sales.map(s => s.toJSON()));
     res.json(sales);
   } catch (err) {

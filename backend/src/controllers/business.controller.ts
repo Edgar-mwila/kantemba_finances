@@ -64,3 +64,45 @@ export const deleteBusiness = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error deleting business', error: err });
   }
 };
+
+export const flutterwaveWebhook = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Flutterwave sends event data in req.body
+    const { businessId, txRef, planType, paymentStatus } = req.body;
+    if (!businessId || !txRef || !planType || !paymentStatus) {
+      res.status(400).json({ message: 'Missing required fields' });
+      return;
+    }
+    if (paymentStatus !== 'successful') {
+      res.status(200).json({ message: 'Payment not successful, no update.' });
+      return;
+    }
+    // Calculate subscription dates
+    const now = new Date();
+    let expiry: Date;
+    if (planType === 'yearly') {
+      expiry = new Date(now);
+      expiry.setFullYear(expiry.getFullYear() + 1);
+    } else {
+      expiry = new Date(now);
+      expiry.setMonth(expiry.getMonth() + 1);
+    }
+    // Update business
+    const [updated] = await Business.update({
+      isPremium: true,
+      subscriptionType: planType,
+      subscriptionStartDate: now,
+      subscriptionExpiryDate: expiry,
+      trialUsed: true,
+      lastPaymentTxRef: txRef,
+    }, { where: { id: businessId } });
+    if (!updated) {
+      res.status(404).json({ message: 'Business not found' });
+      return;
+    }
+    res.status(200).json({ message: 'Business upgraded to premium' });
+  } catch (err) {
+    console.error('Error in Flutterwave webhook:', err);
+    res.status(500).json({ message: 'Server error', error: err });
+  }
+};

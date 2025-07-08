@@ -4,6 +4,7 @@ import { sequelize } from '../utils/db';
 import { Business } from './business.model';
 import { User } from './user.model';
 import { Inventory } from './inventory.model';
+import { Shop } from './shop.model';
 
 interface SaleAttributes {
   id: string;
@@ -14,7 +15,7 @@ interface SaleAttributes {
   levy: number;
   date: Date;
   createdBy: string;
-  businessId: string;
+  shopId?: string | null;
 }
 
 interface SaleCreationAttributes extends Optional<SaleAttributes, 'id'> {}
@@ -28,7 +29,7 @@ class Sale extends Model<SaleAttributes, SaleCreationAttributes> implements Sale
   public levy!: number;
   public date!: Date;
   public createdBy!: string;
-  public businessId!: string;
+  public shopId?: string | null;
 }
 
 Sale.init(
@@ -51,14 +52,14 @@ Sale.init(
         key: 'id',
       },
     },
-    businessId: {
+    shopId: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
       references: {
-        model: Business,
+        model: 'shops',
         key: 'id',
       },
-      onDelete: 'CASCADE',
+      onDelete: 'SET NULL',
     },
   },
   {
@@ -123,8 +124,8 @@ SaleItem.init(
   }
 );
 
-Sale.belongsTo(Business, { foreignKey: 'businessId' });
-Business.hasMany(Sale, { foreignKey: 'businessId' });
+Sale.belongsTo(Shop, { foreignKey: 'shopId' });
+Shop.hasMany(Sale, { foreignKey: 'shopId' });
 Sale.belongsTo(User, { foreignKey: 'createdBy' });
 User.hasMany(Sale, { foreignKey: 'createdBy' });
 Sale.hasMany(SaleItem, { foreignKey: 'saleId' });

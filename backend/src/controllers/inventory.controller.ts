@@ -4,9 +4,9 @@ import { Inventory } from '../models/inventory.model';
 export const getInventory = async (req: Request, res: Response) => {
   console.log('[GET] /inventory', req.query);
   try {
-    const { businessId } = req.query;
-    if (!businessId) return res.status(400).json({ message: 'businessId required' });
-    const items = await Inventory.findAll({ where: { businessId: businessId as string } });
+    const { shopId } = req.query;
+    if (!shopId) return res.status(400).json({ message: 'shopId required' });
+    const items = await Inventory.findAll({ where: { shopId: shopId as string } });
     console.log('Inventory items found:', items.map(i => i.toJSON()));
     res.json(items);
   } catch (err) {

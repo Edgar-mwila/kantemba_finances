@@ -4,7 +4,8 @@ import { sequelize } from '../utils/db';
 import { Business } from './business.model';
 
 export enum UserRole {
-  owner = 'owner',
+  admin = 'admin',
+  manager = 'manager',
   employee = 'employee',
 }
 
@@ -16,6 +17,7 @@ interface UserAttributes {
   role: UserRole;
   permissions: string[];
   businessId: string;
+  shopId?: string | null;
 }
 
 interface UserCreationAttributes extends Optional<UserAttributes, 'id'> {}
@@ -28,6 +30,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
   public role!: UserRole;
   public permissions!: string[];
   public businessId!: string;
+  public shopId?: string | null;
 }
 
 User.init(
@@ -44,7 +47,7 @@ User.init(
       unique: true,
     },
     role: {
-      type: DataTypes.ENUM('owner', 'employee'),
+      type: DataTypes.ENUM('admin', 'manager', 'employee'),
       allowNull: false,
     },
     permissions: {
@@ -60,6 +63,15 @@ User.init(
         key: 'id',
       },
       onDelete: 'CASCADE',
+    },
+    shopId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      references: {
+        model: 'shops',
+        key: 'id',
+      },
+      onDelete: 'SET NULL',
     },
   },
   {

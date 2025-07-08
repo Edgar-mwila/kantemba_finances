@@ -1,4 +1,17 @@
-enum UserRole { owner, employee }
+enum UserRole { admin, manager, employee }
+
+extension UserRoleExtension on UserRole {
+  String get value {
+    switch (this) {
+      case UserRole.admin:
+        return 'admin';
+      case UserRole.manager:
+        return 'manager';
+      case UserRole.employee:
+        return 'employee';
+    }
+  }
+}
 
 class UserPermissions {
   static const String all = 'all';
@@ -11,20 +24,25 @@ class UserPermissions {
   static const String manageUsers = 'manage_users';
   static const String viewReports = 'view_reports';
   static const String manageSettings = 'manage_settings';
-  static const String viewPremium = 'view_premium';
 }
 
 class User {
   final String id;
   final String name;
+  final String contact;
   final UserRole role;
   final List<String> permissions;
+  final String? shopId;
+  final String businessId;
 
   User({
     required this.id,
     required this.name,
+    required this.contact,
     required this.role,
     required this.permissions,
+    this.shopId,
+    required this.businessId,
   });
 
   bool hasPermission(String permission) {

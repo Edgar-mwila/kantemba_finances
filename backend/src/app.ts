@@ -8,6 +8,8 @@ import salesRoutes from './routes/sales.route';
 import shopRoutes from './routes/shop.route';
 import syncRoutes from './routes/sync.route';
 import saleItemRoutes from './routes/sale_item.route';
+import returnsRoutes from './routes/returns.route';
+import aiRoutes from './routes/ai.route';
 
 const app = express();
 
@@ -22,6 +24,8 @@ app.use('/api/sales', salesRoutes);
 app.use('/api/shops', shopRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/sale_items', saleItemRoutes);
+app.use('/api/returns', returnsRoutes);
+app.use('/api/ai', aiRoutes);
 app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
 });

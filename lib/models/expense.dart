@@ -4,6 +4,7 @@ class Expense {
   final double amount;
   final DateTime date;
   final String category;
+  final String shopId;
   final String createdBy;
 
   Expense({
@@ -12,6 +13,7 @@ class Expense {
     required this.amount,
     required this.date,
     this.category = 'Uncategorized',
+    required this.shopId,
     required this.createdBy,
   });
-} 
+}

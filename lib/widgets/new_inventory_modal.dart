@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kantemba_finances/providers/business_provider.dart';
+import 'package:kantemba_finances/providers/shop_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/models/inventory_item.dart';
 import 'package:kantemba_finances/models/expense.dart';
@@ -194,6 +194,7 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
     });
 
     final usersProvider = Provider.of<UsersProvider>(context, listen: false);
+    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
     final currentUser = usersProvider.currentUser;
     if (currentUser == null) {
       ScaffoldMessenger.of(
@@ -213,10 +214,6 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
       context,
       listen: false,
     );
-    final businessProvider = Provider.of<BusinessProvider>(
-      context,
-      listen: false,
-    );
 
     if (_isExistingItem && _selectedItemId != null) {
       // Update stock and price for existing item
@@ -233,12 +230,13 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
         price: _unitPrice,
         quantity: _units,
         lowStockThreshold: _lowStockThreshold,
+        shopId: shopProvider.currentShop!.id,
         createdBy: currentUser.id,
       );
       await inventoryProvider.addInventoryItem(
         newItem,
-        businessProvider.id!,
         currentUser.id,
+        shopProvider.currentShop!.id,
       );
     }
 
@@ -250,12 +248,13 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
       amount: _bulkPrice,
       date: DateTime.now(),
       category: 'Purchases',
+      shopId: shopProvider.currentShop!.id,
       createdBy: currentUser.id,
     );
     await expensesProvider.addExpense(
       expense,
-      businessProvider.id!,
       currentUser.id,
+      shopProvider.currentShop!.id,
     );
 
     setState(() {

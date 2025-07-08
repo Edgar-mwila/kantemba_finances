@@ -3,6 +3,7 @@ import type { Optional } from 'sequelize';
 import { sequelize } from '../utils/db';
 import { Business } from './business.model';
 import { User } from './user.model';
+import { Shop } from './shop.model';
 
 interface ExpenseAttributes {
   id: string;
@@ -11,7 +12,7 @@ interface ExpenseAttributes {
   date: Date;
   category: string;
   createdBy: string;
-  businessId: string;
+  shopId: string;
 }
 
 interface ExpenseCreationAttributes extends Optional<ExpenseAttributes, 'id' | 'category'> {}
@@ -23,7 +24,7 @@ class Expense extends Model<ExpenseAttributes, ExpenseCreationAttributes> implem
   public date!: Date;
   public category!: string;
   public createdBy!: string;
-  public businessId!: string;
+  public shopId!: string;
 }
 
 Expense.init(
@@ -47,11 +48,11 @@ Expense.init(
         key: 'id',
       },
     },
-    businessId: {
+    shopId: {
       type: DataTypes.STRING,
       allowNull: false,
       references: {
-        model: Business,
+        model: Shop,
         key: 'id',
       },
       onDelete: 'CASCADE',
@@ -65,8 +66,8 @@ Expense.init(
   }
 );
 
-Expense.belongsTo(Business, { foreignKey: 'businessId' });
-Business.hasMany(Expense, { foreignKey: 'businessId' });
+Expense.belongsTo(Shop, { foreignKey: 'shopId' });
+Shop.hasMany(Expense, { foreignKey: 'shopId' });
 Expense.belongsTo(User, { foreignKey: 'createdBy' });
 User.hasMany(Expense, { foreignKey: 'createdBy' });
 

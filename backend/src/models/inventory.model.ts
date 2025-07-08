@@ -3,6 +3,7 @@ import type { Optional } from 'sequelize';
 import { sequelize } from '../utils/db';
 import { Business } from './business.model';
 import { User } from './user.model';
+import { Shop } from './shop.model';
 
 interface InventoryAttributes {
   id: string;
@@ -11,7 +12,7 @@ interface InventoryAttributes {
   quantity: number;
   lowStockThreshold: number;
   createdBy: string;
-  businessId: string;
+  shopId?: string | null;
 }
 
 interface InventoryCreationAttributes extends Optional<InventoryAttributes, 'id' | 'lowStockThreshold'> {}
@@ -23,7 +24,7 @@ class Inventory extends Model<InventoryAttributes, InventoryCreationAttributes> 
   public quantity!: number;
   public lowStockThreshold!: number;
   public createdBy!: string;
-  public businessId!: string;
+  public shopId?: string | null;
 }
 
 Inventory.init(
@@ -47,14 +48,14 @@ Inventory.init(
         key: 'id',
       },
     },
-    businessId: {
+    shopId: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
       references: {
-        model: Business,
+        model: Shop,
         key: 'id',
       },
-      onDelete: 'CASCADE',
+      onDelete: 'SET NULL',
     },
   },
   {
@@ -65,8 +66,8 @@ Inventory.init(
   }
 );
 
-Inventory.belongsTo(Business, { foreignKey: 'businessId' });
-Business.hasMany(Inventory, { foreignKey: 'businessId' });
+Inventory.belongsTo(Shop, { foreignKey: 'shopId' });
+Shop.hasMany(Inventory, { foreignKey: 'shopId' });
 Inventory.belongsTo(User, { foreignKey: 'createdBy' });
 User.hasMany(Inventory, { foreignKey: 'createdBy' });
 

@@ -55,7 +55,7 @@ export const updateShop = async (req: Request, res: Response) => {
     }
     const shop = await Shop.findByPk(id);
     console.log('Shop updated:', shop?.toJSON());
-    res.json(shop);
+    res.status(200).json(shop);
   } catch (err) {
     console.error('Error updating shop:', err);
     res.status(400).json({ message: 'Error updating shop', error: err });
@@ -72,7 +72,7 @@ export const deleteShop = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Shop not found' });
     }
     console.log('Shop deleted:', id);
-    res.json({ message: 'Shop deleted' });
+    res.status(204).json({ message: 'Shop deleted' });
   } catch (err) {
     console.error('Error deleting shop:', err);
     res.status(500).json({ message: 'Error deleting shop', error: err });

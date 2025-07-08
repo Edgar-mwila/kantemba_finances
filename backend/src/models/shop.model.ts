@@ -6,7 +6,7 @@ import { Business } from './business.model';
 interface ShopAttributes {
   id: string;
   name: string;
-  location: string;
+  // location: string;
   businessId: string;
 }
 
@@ -15,7 +15,7 @@ interface ShopCreationAttributes extends Optional<ShopAttributes, 'id'> {}
 class Shop extends Model<ShopAttributes, ShopCreationAttributes> implements ShopAttributes {
   public id!: string;
   public name!: string;
-  public location!: string;
+  // public location!: string;
   public businessId!: string;
 }
 
@@ -26,7 +26,7 @@ Shop.init(
       primaryKey: true,
     },
     name: DataTypes.STRING,
-    location: DataTypes.STRING,
+    // location: DataTypes.STRING,
     businessId: {
       type: DataTypes.STRING,
       allowNull: false,

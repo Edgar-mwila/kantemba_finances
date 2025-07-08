@@ -41,6 +41,11 @@ dependencies:
   crypto: ^3.0.6
   shared_preferences: ^2.5.3
   http: ^1.4.0
+  flutterwave_standard: ^1.0.7
+  connectivity_plus: ^5.0.2
+  url_launcher: ^6.0.20
+  intl: ^0.18.0
+  flutter_local_notifications: ^17.2.3
 
 dev_dependencies:
   flutter_test:

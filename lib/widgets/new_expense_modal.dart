@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:kantemba_finances/providers/business_provider.dart';
+import 'package:kantemba_finances/providers/shop_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/models/expense.dart';
 import 'package:kantemba_finances/providers/expenses_provider.dart';
@@ -208,6 +208,7 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
     });
 
     final usersProvider = Provider.of<UsersProvider>(context, listen: false);
+    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
     final currentUser = usersProvider.currentUser;
     if (currentUser == null) {
       ScaffoldMessenger.of(
@@ -224,10 +225,6 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
       listen: false,
     );
     final inventoryProvider = Provider.of<InventoryProvider>(
-      context,
-      listen: false,
-    );
-    final businessProvider = Provider.of<BusinessProvider>(
       context,
       listen: false,
     );
@@ -250,12 +247,13 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
       amount: _amount,
       date: _date,
       category: _isGoodsDamaged ? 'Goods Damaged' : _category,
+      shopId: shopProvider.currentShop!.id,
       createdBy: currentUser.id,
     );
     await expensesProvider.addExpense(
       expense,
-      businessProvider.id!,
       currentUser.id,
+      shopProvider.currentShop!.id,
     );
 
     setState(() {

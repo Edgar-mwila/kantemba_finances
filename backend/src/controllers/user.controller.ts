@@ -111,3 +111,30 @@ export const loginUser = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Login error', error: err });
   }
 };
+
+export const validateToken = async (req: Request, res: Response): Promise<void> => {
+  console.log('[GET] /users/validate');
+  try {
+    const user = (req as any).user;
+    if (!user) {
+      console.log('No user found in request');
+      res.status(401).json({ message: 'Invalid token' });
+      return;
+    }
+    
+    // Get the current user data from database
+    console.log('Validating user:', user);
+    const currentUser = await User.findByPk(user.id);
+    if (!currentUser) {
+      console.log('User not found in database');
+      res.status(401).json({ message: 'User not found' });
+      return;
+    }
+    
+    console.log('Token validation success:', currentUser.toJSON());
+    res.json({ valid: true, user: currentUser });
+  } catch (err) {
+    console.error('Token validation error:', err);
+    res.status(500).json({ message: 'Token validation error', error: err });
+  }
+};

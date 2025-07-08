@@ -5,31 +5,41 @@ import { sequelize } from '../utils/db';
 interface BusinessAttributes {
   id: string;
   name: string;
-  street: string;
-  township: string;
-  city: string;
-  province: string;
+  // street: string;
+  // township: string;
+  // city: string;
+  // province: string;
   country: string;
   businessContact: string;
-  ownerName: string;
-  ownerContact: string;
+  adminName: string;
+  adminContact: string;
   isPremium: boolean;
+  subscriptionType?: 'monthly' | 'yearly';
+  subscriptionStartDate?: Date;
+  subscriptionExpiryDate?: Date;
+  trialUsed?: boolean;
+  lastPaymentTxRef?: string;
 }
 
-interface BusinessCreationAttributes extends Optional<BusinessAttributes, 'id' | 'isPremium'> {}
+interface BusinessCreationAttributes extends Optional<BusinessAttributes, 'id' | 'isPremium' | 'subscriptionType' | 'subscriptionStartDate' | 'subscriptionExpiryDate' | 'trialUsed' | 'lastPaymentTxRef'> {}
 
 class Business extends Model<BusinessAttributes, BusinessCreationAttributes> implements BusinessAttributes {
   public id!: string;
   public name!: string;
-  public street!: string;
-  public township!: string;
-  public city!: string;
-  public province!: string;
+  // public street!: string;
+  // public township!: string;
+  // public city!: string;
+  // public province!: string;
   public country!: string;
   public businessContact!: string;
-  public ownerName!: string;
-  public ownerContact!: string;
+  public adminName!: string;
+  public adminContact!: string;
   public isPremium!: boolean;
+  public subscriptionType?: 'monthly' | 'yearly';
+  public subscriptionStartDate?: Date;
+  public subscriptionExpiryDate?: Date;
+  public trialUsed?: boolean;
+  public lastPaymentTxRef?: string;
 }
 
 Business.init(
@@ -39,18 +49,23 @@ Business.init(
       primaryKey: true,
     },
     name: DataTypes.STRING,
-    street: DataTypes.STRING,
-    township: DataTypes.STRING,
-    city: DataTypes.STRING,
-    province: DataTypes.STRING,
+    // street: DataTypes.STRING,
+    // township: DataTypes.STRING,
+    // city: DataTypes.STRING,
+    // province: DataTypes.STRING,
     country: DataTypes.STRING,
     businessContact: DataTypes.STRING,
-    ownerName: DataTypes.STRING,
-    ownerContact: DataTypes.STRING,
+    adminName: DataTypes.STRING,
+    adminContact: DataTypes.STRING,
     isPremium: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
+    subscriptionType: DataTypes.STRING,
+    subscriptionStartDate: DataTypes.DATE,
+    subscriptionExpiryDate: DataTypes.DATE,
+    trialUsed: DataTypes.BOOLEAN,
+    lastPaymentTxRef: DataTypes.STRING,
   },
   {
     sequelize,

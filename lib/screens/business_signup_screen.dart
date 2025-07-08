@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:kantemba_finances/providers/business_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
+import 'package:kantemba_finances/providers/shop_provider.dart';
 import 'package:kantemba_finances/models/user.dart';
+import 'package:kantemba_finances/models/shop.dart';
 
 class BusinessSignUpScreen extends StatefulWidget {
   const BusinessSignUpScreen({super.key});
@@ -14,15 +16,15 @@ class BusinessSignUpScreen extends StatefulWidget {
 class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final _businessNameController = TextEditingController();
-  final _streetController = TextEditingController();
-  final _townshipController = TextEditingController();
-  final _cityController = TextEditingController();
-  final _provinceController = TextEditingController();
+  // final _streetController = TextEditingController();
+  // final _townshipController = TextEditingController();
+  // final _cityController = TextEditingController();
+  // final _provinceController = TextEditingController();
   final _countryController = TextEditingController();
   final _businessContactController = TextEditingController();
-  final _ownerNameController = TextEditingController();
-  final _ownerContactController = TextEditingController();
-  final _ownerPasswordController = TextEditingController();
+  final _adminNameController = TextEditingController();
+  final _adminContactController = TextEditingController();
+  final _adminPasswordController = TextEditingController();
 
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
@@ -31,35 +33,65 @@ class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
         listen: false,
       ).createBusiness(
         name: _businessNameController.text,
-        street: _streetController.text,
-        township: _townshipController.text,
-        city: _cityController.text,
-        province: _provinceController.text,
+        // street: _streetController.text,
+        // township: _townshipController.text,
+        // city: _cityController.text,
+        // province: _provinceController.text,
         country: _countryController.text,
         businessContact: _businessContactController.text,
-        ownerName: _ownerNameController.text,
-        ownerContact: _ownerContactController.text,
+        adminName: _adminNameController.text,
+        adminContact: _adminContactController.text,
       );
-      // Add owner as first user
+
+      // Logging businessId
+      debugPrint('Business created with ID: $businessId');
+
+      // Create "Main Branch" shop for the business
+      final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+      final mainBranch = Shop(
+        id: '${businessId}_main_branch',
+        name: 'Main Branch',
+        // location: _countryController.text, // Use country as location for now
+        businessId: businessId,
+      );
+      debugPrint('Attempting to add shop: ${mainBranch.id}');
+      try {
+        await shopProvider.addShop(mainBranch);
+        debugPrint('Shop added successfully: ${mainBranch.id}');
+      } catch (e, stack) {
+        debugPrint('Failed to add shop: $e');
+        debugPrint('$stack');
+      }
+
+      // Add admin as first user (with admin role and no shopId for global access)
       await Provider.of<UsersProvider>(context, listen: false).addUser(
         User(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
-          name: _ownerNameController.text,
-          role: UserRole.owner,
+          name: _adminNameController.text,
+          contact: _adminContactController.text,
+          role: UserRole.admin,
           permissions: [UserPermissions.all],
+          shopId: null, // Admin has global access, no specific shop
+          businessId: businessId,
         ),
-        _ownerPasswordController.text,
-        _ownerContactController.text,
+        _adminPasswordController.text,
+        _adminContactController.text,
         businessId,
       );
+
+      // Set current user as admin
       Provider.of<UsersProvider>(context, listen: false).setCurrentUser(
         User(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
-          name: _ownerNameController.text,
-          role: UserRole.owner,
+          name: _adminNameController.text,
+          contact: _adminContactController.text,
+          role: UserRole.admin,
           permissions: [UserPermissions.all],
+          shopId: null, // Admin has global access
+          businessId: businessId,
         ),
       );
+
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
@@ -92,40 +124,40 @@ class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
                               : null,
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: _streetController,
-                  decoration: const InputDecoration(labelText: 'Street'),
-                  validator:
-                      (value) =>
-                          value!.isEmpty ? 'Please enter a street' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _townshipController,
-                  decoration: const InputDecoration(labelText: 'Township'),
-                  validator:
-                      (value) =>
-                          value!.isEmpty ? 'Please enter a township' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _cityController,
-                  decoration: const InputDecoration(labelText: 'City'),
-                  validator:
-                      (value) => value!.isEmpty ? 'Please enter a city' : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _provinceController,
-                  decoration: const InputDecoration(
-                    labelText: 'Province/State',
-                  ),
-                  validator:
-                      (value) =>
-                          value!.isEmpty
-                              ? 'Please enter a province/state'
-                              : null,
-                ),
+                // TextFormField(
+                //   controller: _streetController,
+                //   decoration: const InputDecoration(labelText: 'Street'),
+                //   validator:
+                //       (value) =>
+                //           value!.isEmpty ? 'Please enter a street' : null,
+                // ),
+                // const SizedBox(height: 16),
+                // TextFormField(
+                //   controller: _townshipController,
+                //   decoration: const InputDecoration(labelText: 'Township'),
+                //   validator:
+                //       (value) =>
+                //           value!.isEmpty ? 'Please enter a township' : null,
+                // ),
+                // const SizedBox(height: 16),
+                // TextFormField(
+                //   controller: _cityController,
+                //   decoration: const InputDecoration(labelText: 'City'),
+                //   validator:
+                //       (value) => value!.isEmpty ? 'Please enter a city' : null,
+                // ),
+                // const SizedBox(height: 16),
+                // TextFormField(
+                //   controller: _provinceController,
+                //   decoration: const InputDecoration(
+                //     labelText: 'Province/State',
+                //   ),
+                //   validator:
+                //       (value) =>
+                //           value!.isEmpty
+                //               ? 'Please enter a province/state'
+                //               : null,
+                // ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _countryController,
@@ -148,27 +180,27 @@ class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                  controller: _ownerNameController,
-                  decoration: const InputDecoration(labelText: 'Owner Name'),
+                  controller: _adminNameController,
+                  decoration: const InputDecoration(labelText: 'admin Name'),
                   validator:
                       (value) =>
-                          value!.isEmpty ? 'Please enter the owner name' : null,
+                          value!.isEmpty ? 'Please enter the admin name' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                  controller: _ownerContactController,
-                  decoration: const InputDecoration(labelText: 'Owner Contact'),
+                  controller: _adminContactController,
+                  decoration: const InputDecoration(labelText: 'admin Contact'),
                   validator:
                       (value) =>
                           value!.isEmpty
-                              ? 'Please enter the owner contact'
+                              ? 'Please enter the admin contact'
                               : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                  controller: _ownerPasswordController,
+                  controller: _adminPasswordController,
                   decoration: const InputDecoration(
-                    labelText: 'Owner Password',
+                    labelText: 'admin Password',
                   ),
                   obscureText: true,
                   validator:

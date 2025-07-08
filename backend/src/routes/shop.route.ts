@@ -4,7 +4,7 @@ import { authenticateJWT } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-router.use(authenticateJWT as RequestHandler);
+// router.use(authenticateJWT as RequestHandler);
 router.get('/', getShops as RequestHandler);
 router.get('/:id', getShopById as RequestHandler);
 router.post('/', createShop as RequestHandler);
