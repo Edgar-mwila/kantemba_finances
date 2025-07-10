@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kantemba_finances/helpers/platform_helper.dart';
 
 class NotificationsSettingsScreen extends StatefulWidget {
   const NotificationsSettingsScreen({super.key});
@@ -45,37 +46,123 @@ class _NotificationsSettingsScreenState
 
   @override
   Widget build(BuildContext context) {
+    Widget content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SwitchListTile(
+          title: const Text('Sales Notifications'),
+          value: _salesNotif,
+          onChanged: (v) => setState(() => _salesNotif = v),
+        ),
+        SwitchListTile(
+          title: const Text('Low Stock Alerts'),
+          value: _lowStockNotif,
+          onChanged: (v) => setState(() => _lowStockNotif = v),
+        ),
+        SwitchListTile(
+          title: const Text('Expense Notifications'),
+          value: _expenseNotif,
+          onChanged: (v) => setState(() => _expenseNotif = v),
+        ),
+        SwitchListTile(
+          title: const Text('Report Notifications'),
+          value: _reportNotif,
+          onChanged: (v) => setState(() => _reportNotif = v),
+        ),
+        const SizedBox(height: 24),
+        ElevatedButton(onPressed: _saveSettings, child: const Text('Save')),
+      ],
+    );
+
+    if (isWindows) {
+      // Desktop: Center, max width, two-column layout for toggles
+      content = Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth > 400;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  isWide
+                      ? Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  SwitchListTile(
+                                    title: const Text('Sales Notifications'),
+                                    value: _salesNotif,
+                                    onChanged: (v) => setState(() => _salesNotif = v),
+                                  ),
+                                  SwitchListTile(
+                                    title: const Text('Expense Notifications'),
+                                    value: _expenseNotif,
+                                    onChanged: (v) => setState(() => _expenseNotif = v),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  SwitchListTile(
+                                    title: const Text('Low Stock Alerts'),
+                                    value: _lowStockNotif,
+                                    onChanged: (v) => setState(() => _lowStockNotif = v),
+                                  ),
+                                  SwitchListTile(
+                                    title: const Text('Report Notifications'),
+                                    value: _reportNotif,
+                                    onChanged: (v) => setState(() => _reportNotif = v),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SwitchListTile(
+                              title: const Text('Sales Notifications'),
+                              value: _salesNotif,
+                              onChanged: (v) => setState(() => _salesNotif = v),
+                            ),
+                            SwitchListTile(
+                              title: const Text('Low Stock Alerts'),
+                              value: _lowStockNotif,
+                              onChanged: (v) => setState(() => _lowStockNotif = v),
+                            ),
+                            SwitchListTile(
+                              title: const Text('Expense Notifications'),
+                              value: _expenseNotif,
+                              onChanged: (v) => setState(() => _expenseNotif = v),
+                            ),
+                            SwitchListTile(
+                              title: const Text('Report Notifications'),
+                              value: _reportNotif,
+                              onChanged: (v) => setState(() => _reportNotif = v),
+                            ),
+                          ],
+                        ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(onPressed: _saveSettings, child: const Text('Save')),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Notifications Settings')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SwitchListTile(
-              title: const Text('Sales Notifications'),
-              value: _salesNotif,
-              onChanged: (v) => setState(() => _salesNotif = v),
-            ),
-            SwitchListTile(
-              title: const Text('Low Stock Alerts'),
-              value: _lowStockNotif,
-              onChanged: (v) => setState(() => _lowStockNotif = v),
-            ),
-            SwitchListTile(
-              title: const Text('Expense Notifications'),
-              value: _expenseNotif,
-              onChanged: (v) => setState(() => _expenseNotif = v),
-            ),
-            SwitchListTile(
-              title: const Text('Report Notifications'),
-              value: _reportNotif,
-              onChanged: (v) => setState(() => _reportNotif = v),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(onPressed: _saveSettings, child: const Text('Save')),
-          ],
-        ),
+        child: content,
       ),
     );
   }

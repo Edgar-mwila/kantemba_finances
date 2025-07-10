@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/shop_provider.dart';
 import '../models/shop.dart';
 import '../screens/premium_screen.dart';
+import 'package:kantemba_finances/helpers/platform_helper.dart';
 
 class ShopManagementScreen extends StatefulWidget {
   const ShopManagementScreen({super.key});
@@ -107,6 +108,105 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
   @override
   Widget build(BuildContext context) {
     final shopProvider = Provider.of<ShopProvider>(context);
+    if (isWindows) {
+      // Desktop layout: Centered, max width, table-like shop list, dialogs for add/edit
+      return Scaffold(
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 700),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Manage Shops',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add),
+                        onPressed: () {
+                          final isPremium = Provider.of<BusinessProvider>(context, listen: false).isPremium;
+                          if (isPremium) {
+                            _showShopDialog();
+                          } else {
+                            _showPremiumRequiredDialog();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                // Table header
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  color: Colors.grey.shade100,
+                  child: Row(
+                    children: const [
+                      Expanded(flex: 4, child: Text('Shop Name', style: TextStyle(fontWeight: FontWeight.bold))),
+                      Expanded(flex: 2, child: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                    ],
+                  ),
+                ),
+                const Divider(height: 0),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () => shopProvider.fetchShops(Provider.of<BusinessProvider>(context, listen: false).id!),
+                    child: shopProvider.shops.isEmpty
+                        ? const Center(child: Text('No shops found.'))
+                        : ListView.builder(
+                            itemCount: shopProvider.shops.length,
+                            itemBuilder: (ctx, i) {
+                              final shop = shopProvider.shops[i];
+                              return Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(color: Colors.grey.shade200),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(flex: 4, child: Text(shop.name)),
+                                    Expanded(
+                                      flex: 2,
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(Icons.edit),
+                                            onPressed: () => _showShopDialog(shop: shop),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete),
+                                            onPressed: () async {
+                                              await shopProvider.deleteShop(
+                                                shop.id,
+                                                Provider.of<BusinessProvider>(context, listen: false).id!,
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    // Mobile layout (unchanged)
     return Scaffold(
       body: Column(
         children: [

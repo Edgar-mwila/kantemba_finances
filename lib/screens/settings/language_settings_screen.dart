@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kantemba_finances/helpers/platform_helper.dart';
 
 class LanguageSettingsScreen extends StatefulWidget {
   const LanguageSettingsScreen({super.key});
@@ -39,41 +40,115 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Widget content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('App Language'),
+        DropdownButton<String>(
+          value: _selectedLanguage,
+          items: _languages
+              .map((lang) => DropdownMenuItem(value: lang, child: Text(lang)))
+              .toList(),
+          onChanged: (v) => setState(() => _selectedLanguage = v!),
+        ),
+        const SizedBox(height: 24),
+        const Text('Region/Currency'),
+        DropdownButton<String>(
+          value: _selectedRegion,
+          items: _regions
+              .map((reg) => DropdownMenuItem(value: reg, child: Text(reg)))
+              .toList(),
+          onChanged: (v) => setState(() => _selectedRegion = v!),
+        ),
+        const SizedBox(height: 24),
+        ElevatedButton(onPressed: _saveSettings, child: const Text('Save')),
+      ],
+    );
+
+    if (isWindows) {
+      // Desktop: Center, max width, two-column layout for language and region
+      content = Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth > 400;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  isWide
+                      ? Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('App Language'),
+                                  DropdownButton<String>(
+                                    value: _selectedLanguage,
+                                    items: _languages
+                                        .map((lang) => DropdownMenuItem(value: lang, child: Text(lang)))
+                                        .toList(),
+                                    onChanged: (v) => setState(() => _selectedLanguage = v!),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Region/Currency'),
+                                  DropdownButton<String>(
+                                    value: _selectedRegion,
+                                    items: _regions
+                                        .map((reg) => DropdownMenuItem(value: reg, child: Text(reg)))
+                                        .toList(),
+                                    onChanged: (v) => setState(() => _selectedRegion = v!),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('App Language'),
+                            DropdownButton<String>(
+                              value: _selectedLanguage,
+                              items: _languages
+                                  .map((lang) => DropdownMenuItem(value: lang, child: Text(lang)))
+                                  .toList(),
+                              onChanged: (v) => setState(() => _selectedLanguage = v!),
+                            ),
+                            const SizedBox(height: 24),
+                            const Text('Region/Currency'),
+                            DropdownButton<String>(
+                              value: _selectedRegion,
+                              items: _regions
+                                  .map((reg) => DropdownMenuItem(value: reg, child: Text(reg)))
+                                  .toList(),
+                              onChanged: (v) => setState(() => _selectedRegion = v!),
+                            ),
+                          ],
+                        ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(onPressed: _saveSettings, child: const Text('Save')),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Language & Region')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('App Language'),
-            DropdownButton<String>(
-              value: _selectedLanguage,
-              items:
-                  _languages
-                      .map(
-                        (lang) =>
-                            DropdownMenuItem(value: lang, child: Text(lang)),
-                      )
-                      .toList(),
-              onChanged: (v) => setState(() => _selectedLanguage = v!),
-            ),
-            const SizedBox(height: 24),
-            const Text('Region/Currency'),
-            DropdownButton<String>(
-              value: _selectedRegion,
-              items:
-                  _regions
-                      .map(
-                        (reg) => DropdownMenuItem(value: reg, child: Text(reg)),
-                      )
-                      .toList(),
-              onChanged: (v) => setState(() => _selectedRegion = v!),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(onPressed: _saveSettings, child: const Text('Save')),
-          ],
-        ),
+        child: content,
       ),
     );
   }

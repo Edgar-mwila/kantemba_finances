@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:csv/csv.dart';
+import 'package:kantemba_finances/helpers/platform_helper.dart';
 
 class BackupSettingsScreen extends StatefulWidget {
   const BackupSettingsScreen({super.key});
@@ -173,92 +174,199 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Widget content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Last Cloud Sync:',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        Text(
+          _lastSyncTime ?? 'Never',
+          style: const TextStyle(color: Colors.grey),
+        ),
+        const SizedBox(height: 24),
+        ElevatedButton.icon(
+          icon: _isSyncing
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.cloud_upload),
+          label: const Text('Sync Now (Cloud)'),
+          onPressed: _isSyncing ? null : _syncNow,
+        ),
+        const Divider(height: 40),
+        ElevatedButton.icon(
+          icon: _isExporting
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.save_alt),
+          label: const Text('Export Data (Backup)'),
+          onPressed: _isExporting ? null : _exportData,
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          icon: _isExporting
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.table_chart),
+          label: const Text('Export as CSV'),
+          onPressed: _isExporting ? null : _exportCsv,
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          icon: _isImporting
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.restore),
+          label: const Text('Import Data (Restore)'),
+          onPressed: _isImporting ? null : _importData,
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          icon: _isImporting
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.upload_file),
+          label: const Text('Import from CSV'),
+          onPressed: _isImporting ? null : _importCsv,
+        ),
+        const SizedBox(height: 24),
+        const Text(
+          'Export/Import is a demo. In production, use JSON and file picker.',
+        ),
+      ],
+    );
+
+    if (isWindows) {
+      // Desktop: Center, max width, two-column grid for main actions
+      content = Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Last Cloud Sync:',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              Text(
+                _lastSyncTime ?? 'Never',
+                style: const TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: _isSyncing
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.cloud_upload),
+                      label: const Text('Sync Now (Cloud)'),
+                      onPressed: _isSyncing ? null : _syncNow,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: _isExporting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.save_alt),
+                      label: const Text('Export Data (Backup)'),
+                      onPressed: _isExporting ? null : _exportData,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: _isExporting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.table_chart),
+                      label: const Text('Export as CSV'),
+                      onPressed: _isExporting ? null : _exportCsv,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: _isImporting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.restore),
+                      label: const Text('Import Data (Restore)'),
+                      onPressed: _isImporting ? null : _importData,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: _isImporting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.upload_file),
+                      label: const Text('Import from CSV'),
+                      onPressed: _isImporting ? null : _importCsv,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(child: SizedBox()),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Export/Import is a demo. In production, use JSON and file picker.',
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Data & Backup')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Last Cloud Sync:',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            Text(
-              _lastSyncTime ?? 'Never',
-              style: const TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              icon:
-                  _isSyncing
-                      ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                      : const Icon(Icons.cloud_upload),
-              label: const Text('Sync Now (Cloud)'),
-              onPressed: _isSyncing ? null : _syncNow,
-            ),
-            const Divider(height: 40),
-            ElevatedButton.icon(
-              icon:
-                  _isExporting
-                      ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                      : const Icon(Icons.save_alt),
-              label: const Text('Export Data (Backup)'),
-              onPressed: _isExporting ? null : _exportData,
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              icon:
-                  _isExporting
-                      ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                      : const Icon(Icons.table_chart),
-              label: const Text('Export as CSV'),
-              onPressed: _isExporting ? null : _exportCsv,
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              icon:
-                  _isImporting
-                      ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                      : const Icon(Icons.restore),
-              label: const Text('Import Data (Restore)'),
-              onPressed: _isImporting ? null : _importData,
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              icon:
-                  _isImporting
-                      ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                      : const Icon(Icons.upload_file),
-              label: const Text('Import from CSV'),
-              onPressed: _isImporting ? null : _importCsv,
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Export/Import is a demo. In production, use JSON and file picker.',
-            ),
-          ],
-        ),
+        child: content,
       ),
     );
   }

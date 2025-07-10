@@ -5,6 +5,7 @@ import 'package:kantemba_finances/models/return.dart';
 import 'package:kantemba_finances/providers/returns_provider.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
 import 'package:kantemba_finances/providers/business_provider.dart';
+import 'package:kantemba_finances/helpers/platform_helper.dart';
 
 class ReturnModal extends StatefulWidget {
   final Sale sale;
@@ -116,9 +117,14 @@ class _ReturnModalState extends State<ReturnModal> {
         listen: false,
       );
       final userProvider = Provider.of<UsersProvider>(context, listen: false);
-      final businessProvider = Provider.of<BusinessProvider>(context, listen: false);
+      final businessProvider = Provider.of<BusinessProvider>(
+        context,
+        listen: false,
+      );
       final currentUser = userProvider.currentUser;
-
+      print(
+        "currentUser: ${currentUser?.name}, shopProvider: ${businessProvider.id}",
+      );
       if (currentUser == null) {
         throw Exception('User not authenticated');
       }
@@ -139,10 +145,7 @@ class _ReturnModalState extends State<ReturnModal> {
         status: 'approved', // Always approved
       );
 
-      await returnsProvider.addReturnHybrid(
-        ret,
-        businessProvider,
-      );
+      await returnsProvider.addReturnHybrid(ret, businessProvider);
 
       if (mounted) {
         Navigator.of(context).pop();
@@ -173,6 +176,298 @@ class _ReturnModalState extends State<ReturnModal> {
 
   @override
   Widget build(BuildContext context) {
+    if (isWindows) {
+      // Desktop layout: Centered, max width, more padding, two-column if space allows
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Return Items',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Sale ID: ${widget.sale.id}',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Left: Item selection
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Select Items to Return:',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            constraints: const BoxConstraints(maxHeight: 300),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: widget.sale.items.length,
+                              itemBuilder: (context, index) {
+                                final saleItem = widget.sale.items[index];
+                                final isSelected = _selectedItems.any(
+                                  (item) =>
+                                      item.product.id == saleItem.product.id,
+                                );
+                                final returnItem = _selectedItems.firstWhere(
+                                  (item) =>
+                                      item.product.id == saleItem.product.id,
+                                  orElse:
+                                      () => ReturnItem(
+                                        product: saleItem.product,
+                                        quantity: 0,
+                                        originalPrice: saleItem.product.price,
+                                        reason: '',
+                                      ),
+                                );
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(
+                                    vertical: 4,
+                                  ),
+                                  child: ExpansionTile(
+                                    title: Row(
+                                      children: [
+                                        Checkbox(
+                                          value: isSelected,
+                                          onChanged:
+                                              (value) => _toggleItem(saleItem),
+                                        ),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                saleItem.product.name,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              Text(
+                                                'Original Qty: ${saleItem.quantity}',
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Text(
+                                          'K${saleItem.product.price.toStringAsFixed(2)}',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    children:
+                                        isSelected
+                                            ? [
+                                              Padding(
+                                                padding: const EdgeInsets.all(
+                                                  16,
+                                                ),
+                                                child: Column(
+                                                  children: [
+                                                    Row(
+                                                      children: [
+                                                        const Text(
+                                                          'Return Quantity: ',
+                                                        ),
+                                                        Expanded(
+                                                          child: Row(
+                                                            children: [
+                                                              IconButton(
+                                                                onPressed:
+                                                                    () => _updateQuantity(
+                                                                      returnItem,
+                                                                      returnItem
+                                                                              .quantity -
+                                                                          1,
+                                                                    ),
+                                                                icon: const Icon(
+                                                                  Icons.remove,
+                                                                ),
+                                                              ),
+                                                              Text(
+                                                                '${returnItem.quantity}',
+                                                                style: const TextStyle(
+                                                                  fontSize: 16,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                ),
+                                                              ),
+                                                              IconButton(
+                                                                onPressed:
+                                                                    () => _updateQuantity(
+                                                                      returnItem,
+                                                                      returnItem
+                                                                              .quantity +
+                                                                          1,
+                                                                    ),
+                                                                icon:
+                                                                    const Icon(
+                                                                      Icons.add,
+                                                                    ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 8),
+                                                    TextField(
+                                                      decoration: const InputDecoration(
+                                                        labelText:
+                                                            'Reason for this item',
+                                                        border:
+                                                            OutlineInputBorder(),
+                                                      ),
+                                                      onChanged:
+                                                          (value) =>
+                                                              _updateItemReason(
+                                                                returnItem,
+                                                                value,
+                                                              ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ]
+                                            : [],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 32),
+                    // Right: Summary and actions
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextField(
+                            controller: _reasonController,
+                            decoration: const InputDecoration(
+                              labelText: 'General Return Reason',
+                              border: OutlineInputBorder(),
+                              hintText:
+                                  'e.g., Customer changed mind, defective items',
+                            ),
+                            maxLines: 2,
+                          ),
+                          const SizedBox(height: 16),
+                          if (_selectedItems.isNotEmpty) ...[
+                            Card(
+                              color: Colors.blue.shade50,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Return Summary',
+                                      style:
+                                          Theme.of(
+                                            context,
+                                          ).textTheme.titleMedium,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Items to return: ${_selectedItems.length}',
+                                    ),
+                                    Text(
+                                      'Total return amount: K${_totalReturnAmount.toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed:
+                                      _isProcessing
+                                          ? null
+                                          : () => Navigator.of(context).pop(),
+                                  child: const Text('Cancel'),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed:
+                                      _isProcessing || _selectedItems.isEmpty
+                                          ? null
+                                          : _processReturn,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child:
+                                      _isProcessing
+                                          ? const SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                          : const Text('Process Return'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Mobile layout (unchanged)
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(

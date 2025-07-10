@@ -310,24 +310,6 @@ class InventoryProvider with ChangeNotifier {
     }
   }
 
-  Future<void> addInventoryItemHybrid(
-    InventoryItem item,
-    String createdBy,
-    String shopId,
-    BusinessProvider businessProvider,
-  ) async {
-    if (!businessProvider.isPremium || !(await ApiService.isOnline())) {
-      await DBHelper.insert('inventories', {
-        // ...all inventory fields...
-        'synced': 0,
-      });
-      // ...add to _items...
-      notifyListeners();
-      return;
-    }
-    await addInventoryItem(item, createdBy, shopId);
-  }
-
   Future<void> syncInventoryToBackend(
     BusinessProvider businessProvider, {
     bool batch = false,

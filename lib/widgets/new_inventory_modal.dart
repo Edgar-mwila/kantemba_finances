@@ -7,6 +7,7 @@ import 'package:kantemba_finances/models/expense.dart';
 import 'package:kantemba_finances/providers/inventory_provider.dart';
 import 'package:kantemba_finances/providers/expenses_provider.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
+import 'package:kantemba_finances/helpers/platform_helper.dart';
 
 class NewInventoryModal extends StatefulWidget {
   const NewInventoryModal({super.key});
@@ -17,6 +18,7 @@ class NewInventoryModal extends StatefulWidget {
 
 class _NewInventoryModalState extends State<NewInventoryModal> {
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _itemNameController = TextEditingController();
   String _itemName = '';
   double _bulkPrice = 0.0;
   int _units = 0;
@@ -28,11 +30,214 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
   String? _selectedItemId;
 
   @override
+  void dispose() {
+    _itemNameController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final inventoryProvider = Provider.of<InventoryProvider>(context);
     final existingItems = inventoryProvider.items;
     final itemNames = existingItems.map((e) => e.name).toList();
 
+    if (isWindows) {
+      // Desktop layout: Centered, max width, more padding, two-column form
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 700),
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Add Inventory Purchase',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          children: [
+                            Autocomplete<String>(
+                              optionsBuilder: (
+                                TextEditingValue textEditingValue,
+                              ) {
+                                if (textEditingValue.text == '') {
+                                  return const Iterable<String>.empty();
+                                }
+                                return itemNames.where((String option) {
+                                  return option.toLowerCase().contains(
+                                    textEditingValue.text.toLowerCase(),
+                                  );
+                                });
+                              },
+                              onSelected: (String selection) {
+                                setState(() {
+                                  _itemName = selection;
+                                  _itemNameController.text = selection;
+                                  _isExistingItem = true;
+                                  final item = existingItems.firstWhere(
+                                    (e) => e.name == selection,
+                                  );
+                                  _selectedItemId = item.id;
+                                  _lowStockThreshold = item.lowStockThreshold;
+                                });
+                              },
+                              fieldViewBuilder: (
+                                context,
+                                controller,
+                                focusNode,
+                                onEditingComplete,
+                              ) {
+                                // Use the persistent controller
+                                return TextFormField(
+                                  controller: _itemNameController,
+                                  focusNode: focusNode,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Item Name',
+                                  ),
+                                  validator:
+                                      (value) =>
+                                          value == null || value.isEmpty
+                                              ? 'Enter item name'
+                                              : null,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _itemName = value;
+                                      _isExistingItem = itemNames.contains(
+                                        value,
+                                      );
+                                      if (_isExistingItem) {
+                                        final item = existingItems.firstWhere(
+                                          (e) => e.name == value,
+                                        );
+                                        _selectedItemId = item.id;
+                                        _lowStockThreshold =
+                                            item.lowStockThreshold;
+                                      } else {
+                                        _selectedItemId = null;
+                                      }
+                                    });
+                                  },
+                                  onSaved: (value) => _itemName = value!.trim(),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              decoration: const InputDecoration(
+                                labelText: 'Bulk Price (total purchase)',
+                              ),
+                              keyboardType: TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty)
+                                  return 'Enter bulk price';
+                                final parsed = double.tryParse(value);
+                                if (parsed == null || parsed <= 0)
+                                  return 'Enter a valid price';
+                                return null;
+                              },
+                              onSaved:
+                                  (value) => _bulkPrice = double.parse(value!),
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              decoration: const InputDecoration(
+                                labelText: 'Number of Units',
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (value == null || value.isEmpty)
+                                  return 'Enter number of units';
+                                final parsed = int.tryParse(value);
+                                if (parsed == null || parsed <= 0)
+                                  return 'Enter a valid number';
+                                return null;
+                              },
+                              onSaved: (value) => _units = int.parse(value!),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 32),
+                      Expanded(
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              decoration: const InputDecoration(
+                                labelText: 'Unit Sale Price',
+                              ),
+                              keyboardType: TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty)
+                                  return 'Enter unit price';
+                                final parsed = double.tryParse(value);
+                                if (parsed == null || parsed <= 0)
+                                  return 'Enter a valid price';
+                                return null;
+                              },
+                              onSaved:
+                                  (value) => _unitPrice = double.parse(value!),
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              decoration: const InputDecoration(
+                                labelText: 'Low Stock Threshold (optional)',
+                              ),
+                              keyboardType: TextInputType.number,
+                              initialValue: _lowStockThreshold.toString(),
+                              onSaved: (value) {
+                                if (value != null && value.isNotEmpty) {
+                                  final parsed = int.tryParse(value);
+                                  if (parsed != null && parsed > 0)
+                                    _lowStockThreshold = parsed;
+                                }
+                              },
+                              enabled:
+                                  !_isExistingItem, // Only editable for new items
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              decoration: const InputDecoration(
+                                labelText: 'Description (optional)',
+                              ),
+                              onSaved:
+                                  (value) => _description = value?.trim() ?? '',
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _isLoading
+                      ? const CircularProgressIndicator()
+                      : SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _submit,
+                          child: const Text('Add Item'),
+                        ),
+                      ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Mobile layout (unchanged)
     return SingleChildScrollView(
       child: Padding(
         padding: EdgeInsets.only(
@@ -63,6 +268,7 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                   onSelected: (String selection) {
                     setState(() {
                       _itemName = selection;
+                      _itemNameController.text = selection;
                       _isExistingItem = true;
                       final item = existingItems.firstWhere(
                         (e) => e.name == selection,
@@ -77,9 +283,9 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                     focusNode,
                     onEditingComplete,
                   ) {
-                    controller.text = _itemName;
+                    // Use the persistent controller
                     return TextFormField(
-                      controller: controller,
+                      controller: _itemNameController,
                       focusNode: focusNode,
                       decoration: const InputDecoration(labelText: 'Item Name'),
                       validator:
@@ -197,6 +403,9 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
     final usersProvider = Provider.of<UsersProvider>(context, listen: false);
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
     final currentUser = usersProvider.currentUser;
+    print(
+      "currentUser: ${currentUser?.name}, shopProvider: ${shopProvider.currentShop?.name}",
+    );
     if (currentUser == null) {
       ScaffoldMessenger.of(
         context,
@@ -236,6 +445,7 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
       );
     } else {
       // Add new inventory item
+      print('Adding new inventory item: $_itemName');
       final newItem = InventoryItem(
         id: '', // Will be set by provider
         name: _itemName,
@@ -245,11 +455,10 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
         shopId: currentShop.id,
         createdBy: currentUser.id,
       );
-      await inventoryProvider.addInventoryItemHybrid(
+      await inventoryProvider.addInventoryItem(
         newItem,
         currentUser.id,
         currentShop.id,
-        Provider.of<BusinessProvider>(context, listen: false),
       );
     }
 

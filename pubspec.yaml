@@ -48,6 +48,7 @@ dependencies:
   flutter_local_notifications: ^17.2.3
   csv: ^5.0.2
   file_picker: ^10.2.0
+  sqflite_common_ffi: ^2.3.0
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/shop_provider.dart';
+import 'package:kantemba_finances/helpers/platform_helper.dart';
 
 class ShopFilterWidget extends StatelessWidget {
   final String? selectedShopId;
@@ -24,6 +25,54 @@ class ShopFilterWidget extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
+        if (isWindows) {
+          // Desktop layout: wider dropdown, more padding, centered if in dialog
+          return Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Row(
+                children: [
+                  const Icon(Icons.store, size: 22),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Shop:',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: selectedShopId,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
+                      items: [
+                        if (showAllOption)
+                          const DropdownMenuItem<String>(
+                            value: null,
+                            child: Text('All Shops'),
+                          ),
+                        ...shops.map(
+                          (shop) => DropdownMenuItem<String>(
+                            value: shop.id,
+                            child: Text(shop.name),
+                          ),
+                        ),
+                      ],
+                      onChanged: onShopChanged,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Mobile layout (unchanged)
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:kantemba_finances/helpers/platform_helper.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -61,7 +62,107 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final green = Colors.green;
+    if (isWindows) {
+      // Desktop layout: Centered, max width, more padding
+      return Scaffold(
+        appBar: AppBar(title: const Text('Login'), backgroundColor: green),
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(40.0),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Form(
+                key: _formKey,
+                child: Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: Theme.of(
+                      context,
+                    ).colorScheme.copyWith(primary: green, secondary: green),
+                    inputDecorationTheme: const InputDecorationTheme(
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.green),
+                      ),
+                      labelStyle: TextStyle(color: Colors.green),
+                    ),
+                    elevatedButtonTheme: ElevatedButtonThemeData(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                      ),
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Login',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 32),
+                      TextFormField(
+                        controller: _businessIdController,
+                        decoration: const InputDecoration(
+                          labelText: 'Business ID',
+                        ),
+                        validator:
+                            (value) =>
+                                value == null || value.isEmpty
+                                    ? 'Enter business ID'
+                                    : null,
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: _userContactController,
+                        decoration: const InputDecoration(labelText: 'Phone'),
+                        validator:
+                            (value) =>
+                                value == null || value.isEmpty
+                                    ? 'Enter phone'
+                                    : null,
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: const InputDecoration(
+                          labelText: 'Password',
+                        ),
+                        obscureText: true,
+                        validator:
+                            (value) =>
+                                value == null || value.isEmpty
+                                    ? 'Enter password'
+                                    : null,
+                      ),
+                      const SizedBox(height: 32),
+                      if (_error != null)
+                        Text(
+                          _error!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      const SizedBox(height: 12),
+                      _isLoading
+                          ? const CircularProgressIndicator()
+                          : SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _submit,
+                              child: const Text(
+                                'Log In',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    // Mobile layout (unchanged)
     return Scaffold(
+      appBar: AppBar(title: const Text('Login'), backgroundColor: green),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),

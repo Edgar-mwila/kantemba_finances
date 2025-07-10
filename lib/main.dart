@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:kantemba_finances/screens/employee_management_screen.dart';
@@ -21,8 +22,15 @@ import 'package:kantemba_finances/models/user.dart';
 import 'package:kantemba_finances/screens/premium_screen.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:kantemba_finances/helpers/sync_manager.dart';
+import 'package:kantemba_finances/helpers/platform_helper.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
   runApp(
     MultiProvider(
       providers: [
@@ -361,6 +369,89 @@ class _MainAppScreenState extends State<MainAppScreen> {
       _selectedIndex = 0;
     }
 
+    if (isWindows) {
+      // Desktop layout with NavigationRail
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(navItems[_selectedIndex].title),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.settings),
+              tooltip: 'Settings',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                );
+              },
+            ),
+            if (currentUser != null &&
+                isPremium &&
+                (currentUser.role == 'admin' || currentUser.role == 'manager'))
+              IconButton(
+                icon: const Icon(Icons.store),
+                tooltip: 'Manage Shops',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ShopManagementScreen(),
+                    ),
+                  );
+                },
+              ),
+            IconButton(
+              icon: const Icon(Icons.logout),
+              tooltip: 'Log out',
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Log out'),
+                    content: const Text('Are you sure you want to log out?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: const Text('Log out'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  await usersProvider.logout();
+                }
+              },
+            ),
+          ],
+        ),
+        body: Row(
+          children: [
+            NavigationRail(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+              labelType: NavigationRailLabelType.all,
+              destinations: navItems
+                  .map((item) => NavigationRailDestination(
+                        icon: Icon(item.icon),
+                        label: Text(item.title),
+                      ))
+                  .toList(),
+            ),
+            const VerticalDivider(thickness: 1, width: 1),
+            // Main content area
+            Expanded(
+              child: navItems[_selectedIndex].screen,
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Mobile layout (unchanged)
     return Scaffold(
       appBar: AppBar(
         title: Text(navItems[_selectedIndex].title),

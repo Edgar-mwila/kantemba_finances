@@ -9,6 +9,7 @@ import 'package:kantemba_finances/screens/settings/help_support_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/business_provider.dart';
 import 'package:kantemba_finances/helpers/sync_manager.dart';
+import 'package:kantemba_finances/helpers/platform_helper.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -17,161 +18,229 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final businessProvider = Provider.of<BusinessProvider>(context);
 
+    final settingsItems = [
+      _buildSettingItem(
+        context,
+        Icons.cloud_upload,
+        'Data & Backup',
+        'Manage your data backup and restore settings',
+        () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const BackupSettingsScreen(),
+            ),
+          );
+        },
+      ),
+      _buildSettingItem(
+        context,
+        Icons.receipt_long,
+        'Tax Compliance Settings',
+        'Configure tax rates and compliance settings',
+        () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const TaxComplianceSettingsScreen(),
+            ),
+          );
+        },
+      ),
+      _buildSettingItem(
+        context,
+        Icons.security,
+        'Security Settings',
+        'Manage app security and access controls',
+        () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const SecuritySettingsScreen(),
+            ),
+          );
+        },
+      ),
+      _buildSettingItem(
+        context,
+        Icons.business,
+        'Business Settings',
+        'Manage business information and preferences',
+        () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const BusinessSettingsScreen(),
+            ),
+          );
+        },
+      ),
+      _buildSettingItem(
+        context,
+        Icons.notifications,
+        'Notifications',
+        'Configure app notifications and alerts',
+        () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const NotificationsSettingsScreen(),
+            ),
+          );
+        },
+      ),
+      _buildSettingItem(
+        context,
+        Icons.language,
+        'Language & Region',
+        'Set your preferred language and region',
+        () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const LanguageSettingsScreen(),
+            ),
+          );
+        },
+      ),
+      _buildSettingItem(
+        context,
+        Icons.help,
+        'Help & Support',
+        'Get help and contact support',
+        () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const HelpSupportScreen()),
+          );
+        },
+      ),
+      _buildSettingItem(
+        context,
+        Icons.info,
+        'About',
+        'App version and information',
+        () {
+          showAboutDialog(
+            context: context,
+            applicationName: 'Kantemba Finances',
+            applicationVersion: '1.0.0',
+            applicationIcon: Icon(
+              Icons.account_balance,
+              size: 50,
+              color: Colors.green.shade700,
+            ),
+            children: [
+              const Text(
+                'A comprehensive business finance management app for tracking sales, expenses, inventory, and generating reports.',
+              ),
+            ],
+          );
+        },
+      ),
+    ];
+
+    Widget content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Settings',
+          style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+        ),
+        const SizedBox(height: 20),
+        ...settingsItems,
+        if (businessProvider.isPremium) ...[
+          const SizedBox(height: 20),
+          Center(
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.sync),
+              label: const Text('Sync Now'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () async {
+                await SyncManager.batchSyncAndMarkSynced();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Data synced to cloud!')),
+                );
+              },
+            ),
+          ),
+        ],
+      ],
+    );
+
+    if (isWindows) {
+      // Desktop: Center, max width, two-column grid for settings
+      content = Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 700),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Settings',
+                style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+              ),
+              const SizedBox(height: 20),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth > 500;
+                  return GridView.count(
+                    crossAxisCount: isWide ? 2 : 1,
+                    shrinkWrap: true,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 2.8,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: settingsItems,
+                  );
+                },
+              ),
+              if (businessProvider.isPremium) ...[
+                const SizedBox(height: 20),
+                Center(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.sync),
+                    label: const Text('Sync Now'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: () async {
+                      await SyncManager.batchSyncAndMarkSynced();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Data synced to cloud!')),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Settings',
-              style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 20),
-            _buildSettingItem(
-              context,
-              Icons.cloud_upload,
-              'Data & Backup',
-              'Manage your data backup and restore settings',
-              () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const BackupSettingsScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildSettingItem(
-              context,
-              Icons.receipt_long,
-              'Tax Compliance Settings',
-              'Configure tax rates and compliance settings',
-              () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const TaxComplianceSettingsScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildSettingItem(
-              context,
-              Icons.security,
-              'Security Settings',
-              'Manage app security and access controls',
-              () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const SecuritySettingsScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildSettingItem(
-              context,
-              Icons.business,
-              'Business Settings',
-              'Manage business information and preferences',
-              () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const BusinessSettingsScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildSettingItem(
-              context,
-              Icons.notifications,
-              'Notifications',
-              'Configure app notifications and alerts',
-              () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const NotificationsSettingsScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildSettingItem(
-              context,
-              Icons.language,
-              'Language & Region',
-              'Set your preferred language and region',
-              () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const LanguageSettingsScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildSettingItem(
-              context,
-              Icons.help,
-              'Help & Support',
-              'Get help and contact support',
-              () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const HelpSupportScreen()),
-                );
-              },
-            ),
-            _buildSettingItem(
-              context,
-              Icons.info,
-              'About',
-              'App version and information',
-              () {
-                showAboutDialog(
-                  context: context,
-                  applicationName: 'Kantemba Finances',
-                  applicationVersion: '1.0.0',
-                  applicationIcon: Icon(
-                    Icons.account_balance,
-                    size: 50,
-                    color: Colors.green.shade700,
-                  ),
-                  children: [
-                    const Text(
-                      'A comprehensive business finance management app for tracking sales, expenses, inventory, and generating reports.',
-                    ),
-                  ],
-                );
-              },
-            ),
-            if (businessProvider.isPremium) ...[
-              const SizedBox(height: 20),
-              Center(
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.sync),
-                  label: const Text('Sync Now'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onPressed: () async {
-                    await SyncManager.batchSyncAndMarkSynced();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Data synced to cloud!')),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ],
-        ),
+        child: content,
       ),
     );
   }

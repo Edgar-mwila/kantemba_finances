@@ -5,6 +5,7 @@ import 'package:kantemba_finances/providers/users_provider.dart';
 import 'package:kantemba_finances/providers/shop_provider.dart';
 import 'package:kantemba_finances/models/user.dart';
 import 'package:kantemba_finances/models/shop.dart';
+import 'package:kantemba_finances/helpers/platform_helper.dart';
 
 class BusinessSignUpScreen extends StatefulWidget {
   const BusinessSignUpScreen({super.key});
@@ -25,9 +26,13 @@ class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
   final _adminNameController = TextEditingController();
   final _adminContactController = TextEditingController();
   final _adminPasswordController = TextEditingController();
+  bool _processing = false;
 
   Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _processing = true;
+      });
       String businessId = await Provider.of<BusinessProvider>(
         context,
         listen: false,
@@ -57,8 +62,12 @@ class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
       debugPrint('Attempting to add shop: ${mainBranch.id}');
       try {
         await shopProvider.addShop(mainBranch);
+        shopProvider.setCurrentShop(mainBranch);
         debugPrint('Shop added successfully: ${mainBranch.id}');
       } catch (e, stack) {
+        setState(() {
+          _processing = false;
+        });
         debugPrint('Failed to add shop: $e');
         debugPrint('$stack');
       }
@@ -93,6 +102,9 @@ class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
       );
 
       if (mounted) {
+        setState(() {
+          _processing = false;
+        });
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     }
@@ -101,7 +113,162 @@ class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
   @override
   Widget build(BuildContext context) {
     final green = Colors.green;
+    if (isWindows) {
+      // Desktop layout: Centered, max width, two-column form
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Setup Your Business'),
+          backgroundColor: green,
+        ),
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(40.0),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 700),
+              child: Form(
+                key: _formKey,
+                child: Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: Theme.of(
+                      context,
+                    ).colorScheme.copyWith(primary: green, secondary: green),
+                    inputDecorationTheme: const InputDecorationTheme(
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.green),
+                      ),
+                      labelStyle: TextStyle(color: Colors.green),
+                    ),
+                    elevatedButtonTheme: ElevatedButtonThemeData(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                      ),
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Setup Your Business',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 40),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  controller: _businessNameController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Business Name',
+                                  ),
+                                  validator:
+                                      (value) =>
+                                          value!.isEmpty
+                                              ? 'Please enter a business name'
+                                              : null,
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _countryController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Country',
+                                  ),
+                                  validator:
+                                      (value) =>
+                                          value!.isEmpty
+                                              ? 'Please enter a country'
+                                              : null,
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _businessContactController,
+                                  decoration: const InputDecoration(
+                                    labelText:
+                                        'Business Contact (Phone + Country Code)',
+                                  ),
+                                  validator:
+                                      (value) =>
+                                          value!.isEmpty
+                                              ? 'Please enter a business contact'
+                                              : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 32),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  controller: _adminNameController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'admin Name',
+                                  ),
+                                  validator:
+                                      (value) =>
+                                          value!.isEmpty
+                                              ? 'Please enter the admin name'
+                                              : null,
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _adminContactController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'admin Contact',
+                                  ),
+                                  validator:
+                                      (value) =>
+                                          value!.isEmpty
+                                              ? 'Please enter the admin contact'
+                                              : null,
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _adminPasswordController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'admin Password',
+                                  ),
+                                  obscureText: true,
+                                  validator:
+                                      (value) =>
+                                          value!.isEmpty
+                                              ? 'Please enter a password'
+                                              : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 40),
+                      _processing
+                          ? const CircularProgressIndicator()
+                          : ElevatedButton(
+                            onPressed: _submit,
+                            child: const Text(
+                              'Complete Setup',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                              ),
+                            ),
+                          ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    // Mobile layout (unchanged)
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Setup Your Business'),
+        backgroundColor: green,
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
@@ -232,13 +399,15 @@ class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
                             value!.isEmpty ? 'Please enter a password' : null,
                   ),
                   const SizedBox(height: 30),
-                  ElevatedButton(
-                    onPressed: _submit,
-                    child: const Text(
-                      'Complete Setup',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
+                  _processing
+                      ? const CircularProgressIndicator()
+                      : ElevatedButton(
+                        onPressed: _submit,
+                        child: const Text(
+                          'Complete Setup',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
                 ],
               ),
             ),

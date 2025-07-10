@@ -11,6 +11,7 @@ import 'package:kantemba_finances/providers/shop_provider.dart';
 import 'package:kantemba_finances/providers/returns_provider.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
 import 'package:kantemba_finances/helpers/sync_manager.dart';
+import 'package:kantemba_finances/helpers/platform_helper.dart';
 
 class PremiumScreen extends StatelessWidget {
   const PremiumScreen({super.key});
@@ -19,6 +20,271 @@ class PremiumScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final businessProvider = Provider.of<BusinessProvider>(context);
 
+    if (isWindows) {
+      // Desktop layout: Centered, max width, grid for features, more spacing
+      return Scaffold(
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 900),
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Header Section
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(40.0),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Colors.green.shade700, Colors.green.shade500],
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 10),
+                        Icon(Icons.star, size: 100, color: Colors.white),
+                        const SizedBox(height: 15),
+                        Text(
+                          'Upgrade to Premium',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Unlock the full potential of your business',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(color: Colors.white.withOpacity(0.9)),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 32),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            businessProvider.businessName ?? 'Your Business',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Features Section
+                  Padding(
+                    padding: const EdgeInsets.all(40.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Premium Features',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        // Features grid
+                        GridView.count(
+                          crossAxisCount: 2,
+                          shrinkWrap: true,
+                          crossAxisSpacing: 24,
+                          mainAxisSpacing: 24,
+                          childAspectRatio: 2.2,
+                          physics: const NeverScrollableScrollPhysics(),
+                          children: [
+                            _buildFeatureCard(
+                              context,
+                              icon: Icons.psychology,
+                              title: 'AI-Powered Financial Analysis',
+                              description:
+                                  'Get intelligent insights into your business performance with advanced AI analysis of complex financial reports.',
+                              benefits: [
+                                'Automated profit/loss analysis',
+                                'Cash flow predictions',
+                                'Trend identification',
+                                'Smart recommendations',
+                              ],
+                              color: Colors.purple,
+                            ),
+                            _buildFeatureCard(
+                              context,
+                              icon: Icons.store,
+                              title: 'Multi-Shop Management',
+                              description:
+                                  'Manage multiple locations from a single dashboard with centralized control and reporting.',
+                              benefits: [
+                                'Unlimited shop locations',
+                                'Centralized inventory management',
+                                'Cross-shop reporting',
+                                'Location-specific analytics',
+                              ],
+                              color: Colors.blue,
+                            ),
+                            _buildFeatureCard(
+                              context,
+                              icon: Icons.people,
+                              title: 'Advanced Employee Management',
+                              description:
+                                  'Hire and manage your team with role-based access control and performance tracking.',
+                              benefits: [
+                                'Unlimited employees',
+                                'Role-based permissions',
+                                'Performance tracking',
+                                'Employee activity logs',
+                              ],
+                              color: Colors.orange,
+                            ),
+                            _buildFeatureCard(
+                              context,
+                              icon: Icons.cloud,
+                              title: 'Cloud Storage & Backup',
+                              description:
+                                  'Secure cloud storage with automatic backups to protect your business data.',
+                              benefits: [
+                                'Automatic daily backups',
+                                'Secure cloud storage',
+                                'Data recovery options',
+                                'Cross-device sync',
+                              ],
+                              color: Colors.green,
+                            ),
+                            _buildFeatureCard(
+                              context,
+                              icon: Icons.analytics,
+                              title: 'Advanced Financial Reports',
+                              description:
+                                  'Comprehensive financial reports including balance sheets, cash flow statements, and tax summaries.',
+                              benefits: [
+                                'Balance sheet reports',
+                                'Cash flow statements',
+                                'Tax compliance reports',
+                                'Custom report builder',
+                              ],
+                              color: Colors.indigo,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 40),
+                        // Pricing Section
+                        Container(
+                          padding: const EdgeInsets.all(32),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                'Premium Plan',
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'K',
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green.shade700,
+                                    ),
+                                  ),
+                                  Text(
+                                    '99',
+                                    style: TextStyle(
+                                      fontSize: 56,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green.shade700,
+                                    ),
+                                  ),
+                                  Text(
+                                    '/month',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Cancel anytime • 30-day free trial',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                        // CTA Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              _showUpgradeDialog(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green.shade700,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 20),
+                              textStyle: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            child: const Text('Upgrade Now'),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        // Contact Support
+                        Center(
+                          child: TextButton(
+                            onPressed: () {
+                              _showContactDialog(context);
+                            },
+                            child: Text(
+                              'Contact Support',
+                              style: TextStyle(
+                                color: Colors.green.shade700,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Mobile layout (unchanged)
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -315,67 +581,70 @@ class PremiumScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 28),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: Icon(icon, color: color, size: 28),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            description,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade600,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...benefits.map(
-            (benefit) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.check_circle,
-                    color: Colors.green.shade600,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      benefit,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black87,
-                      ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
-                ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              description,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+                height: 1.4,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            ...benefits.map(
+              (benefit) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      color: Colors.green.shade600,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        benefit,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

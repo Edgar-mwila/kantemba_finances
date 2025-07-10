@@ -7,6 +7,7 @@ import 'package:kantemba_finances/models/sale.dart';
 import 'package:kantemba_finances/providers/inventory_provider.dart';
 import 'package:kantemba_finances/providers/sales_provider.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
+import 'package:kantemba_finances/helpers/platform_helper.dart';
 
 class NewSaleModal extends StatefulWidget {
   const NewSaleModal({super.key});
@@ -135,6 +136,9 @@ class _NewSaleModalState extends State<NewSaleModal> {
     });
 
     final currentShop = shopProvider.currentShop;
+    print(
+      "currentUser: ${currentUser.name}, shopProvider: ${shopProvider.currentShop?.name}",
+    );
     if (currentShop == null) {
       ScaffoldMessenger.of(
         context,
@@ -208,6 +212,204 @@ class _NewSaleModalState extends State<NewSaleModal> {
   Widget build(BuildContext context) {
     final filteredProducts = _getFilteredProducts();
 
+    if (isWindows) {
+      // Desktop layout: side-by-side product list and cart, wider, more padding
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'New Sale',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Product List
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextField(
+                            controller: _searchController,
+                            decoration: const InputDecoration(
+                              labelText: 'Search product',
+                              prefixIcon: Icon(Icons.search),
+                              border: OutlineInputBorder(),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _searchQuery = value;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            height: 260,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade200),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child:
+                                filteredProducts.isEmpty
+                                    ? const Center(
+                                      child: Text('No products found'),
+                                    )
+                                    : ListView.builder(
+                                      itemCount: filteredProducts.length,
+                                      itemBuilder: (ctx, i) {
+                                        final product = filteredProducts[i];
+                                        return ListTile(
+                                          title: Text(product.name),
+                                          subtitle: Text(
+                                            'Price: ${product.price.toStringAsFixed(2)} | Stock: ${product.quantity}',
+                                          ),
+                                          trailing: IconButton(
+                                            icon: const Icon(Icons.add),
+                                            onPressed:
+                                                () =>
+                                                    _addProductToCart(product),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 32),
+                    // Cart
+                    Expanded(
+                      flex: 4,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Cart',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            height: 260,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.grey.shade200),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child:
+                                _cartItems.isEmpty
+                                    ? const Center(
+                                      child: Text('No items in cart'),
+                                    )
+                                    : ListView.builder(
+                                      itemCount: _cartItems.length,
+                                      itemBuilder: (ctx, i) {
+                                        final cartItem = _cartItems[i];
+                                        return ListTile(
+                                          title: Text(cartItem.product.name),
+                                          subtitle: Text(
+                                            'Unit: ${cartItem.product.price.toStringAsFixed(2)} | Qty: ${cartItem.quantity} | Total: ${(cartItem.product.price * cartItem.quantity).toStringAsFixed(2)}',
+                                          ),
+                                          leading: IconButton(
+                                            icon: const Icon(
+                                              Icons.remove_circle_outline,
+                                            ),
+                                            onPressed:
+                                                () => _removeProductFromCart(
+                                                  cartItem.product.id,
+                                                ),
+                                          ),
+                                          trailing: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              IconButton(
+                                                icon: const Icon(Icons.remove),
+                                                onPressed: () {
+                                                  if (cartItem.quantity > 1) {
+                                                    _updateQuantity(
+                                                      cartItem.product.id,
+                                                      cartItem.quantity - 1,
+                                                    );
+                                                  }
+                                                },
+                                              ),
+                                              Text('${cartItem.quantity}'),
+                                              IconButton(
+                                                icon: const Icon(Icons.add),
+                                                onPressed: () {
+                                                  _updateQuantity(
+                                                    cartItem.product.id,
+                                                    cartItem.quantity + 1,
+                                                  );
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Total:',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              Text(
+                                _grandTotal.toStringAsFixed(2),
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton.icon(
+                                icon: const Icon(Icons.clear),
+                                label: const Text('Clear Cart'),
+                                onPressed: _clearCart,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Add Sale button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed:
+                        _isProcessing || _cartItems.isEmpty ? null : _addSale,
+                    child:
+                        _isProcessing
+                            ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Text('Add Sale'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Mobile layout (unchanged)
     return SingleChildScrollView(
       child: Padding(
         padding: EdgeInsets.only(
