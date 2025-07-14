@@ -56,13 +56,13 @@ class ReportsScreen extends StatelessWidget {
           (sum, item) => sum + (item.price * item.quantity),
         );
 
-        if (isWindows) {
+        if (isWindows(context)) {
           // Desktop layout: Centered, max width, grid for summary cards
           return Scaffold(
             body: SingleChildScrollView(
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1200),
+                  constraints: const BoxConstraints(maxWidth: 1000),
                   child: Padding(
                     padding: const EdgeInsets.all(32.0),
                     child: Column(
@@ -152,7 +152,7 @@ class ReportsScreen extends StatelessWidget {
                                     ),
                                     const SizedBox(width: 12),
                                     Text(
-                                      'Quick Financial Snapshot',
+                                      'Financial Snapshot',
                                       style: Theme.of(
                                         context,
                                       ).textTheme.headlineSmall?.copyWith(
@@ -160,7 +160,7 @@ class ReportsScreen extends StatelessWidget {
                                       ),
                                     ),
                                     const Spacer(),
-                                    ElevatedButton.icon(
+                                    ElevatedButton(
                                       onPressed: () {
                                         Navigator.push(
                                           context,
@@ -171,64 +171,79 @@ class ReportsScreen extends StatelessWidget {
                                           ),
                                         );
                                       },
-                                      icon: const Icon(Icons.open_in_new),
-                                      label: const Text(
-                                        'View Detailed Snapshot',
-                                      ),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.blue,
                                         foregroundColor: Colors.white,
                                       ),
+                                      child: const Icon(Icons.open_in_new),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 20),
-                                // Grid for summary cards
-                                GridView.count(
-                                  crossAxisCount: 3,
-                                  shrinkWrap: true,
-                                  crossAxisSpacing: 16,
-                                  mainAxisSpacing: 16,
-                                  childAspectRatio: 2.5,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  children: [
-                                    _buildSummaryCard(
-                                      'Total Sales',
-                                      'K${totalSales.toStringAsFixed(2)}',
-                                      Colors.green,
-                                      Icons.point_of_sale,
-                                    ),
-                                    _buildSummaryCard(
-                                      'Total Expenses',
-                                      'K${totalExpenses.toStringAsFixed(2)}',
-                                      Colors.red,
-                                      Icons.payments,
-                                    ),
-                                    _buildSummaryCard(
-                                      'Net Profit',
-                                      'K${profit.toStringAsFixed(2)}',
-                                      profit >= 0 ? Colors.blue : Colors.orange,
-                                      Icons.trending_up,
-                                    ),
-                                    _buildSummaryCard(
-                                      'Stock Value',
-                                      'K${totalStockValue.toStringAsFixed(2)}',
-                                      Colors.purple,
-                                      Icons.inventory,
-                                    ),
-                                    _buildSummaryCard(
-                                      'Total Discounts',
-                                      'K${totalDiscounts.toStringAsFixed(2)}',
-                                      Colors.orange,
-                                      Icons.discount,
-                                    ),
-                                    _buildSummaryCard(
-                                      'Profit Margin',
-                                      '${totalSales > 0 ? ((profit / totalSales) * 100).toStringAsFixed(1) : 0.0}%',
-                                      profit >= 0 ? Colors.green : Colors.red,
-                                      Icons.percent,
-                                    ),
-                                  ],
+                                // Responsive grid for summary cards
+                                LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    int crossAxisCount;
+                                    double width = constraints.maxWidth;
+                                    if (width < 500) {
+                                      crossAxisCount = 1;
+                                    } else if (width < 700) {
+                                      crossAxisCount = 2;
+                                    } else {
+                                      crossAxisCount = 3;
+                                    }
+                                    return GridView.count(
+                                      crossAxisCount: crossAxisCount,
+                                      shrinkWrap: true,
+                                      crossAxisSpacing: 16,
+                                      mainAxisSpacing: 16,
+                                      childAspectRatio: 2.5,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      children: [
+                                        _buildSummaryCard(
+                                          'Total Sales',
+                                          'K${totalSales.toStringAsFixed(2)}',
+                                          Colors.green,
+                                          Icons.point_of_sale,
+                                        ),
+                                        _buildSummaryCard(
+                                          'Total Expenses',
+                                          'K${totalExpenses.toStringAsFixed(2)}',
+                                          Colors.red,
+                                          Icons.payments,
+                                        ),
+                                        _buildSummaryCard(
+                                          'Net Profit',
+                                          'K${profit.toStringAsFixed(2)}',
+                                          profit >= 0
+                                              ? Colors.blue
+                                              : Colors.orange,
+                                          Icons.trending_up,
+                                        ),
+                                        _buildSummaryCard(
+                                          'Stock Value',
+                                          'K${totalStockValue.toStringAsFixed(2)}',
+                                          Colors.purple,
+                                          Icons.inventory,
+                                        ),
+                                        _buildSummaryCard(
+                                          'Total Discounts',
+                                          'K${totalDiscounts.toStringAsFixed(2)}',
+                                          Colors.orange,
+                                          Icons.discount,
+                                        ),
+                                        _buildSummaryCard(
+                                          'Profit Margin',
+                                          '${totalSales > 0 ? ((profit / totalSales) * 100).toStringAsFixed(1) : 0.0}%',
+                                          profit >= 0
+                                              ? Colors.green
+                                              : Colors.red,
+                                          Icons.percent,
+                                        ),
+                                      ],
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -248,67 +263,81 @@ class ReportsScreen extends StatelessWidget {
                                   UserPermissions.viewReports,
                                 ) ||
                                 currentUser.hasPermission(UserPermissions.all)))
-                          GridView.count(
-                            crossAxisCount: 2,
-                            shrinkWrap: true,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                            childAspectRatio: 3.5,
-                            physics: const NeverScrollableScrollPhysics(),
-                            children: [
-                              _buildReportCard(
-                                context,
-                                Icons.trending_up,
-                                'Profit & Loss',
-                                'View detailed profit and loss statement',
-                                Colors.green,
-                                () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const ProfitLossScreen(),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              int crossAxisCount;
+                              double width = constraints.maxWidth;
+                              if (width < 500) {
+                                crossAxisCount = 1;
+                              } else {
+                                crossAxisCount = 2;
+                              }
+                              return GridView.count(
+                                crossAxisCount: crossAxisCount,
+                                shrinkWrap: true,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                                childAspectRatio: 3.5,
+                                physics: const NeverScrollableScrollPhysics(),
+                                children: [
+                                  _buildReportCard(
+                                    context,
+                                    Icons.trending_up,
+                                    'Profit & Loss',
+                                    'View detailed profit and loss statement',
+                                    Colors.green,
+                                    () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => const ProfitLossScreen(),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                              _buildReportCard(
-                                context,
-                                Icons.account_balance_wallet,
-                                'Cash Flow',
-                                'Track cash inflows and outflows',
-                                Colors.blue,
-                                () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const CashFlowScreen(),
+                                  _buildReportCard(
+                                    context,
+                                    Icons.account_balance_wallet,
+                                    'Cash Flow',
+                                    'Track cash inflows and outflows',
+                                    Colors.blue,
+                                    () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const CashFlowScreen(),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                              _buildReportCard(
-                                context,
-                                Icons.account_balance,
-                                'Balance Sheet',
-                                'View assets, liabilities, and equity',
-                                Colors.purple,
-                                () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const BalanceSheetScreen(),
+                                  _buildReportCard(
+                                    context,
+                                    Icons.account_balance,
+                                    'Balance Sheet',
+                                    'View assets, liabilities, and equity',
+                                    Colors.purple,
+                                    () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => const BalanceSheetScreen(),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                              _buildReportCard(
-                                context,
-                                Icons.receipt_long,
-                                'Tax Summary',
-                                'Review tax obligations and compliance',
-                                Colors.orange,
-                                () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const TaxSummaryScreen(),
+                                  _buildReportCard(
+                                    context,
+                                    Icons.receipt_long,
+                                    'Tax Summary',
+                                    'Review tax obligations and compliance',
+                                    Colors.orange,
+                                    () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (_) => const TaxSummaryScreen(),
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                            ],
+                                ],
+                              );
+                            },
                           ),
                       ],
                     ),

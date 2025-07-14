@@ -416,7 +416,7 @@ class _BalanceSheetScreenState extends State<BalanceSheetScreen> {
           ],
         );
 
-        if (isWindows) {
+        if (isWindows(context)) {
           reportContent = Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 800),

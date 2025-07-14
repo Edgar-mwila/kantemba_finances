@@ -194,7 +194,7 @@ class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
   @override
   Widget build(BuildContext context) {
     final green = Colors.green;
-    if (isWindows) {
+    if (isWindows(context)) {
       // Desktop layout: Centered, max width, two-column form
       return Scaffold(
         appBar: AppBar(

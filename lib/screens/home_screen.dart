@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:kantemba_finances/providers/sales_provider.dart';
 import 'package:kantemba_finances/providers/shop_provider.dart';
 import 'package:kantemba_finances/screens/sales_screen.dart';
-import 'package:kantemba_finances/screens/returns_screen.dart';
 import 'package:kantemba_finances/widgets/new_sale_modal.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
 
@@ -26,7 +25,7 @@ class HomeScreen extends StatelessWidget {
         );
         final recentSales = filteredSales.take(5).toList();
 
-        if (isWindows) {
+        if (isWindows(context)) {
           // Desktop layout: Centered, max width, dialogs for details
           return Scaffold(
             body: Center(
@@ -50,12 +49,7 @@ class HomeScreen extends StatelessWidget {
                                   showDialog(
                                     context: context,
                                     builder:
-                                        (_) => Dialog(
-                                          child: SizedBox(
-                                            width: 400,
-                                            child: NewSaleModal(),
-                                          ),
-                                        ),
+                                        (_) => Dialog(child: NewSaleModal()),
                                   );
                                 },
                                 child: Padding(
@@ -75,44 +69,6 @@ class HomeScreen extends StatelessWidget {
                                           context,
                                         ).textTheme.headlineSmall!.copyWith(
                                           color: Colors.green.shade700,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                            Card(
-                              elevation: 4,
-                              child: InkWell(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) => const ReturnsScreen(),
-                                    ),
-                                  );
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.all(24.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.assignment_return,
-                                        size: 32,
-                                        color: Colors.orange.shade700,
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Text(
-                                        'Manage Returns',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.headlineSmall!.copyWith(
-                                          color: Colors.orange.shade700,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -174,80 +130,27 @@ class HomeScreen extends StatelessWidget {
                                     (ctx, i) => Card(
                                       child: ListTile(
                                         title: Text(
-                                          'Sale ID: ${recentSales[i].id}',
+                                          'Sale ID: ${recentSales[recentSales.length - i - 1].id}',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         subtitle: Text(
-                                          'Items: ${recentSales[i].items.length} | ${DateFormat('yyyy-MM-dd - kk:mm').format(recentSales[i].date)}',
+                                          'Items: ${recentSales[recentSales.length - i - 1].items.length} | ${DateFormat('yyyy-MM-dd - kk:mm').format(recentSales[recentSales.length - i - 1].date)}',
                                         ),
                                         trailing: Text(
-                                          'K ${recentSales[i].grandTotal.toStringAsFixed(2)}',
+                                          'K ${recentSales[recentSales.length - i - 1].grandTotal.toStringAsFixed(2)}',
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 16,
                                           ),
                                         ),
                                         onTap: () {
-                                          showDialog(
-                                            context: context,
-                                            builder: (_) {
-                                              final sale = recentSales[i];
-                                              return Dialog(
-                                                child: Padding(
-                                                  padding: const EdgeInsets.all(
-                                                    24.0,
-                                                  ),
-                                                  child: Column(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Text(
-                                                        'Sale Details',
-                                                        style:
-                                                            Theme.of(context)
-                                                                .textTheme
-                                                                .titleLarge,
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 16,
-                                                      ),
-                                                      ...sale.items.map<Widget>(
-                                                        (item) => Padding(
-                                                          padding:
-                                                              const EdgeInsets.symmetric(
-                                                                vertical: 4.0,
-                                                              ),
-                                                          child: Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              Expanded(
-                                                                child: Text(
-                                                                  item
-                                                                      .product
-                                                                      .name,
-                                                                ),
-                                                              ),
-                                                              Text(
-                                                                ' ${item.quantity} x K ${item.product.price.toStringAsFixed(2)}',
-                                                              ),
-                                                              Text(
-                                                                '= K ${(item.quantity * item.product.price).toStringAsFixed(2)}',
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              );
-                                            },
+                                          _showSaleDetailsDialog(
+                                            context,
+                                            recentSales[recentSales.length -
+                                                i -
+                                                1],
+                                            shopProvider,
                                           );
                                         },
                                       ),
@@ -680,7 +583,7 @@ void _showSaleDetailsDialog(
                                 style: TextStyle(fontSize: 16),
                               ),
                               Text(
-                                'K${sale.grandTotal.toStringAsFixed(2)}',
+                                'K${sale.totalAmount.toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -775,7 +678,7 @@ void _showSaleDetailsDialog(
                                     ?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               Text(
-                                'K${sale.totalAmount.toStringAsFixed(2)}',
+                                'K${sale.grandTotal.toStringAsFixed(2)}',
                                 style: Theme.of(
                                   context,
                                 ).textTheme.titleMedium?.copyWith(

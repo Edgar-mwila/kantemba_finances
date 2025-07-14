@@ -1,6 +1,6 @@
 {
-    "name": "kantemba_finances",
-    "short_name": "kantemba_finances",
+    "name": "Kantemba Finances",
+    "short_name": "Kantemba",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#2E7D32",

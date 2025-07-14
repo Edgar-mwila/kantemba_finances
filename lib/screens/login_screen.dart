@@ -24,17 +24,17 @@ class _LoginScreenState extends State<LoginScreen> {
       return 'Enter phone or email';
     }
     final trimmed = value.trim();
-    
+
     // Check if it's a valid email
     if (EmailValidator.validate(trimmed)) {
       return null;
     }
-    
+
     // Check if it's a valid Zambian phone number
     if (isValidZambianPhoneNumber(trimmed)) {
       return null;
     }
-    
+
     return 'Enter a valid Zambian phone number (+260XXXXXXXXX) or email address';
   }
 
@@ -66,8 +66,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text.trim();
 
     try {
-      debugPrint('Attempting login for contact: $contact');
-
       final success = await usersProvider.login(context, contact, password);
 
       if (success) {
@@ -84,7 +82,6 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     } catch (error) {
-      debugPrint('Login screen error: $error');
       setState(() {
         _error = 'An error occurred: $error';
         _isLoading = false;
@@ -95,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final green = Colors.green;
-    if (isWindows) {
+    if (isWindows(context)) {
       // Desktop layout: Centered, max width, more padding
       return Scaffold(
         appBar: AppBar(title: const Text('Login'), backgroundColor: green),

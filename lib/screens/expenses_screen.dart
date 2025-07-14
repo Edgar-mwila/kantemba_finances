@@ -165,50 +165,9 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
         final filteredAndSortedExpenses = _filterAndSortExpenses(expenses);
 
-        if (isWindows) {
+        if (isWindows(context)) {
           // Desktop layout: Centered, max width, header add button, table-like list
           return Scaffold(
-            appBar: AppBar(
-              title: const Text('Expenses'),
-              actions: [
-                if (filteredAndSortedExpenses.isNotEmpty)
-                  Text(
-                    '${filteredAndSortedExpenses.length} expenses',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-                  ),
-                const SizedBox(width: 16),
-                if (user != null &&
-                    (user.permissions.contains('add_expense') ||
-                        user.permissions.contains('all') ||
-                        user.role == 'admin' ||
-                        user.role == 'owner'))
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder:
-                            (ctx) => Dialog(
-                              child: SizedBox(
-                                width: 400,
-                                child: NewExpenseModal(),
-                              ),
-                            ),
-                      );
-                    },
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Expense'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade700,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                    ),
-                  ),
-                const SizedBox(width: 16),
-              ],
-            ),
             body: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1000),
@@ -357,6 +316,29 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                 ),
               ),
             ),
+            floatingActionButton:
+                (user != null &&
+                        (user.permissions.contains('add_expense') ||
+                            user.permissions.contains('all') ||
+                            user.role == 'admin' ||
+                            user.role == 'owner'))
+                    ? FloatingActionButton(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder:
+                              (ctx) => Dialog(
+                                child: SizedBox(
+                                  width: 600,
+                                  child: NewExpenseModal(),
+                                ),
+                              ),
+                        );
+                      },
+                      backgroundColor: Colors.green.shade700,
+                      child: const Icon(Icons.add),
+                    )
+                    : null,
           );
         }
 

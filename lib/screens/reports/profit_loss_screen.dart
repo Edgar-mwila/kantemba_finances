@@ -384,7 +384,7 @@ class _ProfitLossScreenState extends State<ProfitLossScreen> {
           ],
         );
 
-        if (isWindows) {
+        if (isWindows(context)) {
           reportContent = Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 800),

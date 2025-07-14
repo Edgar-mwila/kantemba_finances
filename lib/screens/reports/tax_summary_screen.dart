@@ -417,7 +417,7 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
           ],
         );
 
-        if (isWindows) {
+        if (isWindows(context)) {
           reportContent = Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 800),

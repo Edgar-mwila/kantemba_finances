@@ -22,7 +22,7 @@ class EmployeeManagementScreen extends StatelessWidget {
 
     return Scaffold(
       body:
-          isWindows
+          isWindows(context)
               ? Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 900),

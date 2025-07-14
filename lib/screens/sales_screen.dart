@@ -174,7 +174,7 @@ class _SalesScreenState extends State<SalesScreen> {
         final allSales = salesData.getSalesForShop(shopProvider.currentShop);
         final filteredAndSortedSales = _filterAndSortSales(allSales);
 
-        if (isWindows) {
+        if (isWindows(context)) {
           // Desktop layout: Centered, max width, table-like sales list, dialogs for details
           return Scaffold(
             appBar: AppBar(
@@ -244,34 +244,34 @@ class _SalesScreenState extends State<SalesScreen> {
                         child:
                             filteredAndSortedSales.isEmpty
                                 ? Center(
-                                                  child: Column(
+                                  child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                                    children: [
+                                    children: [
                                       Icon(
                                         Icons.search_off,
                                         size: 64,
                                         color: Colors.grey.shade400,
                                       ),
                                       const SizedBox(height: 16),
-                                                      Text(
+                                      Text(
                                         _searchQuery.isEmpty
                                             ? 'No sales found.'
                                             : 'No sales match your search.',
-                                                        style: TextStyle(
+                                        style: TextStyle(
                                           fontSize: 16,
                                           color: Colors.grey.shade600,
                                         ),
                                       ),
                                       if (_searchQuery.isNotEmpty) ...[
                                         const SizedBox(height: 8),
-                                                              Text(
+                                        Text(
                                           'Try adjusting your search terms.',
-                                                            style: TextStyle(
+                                          style: TextStyle(
                                             fontSize: 14,
                                             color: Colors.grey.shade500,
-                                                                ),
-                                                          ),
-                                                        ],
+                                          ),
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 )
@@ -290,8 +290,8 @@ class _SalesScreenState extends State<SalesScreen> {
                                     return InkWell(
                                       onTap: () {
                                         _showSaleDetailsDialog(
-                                                                      context,
-                                                                                  sale,
+                                          context,
+                                          sale,
                                           shopProvider,
                                         );
                                       },
@@ -375,7 +375,7 @@ class _SalesScreenState extends State<SalesScreen> {
                                                     CrossAxisAlignment.end,
                                                 children: [
                                                   Text(
-                                                'K${sale.grandTotal.toStringAsFixed(2)}',
+                                                    'K${sale.grandTotal.toStringAsFixed(2)}',
                                                   ),
                                                   if (sale.discount > 0)
                                                     Text(
@@ -400,29 +400,41 @@ class _SalesScreenState extends State<SalesScreen> {
                 ),
               ),
             ),
-            floatingActionButton:
-                (user != null &&
-                        (user.role == 'admin' ||
-                            user.role == 'manager' ||
-                            user.role == 'employee'))
-                    ? FloatingActionButton(
-                      heroTag: 'sales_add_button',
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder:
-                              (_) => Dialog(
-                                child: SizedBox(
-                                  width: 500,
-                                  child: NewSaleModal(),
-                                ),
-                              ),
-                        );
-                      },
-                      child: const Icon(Icons.add),
-                      backgroundColor: Colors.green.shade700,
-                    )
-                    : null,
+            floatingActionButton: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (user != null)
+                  FloatingActionButton(
+                    heroTag: 'sales_add_button',
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => const NewSaleModal(),
+                      );
+                    },
+                    child: const Icon(Icons.add),
+                    backgroundColor: Colors.green.shade700,
+                  ),
+                const SizedBox(width: 16),
+                FloatingActionButton.extended(
+                  heroTag: 'sales_returns_button',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ReturnsScreen(),
+                      ),
+                    );
+                  },
+                  icon: Icon(
+                    Icons.assignment_return,
+                    size: 32,
+                    color: Colors.orange.shade700,
+                  ),
+                  label: Text('Returns'),
+                ),
+              ],
+            ),
           );
         }
 
@@ -488,36 +500,36 @@ class _SalesScreenState extends State<SalesScreen> {
                         )
                         : ListView.builder(
                           itemCount: filteredAndSortedSales.length,
-                  itemBuilder: (ctx, i) {
+                          itemBuilder: (ctx, i) {
                             final sale = filteredAndSortedSales[i];
-                    final shop = shopProvider.shops.firstWhere(
-                      (s) => s.id == sale.shopId,
-                      orElse:
-                          () =>
-                              shopProvider
-                                  .shops
-                                  .first, // Fallback to first shop if not found
-                    );
+                            final shop = shopProvider.shops.firstWhere(
+                              (s) => s.id == sale.shopId,
+                              orElse:
+                                  () =>
+                                      shopProvider
+                                          .shops
+                                          .first, // Fallback to first shop if not found
+                            );
 
-                    return ListTile(
+                            return ListTile(
                               title: Text(
                                 'Sale ID: ${sale.id}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                   Text(
                                     DateFormat(
                                       'yyyy-MM-dd - kk:mm',
                                     ).format(sale.date),
                                   ),
-                          Text(
-                            'Shop: ${shop.name}',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
+                                  Text(
+                                    'Shop: ${shop.name}',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 12,
                                     ),
                                   ),
                                   if (sale.customerName != null &&
@@ -536,10 +548,10 @@ class _SalesScreenState extends State<SalesScreen> {
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Colors.grey.shade700,
-                            ),
-                          ),
-                        ],
-                      ),
+                                      ),
+                                    ),
+                                ],
+                              ),
                               trailing: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -557,7 +569,7 @@ class _SalesScreenState extends State<SalesScreen> {
                                     ),
                                 ],
                               ),
-                      onTap: () {
+                              onTap: () {
                                 _showSaleDetailsDialog(
                                   context,
                                   sale,
@@ -580,7 +592,7 @@ class _SalesScreenState extends State<SalesScreen> {
                   heroTag: 'sales_add_button',
                   onPressed: () {
                     showDialog(
-                          context: context,
+                      context: context,
                       builder: (_) => const NewSaleModal(),
                     );
                   },
@@ -634,18 +646,18 @@ class _SalesScreenState extends State<SalesScreen> {
               ),
               child: SingleChildScrollView(
                 child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       // Header
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
                             child: Text(
-                                    'Sale Details',
+                              'Sale Details',
                               style: Theme.of(context).textTheme.titleLarge
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
@@ -687,8 +699,8 @@ class _SalesScreenState extends State<SalesScreen> {
                                   ),
                                 ),
                               ],
-                                  ),
-                                  const SizedBox(height: 8),
+                            ),
+                            const SizedBox(height: 8),
                             Row(
                               children: [
                                 Icon(
@@ -779,9 +791,9 @@ class _SalesScreenState extends State<SalesScreen> {
                               ],
                             ),
                           ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
 
                       // Items List
                       Text(
@@ -808,10 +820,10 @@ class _SalesScreenState extends State<SalesScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
                                           child: Text(
                                             item.product.name,
                                             style: const TextStyle(
@@ -820,8 +832,8 @@ class _SalesScreenState extends State<SalesScreen> {
                                             ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
-                                          ),
-                                          Text(
+                                        ),
+                                        Text(
                                           'K${item.product.price.toStringAsFixed(2)}',
                                           style: TextStyle(
                                             color: Colors.grey.shade600,
@@ -835,7 +847,7 @@ class _SalesScreenState extends State<SalesScreen> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                          Text(
+                                        Text(
                                           'Quantity: ${item.quantity}',
                                           style: TextStyle(
                                             color: Colors.grey.shade600,
@@ -847,9 +859,9 @@ class _SalesScreenState extends State<SalesScreen> {
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                           ),
-                                          ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
+                                    ),
                                     if (hasReturns) ...[
                                       const SizedBox(height: 8),
                                       Container(
@@ -918,19 +930,19 @@ class _SalesScreenState extends State<SalesScreen> {
                             ),
                             if (sale.discount > 0) ...[
                               const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text(
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
                                     'Discount:',
                                     style: TextStyle(fontSize: 16),
                                   ),
                                   Text(
                                     '-K${sale.discount.toStringAsFixed(2)}',
-                                        style: TextStyle(
+                                    style: TextStyle(
                                       fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.bold,
                                       color: Colors.orange.shade700,
                                     ),
                                   ),
@@ -947,14 +959,14 @@ class _SalesScreenState extends State<SalesScreen> {
                                     'VAT:',
                                     style: TextStyle(fontSize: 16),
                                   ),
-                                      Text(
+                                  Text(
                                     'K${sale.vat.toStringAsFixed(2)}',
-                                        style: const TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                             if (sale.turnoverTax > 0) ...[
@@ -1019,29 +1031,29 @@ class _SalesScreenState extends State<SalesScreen> {
                             ),
                           ],
                         ),
-                                  ),
-                                  const SizedBox(height: 16),
+                      ),
+                      const SizedBox(height: 16),
 
                       // Returns Info
-                                  Consumer<ReturnsProvider>(
-                                    builder: (context, returnsProvider, child) {
+                      Consumer<ReturnsProvider>(
+                        builder: (context, returnsProvider, child) {
                           final hasReturns = returnsProvider.hasReturns(
                             sale.id,
                           );
-                                      final totalReturnAmount = returnsProvider
-                                          .getTotalReturnAmountForSale(sale.id);
+                          final totalReturnAmount = returnsProvider
+                              .getTotalReturnAmountForSale(sale.id);
 
                           if (hasReturns) {
                             return Container(
                               padding: const EdgeInsets.all(16),
-                                              decoration: BoxDecoration(
-                                                color: Colors.orange.shade50,
+                              decoration: BoxDecoration(
+                                color: Colors.orange.shade50,
                                 borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.assignment_return,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.assignment_return,
                                     color: Colors.orange.shade700,
                                     size: 24,
                                   ),
@@ -1051,9 +1063,9 @@ class _SalesScreenState extends State<SalesScreen> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                                  Text(
-                                                    'Returns: K${totalReturnAmount.toStringAsFixed(2)}',
-                                                    style: TextStyle(
+                                        Text(
+                                          'Returns: K${totalReturnAmount.toStringAsFixed(2)}',
+                                          style: TextStyle(
                                             color: Colors.orange.shade700,
                                             fontWeight: FontWeight.bold,
                                             fontSize: 16,
@@ -1064,11 +1076,11 @@ class _SalesScreenState extends State<SalesScreen> {
                                           style: TextStyle(
                                             color: Colors.orange.shade600,
                                             fontSize: 12,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ],
                               ),
                             );
@@ -1082,25 +1094,25 @@ class _SalesScreenState extends State<SalesScreen> {
                       Row(
                         children: [
                           Expanded(
-                                            child: ElevatedButton.icon(
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).pop();
                                 showDialog(
-                                                  context: context,
-                                                  builder:
+                                  context: context,
+                                  builder:
                                       (_) => Dialog(
                                         child: ReturnModal(sale: sale),
-                                                      ),
-                                                );
-                                              },
+                                      ),
+                                );
+                              },
                               icon: const Icon(Icons.assignment_return),
-                                              label: const Text('Return Items'),
-                                              style: ElevatedButton.styleFrom(
+                              label: const Text('Return Items'),
+                              style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.orange.shade600,
-                                                foregroundColor: Colors.white,
-                                              ),
-                                            ),
-                                          ),
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: ElevatedButton(
@@ -1109,13 +1121,13 @@ class _SalesScreenState extends State<SalesScreen> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.grey.shade300,
                                 foregroundColor: Colors.black87,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                  ),
-                                ],
                               ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

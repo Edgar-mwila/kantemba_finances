@@ -179,7 +179,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
         );
         final items = _getFilteredAndSortedItems(allItems);
 
-        if (isWindows) {
+        if (isWindows(context)) {
           // Desktop layout: Centered, max width, header add button, table-like list
           return Scaffold(
             body: Center(
@@ -190,51 +190,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Inventory',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.headlineMedium!.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          if (user != null &&
-                              (user.permissions.contains('add_inventory') ||
-                                  user.permissions.contains('all') ||
-                                  user.role == 'admin' ||
-                                  user.role == 'owner'))
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder:
-                                      (ctx) => Dialog(
-                                        child: SizedBox(
-                                          width: 400,
-                                          child: NewInventoryModal(),
-                                        ),
-                                      ),
-                                );
-                              },
-                              icon: const Icon(Icons.add),
-                              label: const Text('Add Item'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green.shade700,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 24,
-                                  vertical: 16,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-
                       // Search and sort bar
                       _buildSearchAndSortBar(),
                       const SizedBox(height: 16),
@@ -417,7 +372,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         builder:
                             (ctx) => Dialog(
                               child: SizedBox(
-                                width: 400,
+                                width: 600,
                                 child: NewInventoryModal(),
                               ),
                             ),
@@ -663,7 +618,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   if (usersProvider.currentUser == null) {
                     // Try to wait for initialization
                     if (!usersProvider.isInitialized) {
-                      debugPrint('User provider not initialized, waiting...');
                       int attempts = 0;
                       while (!usersProvider.isInitialized && attempts < 10) {
                         await Future.delayed(const Duration(milliseconds: 100));
@@ -679,9 +633,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   }
 
                   final currentUser = usersProvider.currentUser!;
-                  debugPrint(
-                    'Current user: ${currentUser.name} (${currentUser.id})',
-                  );
 
                   final inventoryProvider = Provider.of<InventoryProvider>(
                     context,
@@ -736,7 +687,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     );
                     Navigator.of(ctx).pop();
                   } catch (e) {
-                    debugPrint('Restock error: $e');
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Failed: $e'),

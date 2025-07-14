@@ -20,19 +20,14 @@ class ShopProvider with ChangeNotifier {
 
     if (!isOnline || !isPremium) {
       // Offline mode or non-premium business: load from local database
-      debugPrint(
-        'ShopProvider: Loading shops from local database (offline: ${!isOnline}, premium: $isPremium)',
-      );
       final localShops = await DBHelper.getData('shops');
       _shops = localShops.map((json) => Shop.fromJson(json)).toList();
       _currentShop = _shops.isNotEmpty ? _shops.first : null;
-      debugPrint('shops: $_shops, currentShop: $_currentShop');
       notifyListeners();
       return;
     }
 
     // Online mode and premium business: fetch from API
-    debugPrint('ShopProvider: Loading shops from API');
     if (shopIds != null && shopIds.isNotEmpty) {
       // If only one shopId, fetch that shop
       if (shopIds.length == 1) {

@@ -125,19 +125,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Future<void> _initializeApp() async {
-    print('Starting app initialization...');
     final usersProvider = Provider.of<UsersProvider>(context, listen: false);
     await usersProvider.initialize(context);
 
     // Add a small delay to ensure all providers are properly initialized
     await Future.delayed(const Duration(milliseconds: 100));
 
-    print(
-      'App initialization complete. Current user: ${usersProvider.currentUser?.name}',
-    );
-    print(
-      'App initialization complete. Current user details: ${usersProvider.currentUser?.toJson()}',
-    );
     setState(() {
       _isInitializing = false;
     });
@@ -186,20 +179,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Widget build(BuildContext context) {
     final usersProvider = Provider.of<UsersProvider>(context);
 
-    print(
-      'AuthWrapper build - isInitializing: $_isInitializing, isInitialized: ${usersProvider.isInitialized}, currentUser: ${usersProvider.currentUser?.name}',
-    );
-
     if (_isInitializing || !usersProvider.isInitialized) {
-      print('Showing splash screen...');
       return const SplashScreen();
     }
 
     if (usersProvider.currentUser == null) {
-      print('No current user, showing InitialChoiceScreen');
       return const InitialChoiceScreen();
     }
-    print('User found, showing MainAppScreen');
     return const MainAppScreen();
   }
 }
@@ -363,7 +349,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
       _selectedIndex = 0;
     }
 
-    if (isWindows) {
+    if (isWindows(context)) {
       // Desktop layout with NavigationRail
       return Scaffold(
         appBar: AppBar(

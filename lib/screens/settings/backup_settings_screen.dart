@@ -51,7 +51,7 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
     await prefs.setBool('auto_backup', _autoBackup);
     await prefs.setBool('cloud_sync', _cloudSync);
     await prefs.setString('backup_frequency', _backupFrequency);
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Backup settings saved!'),
@@ -77,12 +77,12 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
       }
 
       final success = await SyncManager.batchSyncAndMarkSynced();
-      
+
       if (success) {
         final prefs = await SharedPreferences.getInstance();
         final now = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
         await prefs.setString('last_sync_time', now);
-        
+
         setState(() {
           _lastSyncTime = now;
         });
@@ -137,9 +137,9 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
       final data = await DBHelper.exportAllData();
       final jsonString = jsonEncode(data);
       final output = await FilePicker.platform.getDirectoryPath();
-      
+
       if (output == null) throw Exception('No directory selected');
-      
+
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
       final file = File('$output/kantemba_backup_$timestamp.json');
       await file.writeAsString(jsonString);
@@ -147,7 +147,7 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
       final prefs = await SharedPreferences.getInstance();
       final now = DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now());
       await prefs.setString('last_backup_time', now);
-      
+
       setState(() {
         _lastBackupTime = now;
       });
@@ -190,9 +190,9 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
     try {
       final data = await DBHelper.exportAllData();
       final output = await FilePicker.platform.getDirectoryPath();
-      
+
       if (output == null) throw Exception('No directory selected');
-      
+
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
       int tableCount = 0;
       final totalTables = data.keys.length;
@@ -200,10 +200,11 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
       for (final table in data.keys) {
         final rows = data[table] as List<dynamic>;
         if (rows.isEmpty) continue;
-        
-        final headers = (rows.first as Map<String, dynamic>).keys
-            .map((h) => h.toString())
-            .toList();
+
+        final headers =
+            (rows.first as Map<String, dynamic>).keys
+                .map((h) => h.toString())
+                .toList();
         final csvRows = [
           headers,
           ...rows.map(
@@ -213,7 +214,7 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
         final csvString = const ListToCsvConverter().convert(csvRows);
         final file = File('$output/${table}_$timestamp.csv');
         await file.writeAsString(csvString);
-        
+
         tableCount++;
         setState(() {
           _backupProgress = tableCount / totalTables;
@@ -260,15 +261,15 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
         type: FileType.custom,
         allowedExtensions: ['json'],
       );
-      
+
       if (result == null || result.files.isEmpty) {
         throw Exception('No file selected');
       }
-      
+
       final file = File(result.files.single.path!);
       final content = await file.readAsString();
       final data = jsonDecode(content) as Map<String, dynamic>;
-      
+
       // Simulate progress
       for (int i = 0; i <= 10; i++) {
         await Future.delayed(const Duration(milliseconds: 200));
@@ -276,7 +277,7 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
           _backupProgress = i / 10;
         });
       }
-      
+
       await DBHelper.importAllData(data);
 
       if (mounted) {
@@ -319,32 +320,32 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
         type: FileType.custom,
         allowedExtensions: ['csv'],
       );
-      
+
       if (result == null || result.files.isEmpty) {
         throw Exception('No file selected');
       }
-      
+
       final file = File(result.files.single.path!);
       final content = await file.readAsString();
       final csvTable = const CsvToListConverter().convert(content, eol: '\n');
-      
+
       if (csvTable.isEmpty) throw Exception('CSV is empty');
-      
+
       final headers = csvTable.first.cast<String>();
       final rows = csvTable.skip(1);
       final fileName = file.uri.pathSegments.last;
       final table = fileName.split('_').first;
-      
+
       int rowCount = 0;
       final totalRows = rows.length;
-      
+
       for (final row in rows) {
         final Map<String, Object> rowMap = {};
         for (int i = 0; i < headers.length; i++) {
           rowMap[headers[i]] = row[i];
         }
         await DBHelper.insert(table, rowMap);
-        
+
         rowCount++;
         setState(() {
           _backupProgress = rowCount / totalRows;
@@ -438,11 +439,7 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: color ?? Colors.green.shade700,
-                size: 24,
-              ),
+              Icon(icon, color: color ?? Colors.green.shade700, size: 24),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
@@ -480,43 +477,10 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    Widget content = ListView(
-      padding: const EdgeInsets.all(16),
+  Widget _buildBackupActions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Status Section
-        const Text(
-          'Backup Status',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatusCard(
-                title: 'Last Cloud Sync',
-                value: _lastSyncTime ?? 'Never',
-                icon: Icons.cloud_sync,
-                color: Colors.blue,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatusCard(
-                title: 'Last Local Backup',
-                value: _lastBackupTime ?? 'Never',
-                icon: Icons.backup,
-                color: Colors.green,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-
         // Progress Indicator
         if (_isSyncing || _isExporting || _isImporting) ...[
           Card(
@@ -551,10 +515,7 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
         // Cloud Sync Section
         const Text(
           'Cloud Sync',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         _buildActionCard(
@@ -570,10 +531,7 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
         // Local Backup Section
         const Text(
           'Local Backup',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         _buildActionCard(
@@ -598,10 +556,7 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
         // Restore Section
         const Text(
           'Restore Data',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         _buildActionCard(
@@ -621,72 +576,230 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
           isLoading: _isImporting,
           color: Colors.teal,
         ),
-        const SizedBox(height: 24),
+      ],
+    );
+  }
 
-        // Settings Section
-        Card(
-          elevation: 2,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Backup Settings',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  title: const Text('Auto Backup'),
-                  subtitle: const Text('Automatically backup data'),
-                  value: _autoBackup,
-                  onChanged: (value) => setState(() => _autoBackup = value),
-                  secondary: const Icon(Icons.backup),
-                ),
-                SwitchListTile(
-                  title: const Text('Cloud Sync'),
-                  subtitle: const Text('Sync data to cloud storage'),
-                  value: _cloudSync,
-                  onChanged: (value) => setState(() => _cloudSync = value),
-                  secondary: const Icon(Icons.cloud),
-                ),
-                ListTile(
-                  title: const Text('Backup Frequency'),
-                  subtitle: Text(_backupFrequency),
-                  trailing: DropdownButton<String>(
-                    value: _backupFrequency,
-                    items: const [
-                      DropdownMenuItem(value: 'daily', child: Text('Daily')),
-                      DropdownMenuItem(value: 'weekly', child: Text('Weekly')),
-                      DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
-                    ],
-                    onChanged: (value) => setState(() => _backupFrequency = value!),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _saveSettings,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade700,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('Save Settings'),
-                  ),
-                ),
-              ],
+  Widget _buildRestoreSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Backup Settings',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        SwitchListTile(
+          title: const Text('Auto Backup'),
+          subtitle: const Text('Automatically backup data'),
+          value: _autoBackup,
+          onChanged: (value) => setState(() => _autoBackup = value),
+          secondary: const Icon(Icons.backup),
+        ),
+        SwitchListTile(
+          title: const Text('Cloud Sync'),
+          subtitle: const Text('Sync data to cloud storage'),
+          value: _cloudSync,
+          onChanged: (value) => setState(() => _cloudSync = value),
+          secondary: const Icon(Icons.cloud),
+        ),
+        ListTile(
+          title: const Text('Backup Frequency'),
+          subtitle: Text(_backupFrequency),
+          trailing: DropdownButton<String>(
+            value: _backupFrequency,
+            items: const [
+              DropdownMenuItem(value: 'daily', child: Text('Daily')),
+              DropdownMenuItem(value: 'weekly', child: Text('Weekly')),
+              DropdownMenuItem(
+                value: 'monthly',
+                child: Text('Monthly'),
+              ),
+            ],
+            onChanged:
+                (value) => setState(() => _backupFrequency = value!),
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _saveSettings,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade700,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
             ),
+            child: const Text('Save Settings'),
           ),
         ),
       ],
     );
+  }
 
-    if (isWindows) {
+  @override
+  Widget build(BuildContext context) {
+    Widget content = isWindows(context)
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Backup Status',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatusCard(
+                      title: 'Last Cloud Sync',
+                      value: _lastSyncTime ?? 'Never',
+                      icon: Icons.cloud_sync,
+                      color: Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatusCard(
+                      title: 'Last Local Backup',
+                      value: _lastBackupTime ?? 'Never',
+                      icon: Icons.backup,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              _buildBackupActions(),
+              const SizedBox(height: 24),
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Backup Settings',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 16),
+                      SwitchListTile(
+                        title: const Text('Auto Backup'),
+                        subtitle: const Text('Automatically backup data'),
+                        value: _autoBackup,
+                        onChanged: (value) => setState(() => _autoBackup = value),
+                        secondary: const Icon(Icons.backup),
+                      ),
+                      SwitchListTile(
+                        title: const Text('Cloud Sync'),
+                        subtitle: const Text('Sync data to cloud storage'),
+                        value: _cloudSync,
+                        onChanged: (value) => setState(() => _cloudSync = value),
+                        secondary: const Icon(Icons.cloud),
+                      ),
+                      ListTile(
+                        title: const Text('Backup Frequency'),
+                        subtitle: Text(_backupFrequency),
+                        trailing: DropdownButton<String>(
+                          value: _backupFrequency,
+                          items: const [
+                            DropdownMenuItem(value: 'daily', child: Text('Daily')),
+                            DropdownMenuItem(value: 'weekly', child: Text('Weekly')),
+                            DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
+                          ],
+                          onChanged: (value) => setState(() => _backupFrequency = value!),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildRestoreSection(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          )
+        : ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              const Text(
+                'Backup Status',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatusCard(
+                      title: 'Last Cloud Sync',
+                      value: _lastSyncTime ?? 'Never',
+                      icon: Icons.cloud_sync,
+                      color: Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatusCard(
+                      title: 'Last Local Backup',
+                      value: _lastBackupTime ?? 'Never',
+                      icon: Icons.backup,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              _buildBackupActions(),
+              const SizedBox(height: 24),
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Backup Settings',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 16),
+                      SwitchListTile(
+                        title: const Text('Auto Backup'),
+                        subtitle: const Text('Automatically backup data'),
+                        value: _autoBackup,
+                        onChanged: (value) => setState(() => _autoBackup = value),
+                        secondary: const Icon(Icons.backup),
+                      ),
+                      SwitchListTile(
+                        title: const Text('Cloud Sync'),
+                        subtitle: const Text('Sync data to cloud storage'),
+                        value: _cloudSync,
+                        onChanged: (value) => setState(() => _cloudSync = value),
+                        secondary: const Icon(Icons.cloud),
+                      ),
+                      ListTile(
+                        title: const Text('Backup Frequency'),
+                        subtitle: Text(_backupFrequency),
+                        trailing: DropdownButton<String>(
+                          value: _backupFrequency,
+                          items: const [
+                            DropdownMenuItem(value: 'daily', child: Text('Daily')),
+                            DropdownMenuItem(value: 'weekly', child: Text('Weekly')),
+                            DropdownMenuItem(value: 'monthly', child: Text('Monthly')),
+                          ],
+                          onChanged: (value) => setState(() => _backupFrequency = value!),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildRestoreSection(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+
+    if (isWindows(context)) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Data & Backup'),
@@ -707,7 +820,11 @@ class _BackupSettingsScreenState extends State<BackupSettingsScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.backup, color: Colors.green, size: 28),
+                          const Icon(
+                            Icons.backup,
+                            color: Colors.green,
+                            size: 28,
+                          ),
                           const SizedBox(width: 12),
                           const Text(
                             'Data & Backup',

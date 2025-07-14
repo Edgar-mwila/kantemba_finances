@@ -20,7 +20,7 @@ class PremiumScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final businessProvider = Provider.of<BusinessProvider>(context);
 
-    if (isWindows) {
+    if (isWindows(context)) {
       // Desktop layout: Centered, max width, grid for features, more spacing
       return Scaffold(
         body: Center(

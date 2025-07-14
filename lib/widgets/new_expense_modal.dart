@@ -24,11 +24,15 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
 
   @override
   Widget build(BuildContext context) {
-    if (isWindows) {
+    if (isWindows(context)) {
+      final screenHeight = MediaQuery.of(context).size.height;
       // Desktop layout: Centered, max width, more padding, two-column form
       return Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 700),
+          constraints: BoxConstraints(
+            maxWidth: 700,
+            maxHeight: screenHeight * 0.8,
+          ),
           child: Padding(
             padding: const EdgeInsets.all(32.0),
             child: Form(
@@ -37,11 +41,22 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Add Expense',
-                    style: Theme.of(context).textTheme.headlineSmall,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Add Expense',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(context).pop(),
+                        tooltip: 'Close',
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   Row(
                     children: [
                       Expanded(
@@ -75,7 +90,7 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
                                 return null;
                               },
                               onSaved: (value) {
-                                  _amount = double.parse(value!);
+                                _amount = double.parse(value!);
                               },
                             ),
                             const SizedBox(height: 16),
@@ -276,43 +291,43 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
     });
 
     try {
-    final usersProvider = Provider.of<UsersProvider>(context, listen: false);
-    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
-    final currentUser = usersProvider.currentUser;
-    if (currentUser == null) {
+      final usersProvider = Provider.of<UsersProvider>(context, listen: false);
+      final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+      final currentUser = usersProvider.currentUser;
+      if (currentUser == null) {
         throw Exception('No user is logged in!');
-    }
+      }
 
-    final expensesProvider = Provider.of<ExpensesProvider>(
-      context,
-      listen: false,
-    );
+      final expensesProvider = Provider.of<ExpensesProvider>(
+        context,
+        listen: false,
+      );
 
-    final currentShop = shopProvider.currentShop;
-    if (currentShop == null) {
+      final currentShop = shopProvider.currentShop;
+      if (currentShop == null) {
         throw Exception('No shop is selected!');
-    }
+      }
 
-    final expense = Expense(
+      final expense = Expense(
         id:
             '${currentShop.name.replaceAll(' ', '_')}_expense_${DateTime.now().millisecondsSinceEpoch}', // Will be set by provider
-      description: _description,
-      amount: _amount,
-      date: _date,
+        description: _description,
+        amount: _amount,
+        date: _date,
         category: _category,
-      shopId: currentShop.id,
-      createdBy: currentUser.id,
-    );
-    await expensesProvider.addExpenseHybrid(
-      expense,
-      currentUser.id,
-      currentShop.id,
-      Provider.of<BusinessProvider>(context, listen: false),
-    );
+        shopId: currentShop.id,
+        createdBy: currentUser.id,
+      );
+      await expensesProvider.addExpenseHybrid(
+        expense,
+        currentUser.id,
+        currentShop.id,
+        Provider.of<BusinessProvider>(context, listen: false),
+      );
 
-    setState(() {
-      _isLoading = false;
-    });
+      setState(() {
+        _isLoading = false;
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -322,7 +337,7 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
           ),
         );
         await Future.delayed(const Duration(milliseconds: 500));
-    Navigator.of(context).pop();
+        Navigator.of(context).pop();
       }
     } catch (e) {
       setState(() {

@@ -7,7 +7,7 @@ class FloatingShopFilter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Placeholder: Implement floating filter for desktop if needed
-    if (isWindows) {
+    if (isWindows(context)) {
       return Positioned(
         right: 32,
         bottom: 32,
@@ -46,4 +46,4 @@ class FloatingShopFilter extends StatelessWidget {
       backgroundColor: Colors.green,
     );
   }
-} 
+}

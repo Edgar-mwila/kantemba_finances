@@ -209,232 +209,221 @@ class _BusinessSettingsScreenState extends State<BusinessSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Widget content = Form(
-      key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Business Profile Section
-          _buildSettingCard(
-            title: 'Business Profile',
-            icon: Icons.business,
+    Widget content = isWindows(context)
+        ? Form(
+            key: _formKey,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Business Name *',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.store),
+                // Business Profile Section
+                _buildSettingCard(
+                  title: 'Business Profile',
+                  icon: Icons.business,
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Business Name *',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.store),
+                        ),
+                        validator: _validateBusinessName,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _businessTypeController,
+                        decoration: const InputDecoration(
+                          labelText: 'Business Type',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.category),
+                          hintText: 'e.g. Retail, Restaurant, Service',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _addressController,
+                        maxLines: 2,
+                        decoration: const InputDecoration(
+                          labelText: 'Business Address',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.location_on),
+                          hintText: 'Enter your business address',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _adminContactController,
+                        decoration: const InputDecoration(
+                          labelText: 'Admin Contact *',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.email),
+                          hintText: '+260XXXXXXXXX or email@example.com',
+                        ),
+                        validator: _validateContact,
+                      ),
+                    ],
                   ),
-                  validator: _validateBusinessName,
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _businessTypeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Business Type',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.category),
-                    hintText: 'e.g. Retail, Restaurant, Service',
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _addressController,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    labelText: 'Business Address',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.location_on),
-                    hintText: 'Enter your business address',
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _taxNumberController,
-                  decoration: const InputDecoration(
-                    labelText: 'Tax Registration Number',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.receipt_long),
-                    hintText: 'e.g. ZRA123456789',
-                  ),
-                  validator: _validateTaxNumber,
-                ),
-              ],
-            ),
-          ),
-
-          // Contact Information Section
-          _buildSettingCard(
-            title: 'Contact Information',
-            icon: Icons.contact_phone,
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: _contactController,
-                  decoration: const InputDecoration(
-                    labelText: 'Business Contact *',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.phone),
-                    hintText: '+260XXXXXXXXX or email@example.com',
-                  ),
-                  validator: _validateContact,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _adminNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Admin Name *',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person),
-                  ),
-                  validator: _validateAdminName,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _adminContactController,
-                  decoration: const InputDecoration(
-                    labelText: 'Admin Contact *',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
-                    hintText: '+260XXXXXXXXX or email@example.com',
-                  ),
-                  validator: _validateContact,
-                ),
-              ],
-            ),
-          ),
-
-          // Business Settings Section
-          _buildSettingCard(
-            title: 'Business Settings',
-            icon: Icons.settings,
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                // Business Settings Section
+                _buildSettingCard(
+                  title: 'Business Settings',
+                  icon: Icons.settings,
+                  child: Column(
+                    children: [
+                      Row(
                         children: [
-                          const Text('Currency'),
-                          const SizedBox(height: 8),
-                          DropdownButtonFormField<String>(
-                            value: _currency,
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.attach_money),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Timezone'),
+                                const SizedBox(height: 8),
+                                DropdownButtonFormField<String>(
+                                  value: _timezone,
+                                  decoration: const InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.access_time),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: 'Africa/Lusaka',
+                                      child: Text('Lusaka (GMT+2)'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'UTC',
+                                      child: Text('UTC (GMT+0)'),
+                                    ),
+                                  ],
+                                  onChanged: (value) => setState(() => _timezone = value!),
+                                ),
+                              ],
                             ),
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'ZMW',
-                                child: Text('ZMW (Kwacha)'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'USD',
-                                child: Text('USD (Dollar)'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'EUR',
-                                child: Text('EUR (Euro)'),
-                              ),
-                            ],
-                            onChanged:
-                                (value) => setState(() => _currency = value!),
                           ),
                         ],
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Timezone'),
-                          const SizedBox(height: 8),
-                          DropdownButtonFormField<String>(
-                            value: _timezone,
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.access_time),
-                            ),
-                            items: const [
-                              DropdownMenuItem(
-                                value: 'Africa/Lusaka',
-                                child: Text('Lusaka (GMT+2)'),
-                              ),
-                              DropdownMenuItem(
-                                value: 'UTC',
-                                child: Text('UTC (GMT+0)'),
-                              ),
-                            ],
-                            onChanged:
-                                (value) => setState(() => _timezone = value!),
-                          ),
-                        ],
+                      const SizedBox(height: 16),
+                      SwitchListTile(
+                        title: const Text('Auto Backup'),
+                        subtitle: const Text('Automatically backup data to cloud'),
+                        value: _autoBackup,
+                        onChanged: (value) => setState(() => _autoBackup = value),
+                        secondary: const Icon(Icons.backup),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  title: const Text('Auto Backup'),
-                  subtitle: const Text('Automatically backup data to cloud'),
-                  value: _autoBackup,
-                  onChanged: (value) => setState(() => _autoBackup = value),
-                  secondary: const Icon(Icons.backup),
-                ),
-                SwitchListTile(
-                  title: const Text('Sync Enabled'),
-                  subtitle: const Text('Sync data across devices'),
-                  value: _syncEnabled,
-                  onChanged: (value) => setState(() => _syncEnabled = value),
-                  secondary: const Icon(Icons.sync),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _saveBusiness,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade700,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child:
-                  _isLoading
-                      ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
+          )
+        : Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // Business Profile Section
+                _buildSettingCard(
+                  title: 'Business Profile',
+                  icon: Icons.business,
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Business Name *',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.store),
                         ),
-                      )
-                      : const Text(
-                        'Save Changes',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                        validator: _validateBusinessName,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _businessTypeController,
+                        decoration: const InputDecoration(
+                          labelText: 'Business Type',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.category),
+                          hintText: 'e.g. Retail, Restaurant, Service',
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _addressController,
+                        maxLines: 2,
+                        decoration: const InputDecoration(
+                          labelText: 'Business Address',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.location_on),
+                          hintText: 'Enter your business address',
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _adminContactController,
+                        decoration: const InputDecoration(
+                          labelText: 'Admin Contact *',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.email),
+                          hintText: '+260XXXXXXXXX or email@example.com',
+                        ),
+                        validator: _validateContact,
+                      ),
+                    ],
+                  ),
+                ),
+                // Business Settings Section
+                _buildSettingCard(
+                  title: 'Business Settings',
+                  icon: Icons.settings,
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Timezone'),
+                                const SizedBox(height: 8),
+                                DropdownButtonFormField<String>(
+                                  value: _timezone,
+                                  decoration: const InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.access_time),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: 'Africa/Lusaka',
+                                      child: Text('Lusaka (GMT+2)'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'UTC',
+                                      child: Text('UTC (GMT+0)'),
+                                    ),
+                                  ],
+                                  onChanged: (value) => setState(() => _timezone = value!),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      SwitchListTile(
+                        title: const Text('Auto Backup'),
+                        subtitle: const Text('Automatically backup data to cloud'),
+                        value: _autoBackup,
+                        onChanged: (value) => setState(() => _autoBackup = value),
+                        secondary: const Icon(Icons.backup),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
-    );
+          );
 
-    if (isWindows) {
+    if (isWindows(context)) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Business Settings'),

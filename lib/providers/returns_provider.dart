@@ -5,14 +5,11 @@ import 'package:kantemba_finances/models/inventory_item.dart';
 import 'package:kantemba_finances/models/return.dart';
 import 'package:kantemba_finances/models/sale.dart';
 import 'package:kantemba_finances/models/shop.dart';
-import 'package:kantemba_finances/models/expense.dart';
 import 'package:flutter/material.dart';
 import 'package:kantemba_finances/helpers/db_helper.dart';
 import 'package:kantemba_finances/providers/business_provider.dart';
 import 'package:kantemba_finances/providers/inventory_provider.dart';
 import 'package:kantemba_finances/providers/sales_provider.dart';
-import 'package:kantemba_finances/providers/expenses_provider.dart';
-import 'package:kantemba_finances/providers/users_provider.dart';
 import 'package:provider/provider.dart';
 
 class ReturnsProvider with ChangeNotifier {
@@ -384,13 +381,6 @@ class ReturnsProvider with ChangeNotifier {
         reason,
         context,
       );
-
-      // Create expense for damaged goods
-      if (reason.toLowerCase().contains('damaged') ||
-          reason.toLowerCase().contains('defective') ||
-          reason.toLowerCase().contains('spoiled')) {
-        await _createDamagedGoodsExpense(newReturn, context);
-      }
     } catch (e) {
       debugPrint('Error creating return: $e');
       rethrow;
@@ -415,10 +405,6 @@ class ReturnsProvider with ChangeNotifier {
           reason.toLowerCase().contains('defective') ||
           reason.toLowerCase().contains('spoiled');
 
-      debugPrint(
-        'Processing return with ${returnItems.length} items. Damaged goods: $isDamagedGoods',
-      );
-
       // Update inventory quantities
       for (final returnItem in returnItems) {
         try {
@@ -431,8 +417,9 @@ class ReturnsProvider with ChangeNotifier {
             orElse: () => returnItem.product,
           );
 
-          debugPrint(
-            'Found inventory item: ${inventoryItem.name} - Current quantity: ${inventoryItem.quantity}',
+          await inventoryProvider.reimburseStockForReturn(
+            inventoryItem.id,
+            returnItem.quantity,
           );
 
           if (isDamagedGoods) {
@@ -444,15 +431,6 @@ class ReturnsProvider with ChangeNotifier {
               inventoryItem.id,
               returnItem.quantity,
               reason,
-            );
-          } else {
-            // For non-damaged goods, reimburse inventory
-            debugPrint(
-              'Processing regular return: ${returnItem.product.name} - ${returnItem.quantity} units',
-            );
-            await inventoryProvider.reimburseStockForReturn(
-              inventoryItem.id,
-              returnItem.quantity,
             );
           }
         } catch (e) {
@@ -479,40 +457,6 @@ class ReturnsProvider with ChangeNotifier {
     } catch (e) {
       debugPrint('Error updating inventory and sales for return: $e');
       rethrow; // Re-throw to be handled by the calling function
-    }
-  }
-
-  Future<void> _createDamagedGoodsExpense(
-    Return returnData,
-    BuildContext context,
-  ) async {
-    try {
-      final expensesProvider = Provider.of<ExpensesProvider>(
-        context,
-        listen: false,
-      );
-      final userProvider = Provider.of<UsersProvider>(context, listen: false);
-
-      final expense = Expense(
-        id: 'EXP_DAMAGED_${DateTime.now().millisecondsSinceEpoch}',
-        description: 'Damaged goods write-off - Return ${returnData.id}',
-        amount: returnData.totalReturnAmount,
-        date: returnData.date,
-        category: 'Damaged Goods',
-        createdBy: returnData.createdBy,
-        shopId: returnData.shopId,
-      );
-
-      await expensesProvider.addExpense(
-        expense,
-        userProvider.currentUser?.id ?? returnData.createdBy,
-        returnData.shopId,
-      );
-
-      debugPrint('Created damaged goods expense: ${expense.id}');
-    } catch (e) {
-      debugPrint('Error creating damaged goods expense: $e');
-      // Don't rethrow - expense creation failure shouldn't fail the entire return
     }
   }
 

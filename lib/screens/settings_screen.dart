@@ -26,9 +26,7 @@ class SettingsScreen extends StatelessWidget {
         'Manage your data backup and restore settings',
         () {
           Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const BackupSettingsScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const BackupSettingsScreen()),
           );
         },
       ),
@@ -52,9 +50,7 @@ class SettingsScreen extends StatelessWidget {
         'Manage app security and access controls',
         () {
           Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const SecuritySettingsScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const SecuritySettingsScreen()),
           );
         },
       ),
@@ -65,9 +61,7 @@ class SettingsScreen extends StatelessWidget {
         'Manage business information and preferences',
         () {
           Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const BusinessSettingsScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const BusinessSettingsScreen()),
           );
         },
       ),
@@ -91,9 +85,7 @@ class SettingsScreen extends StatelessWidget {
         'Set your preferred language and region',
         () {
           Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const LanguageSettingsScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const LanguageSettingsScreen()),
           );
         },
       ),
@@ -103,9 +95,9 @@ class SettingsScreen extends StatelessWidget {
         'Help & Support',
         'Get help and contact support',
         () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const HelpSupportScreen()),
-          );
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const HelpSupportScreen()));
         },
       ),
       _buildSettingItem(
@@ -134,96 +126,101 @@ class SettingsScreen extends StatelessWidget {
     ];
 
     Widget content = SingleChildScrollView(
-    child:Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ...settingsItems,
-        if (businessProvider.isPremium) ...[
-          const SizedBox(height: 20),
-          Center(
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.sync),
-              label: const Text('Sync Now'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 12,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ...settingsItems,
+          if (businessProvider.isPremium) ...[
+            const SizedBox(height: 20),
+            Center(
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.sync),
+                label: const Text('Sync Now'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onPressed: () async {
-                await SyncManager.batchSyncAndMarkSynced();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Data synced to cloud!')),
-                );
-              },
-            ),
-          ),
-        ],
-      ],
-    ),);
-
-    if (isWindows) {
-      // Desktop: Center, max width, two-column grid for settings
-      content = Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 700),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Settings',
-                style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-              ),
-              const SizedBox(height: 20),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final isWide = constraints.maxWidth > 500;
-                  return GridView.count(
-                    crossAxisCount: isWide ? 2 : 1,
-                    shrinkWrap: true,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 2.8,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: settingsItems,
+                onPressed: () async {
+                  await SyncManager.batchSyncAndMarkSynced();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Data synced to cloud!')),
                   );
                 },
               ),
-              if (businessProvider.isPremium) ...[
-                const SizedBox(height: 20),
-                Center(
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.sync),
-                    label: const Text('Sync Now'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onPressed: () async {
-                      await SyncManager.batchSyncAndMarkSynced();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Data synced to cloud!')),
-                      );
-                    },
+            ),
+          ],
+        ],
+      ),
+    );
+
+    if (isWindows(context)) {
+      // Desktop: Center, max width, two-column grid for settings
+      content = Center(
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 700),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Settings',
+                  style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
                   ),
                 ),
+                const SizedBox(height: 20),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isWide = constraints.maxWidth > 500;
+                    return GridView.count(
+                      crossAxisCount: isWide ? 2 : 1,
+                      shrinkWrap: true,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 2.8,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: settingsItems,
+                    );
+                  },
+                ),
+                if (businessProvider.isPremium) ...[
+                  const SizedBox(height: 20),
+                  Center(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.sync),
+                      label: const Text('Sync Now'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () async {
+                        await SyncManager.batchSyncAndMarkSynced();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Data synced to cloud!'),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       );
@@ -231,10 +228,7 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: content,
-      ),
+      body: Padding(padding: const EdgeInsets.all(16.0), child: content),
     );
   }
 

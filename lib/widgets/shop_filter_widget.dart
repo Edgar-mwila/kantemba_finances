@@ -25,7 +25,7 @@ class ShopFilterWidget extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
-        if (isWindows) {
+        if (isWindows(context)) {
           // Desktop layout: wider dropdown, more padding, centered if in dialog
           return Center(
             child: Container(

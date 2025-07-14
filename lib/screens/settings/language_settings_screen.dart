@@ -41,10 +41,7 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
     'DD-MM-YYYY',
   ];
 
-  final List<String> _timeFormats = [
-    '12-hour',
-    '24-hour',
-  ];
+  final List<String> _timeFormats = ['12-hour', '24-hour'];
 
   @override
   void initState() {
@@ -65,7 +62,7 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
 
   Future<void> _saveSettings() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('app_language', _selectedLanguage);
@@ -145,245 +142,329 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Widget content = ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Language Section
-        _buildSettingCard(
-          title: 'Language',
-          icon: Icons.language,
-          child: Column(
+    Widget content = isWindows(context)
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              DropdownButtonFormField<String>(
-                value: _selectedLanguage,
-                decoration: const InputDecoration(
-                  labelText: 'App Language',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.translate),
-                ),
-                items: _languages.map((lang) {
-                  return DropdownMenuItem(
-                    value: lang['name'],
-                    child: Row(
-                      children: [
-                        Text(lang['name']!),
-                        const SizedBox(width: 8),
-                        Text(
-                          '(${lang['native']!})',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: (value) => setState(() => _selectedLanguage = value!),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: const Text(
-                  'Language changes will take effect after restarting the app.',
-                  style: TextStyle(fontSize: 12, color: Colors.blue),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // Region & Currency Section
-        _buildSettingCard(
-          title: 'Region & Currency',
-          icon: Icons.public,
-          child: Column(
-            children: [
-              DropdownButtonFormField<String>(
-                value: _selectedRegion,
-                decoration: const InputDecoration(
-                  labelText: 'Region',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.location_on),
-                ),
-                items: _regions.map((region) {
-                  return DropdownMenuItem(
-                    value: region['name'],
-                    child: Text(region['name']!),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() => _selectedRegion = value!);
-                  _updateCurrency();
-                },
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedCurrency,
-                decoration: const InputDecoration(
-                  labelText: 'Currency',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.attach_money),
-                ),
-                items: _regions.map((region) {
-                  return DropdownMenuItem(
-                    value: region['currency'],
-                    child: Row(
-                      children: [
-                        Text(region['currency']!),
-                        const SizedBox(width: 8),
-                        Text(
-                          '(${region['symbol']!})',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                onChanged: (value) => setState(() => _selectedCurrency = value!),
-              ),
-            ],
-          ),
-        ),
-
-        // Date & Time Format Section
-        _buildSettingCard(
-          title: 'Date & Time Format',
-          icon: Icons.schedule,
-          child: Column(
-            children: [
-              DropdownButtonFormField<String>(
-                value: _selectedDateFormat,
-                decoration: const InputDecoration(
-                  labelText: 'Date Format',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.calendar_today),
-                ),
-                items: _dateFormats.map((format) {
-                  return DropdownMenuItem(
-                    value: format,
-                    child: Text(format),
-                  );
-                }).toList(),
-                onChanged: (value) => setState(() => _selectedDateFormat = value!),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedTimeFormat,
-                decoration: const InputDecoration(
-                  labelText: 'Time Format',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.access_time),
-                ),
-                items: _timeFormats.map((format) {
-                  return DropdownMenuItem(
-                    value: format,
-                    child: Text(format),
-                  );
-                }).toList(),
-                onChanged: (value) => setState(() => _selectedTimeFormat = value!),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
+              _buildSettingCard(
+                title: 'Language',
+                icon: Icons.language,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Preview:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    DropdownButtonFormField<String>(
+                      value: _selectedLanguage,
+                      decoration: const InputDecoration(
+                        labelText: 'App Language',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.translate),
+                      ),
+                      items: _languages.map((lang) {
+                        return DropdownMenuItem(
+                          value: lang['name'],
+                          child: Row(
+                            children: [
+                              Text(lang['name']!),
+                              const SizedBox(width: 8),
+                              Text(
+                                '(${lang['native']!})',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) => setState(() => _selectedLanguage = value!),
                     ),
-                    const SizedBox(height: 8),
-                    Text('Date: ${_getDatePreview()}'),
-                    Text('Time: ${_getTimePreview()}'),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: const Text(
+                        'Language changes will take effect after restarting the app.',
+                        style: TextStyle(fontSize: 12, color: Colors.blue),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _buildSettingCard(
+                title: 'Region & Currency',
+                icon: Icons.public,
+                child: Column(
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _selectedRegion,
+                      decoration: const InputDecoration(
+                        labelText: 'Region',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.location_on),
+                      ),
+                      items: _regions.map((region) {
+                        return DropdownMenuItem(
+                          value: region['name'],
+                          child: Text(region['name']!),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() => _selectedRegion = value!);
+                        _updateCurrency();
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.green.shade200),
+                      ),
+                      child: Text(
+                        'Currency: $_selectedCurrency',
+                        style: const TextStyle(fontSize: 12, color: Colors.green),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _buildSettingCard(
+                title: 'Date & Time Format',
+                icon: Icons.calendar_today,
+                child: Column(
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _selectedDateFormat,
+                      decoration: const InputDecoration(
+                        labelText: 'Date Format',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.date_range),
+                      ),
+                      items: _dateFormats.map((format) {
+                        return DropdownMenuItem(
+                          value: format,
+                          child: Text(format),
+                        );
+                      }).toList(),
+                      onChanged: (value) => setState(() => _selectedDateFormat = value!),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: _selectedTimeFormat,
+                      decoration: const InputDecoration(
+                        labelText: 'Time Format',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.access_time),
+                      ),
+                      items: _timeFormats.map((format) {
+                        return DropdownMenuItem(
+                          value: format,
+                          child: Text(format),
+                        );
+                      }).toList(),
+                      onChanged: (value) => setState(() => _selectedTimeFormat = value!),
+                    ),
+                  ],
+                ),
+              ),
+              _buildSettingCard(
+                title: 'Localization Features',
+                icon: Icons.settings,
+                child: Column(
+                  children: [
+                    SwitchListTile(
+                      title: const Text('Auto-detect Region'),
+                      subtitle: const Text('Automatically detect your region'),
+                      value: true,
+                      onChanged: (value) {},
+                      secondary: const Icon(Icons.location_searching),
+                    ),
+                    SwitchListTile(
+                      title: const Text('Show Native Names'),
+                      subtitle: const Text('Display names in native language'),
+                      value: true,
+                      onChanged: (value) {},
+                      secondary: const Icon(Icons.translate),
+                    ),
+                    SwitchListTile(
+                      title: const Text('Currency Symbol'),
+                      subtitle: const Text('Show currency symbols'),
+                      value: true,
+                      onChanged: (value) {},
+                      secondary: const Icon(Icons.attach_money),
+                    ),
                   ],
                 ),
               ),
             ],
-          ),
-        ),
-
-        // Localization Features Section
-        _buildSettingCard(
-          title: 'Localization Features',
-          icon: Icons.settings,
-          child: Column(
+          )
+        : ListView(
+            padding: const EdgeInsets.all(16),
             children: [
-              SwitchListTile(
-                title: const Text('Auto-detect Region'),
-                subtitle: const Text('Automatically detect your region'),
-                value: true,
-                onChanged: (value) {
-                  // TODO: Implement auto-detection
-                },
-                secondary: const Icon(Icons.location_searching),
+              _buildSettingCard(
+                title: 'Language',
+                icon: Icons.language,
+                child: Column(
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _selectedLanguage,
+                      decoration: const InputDecoration(
+                        labelText: 'App Language',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.translate),
+                      ),
+                      items: _languages.map((lang) {
+                        return DropdownMenuItem(
+                          value: lang['name'],
+                          child: Row(
+                            children: [
+                              Text(lang['name']!),
+                              const SizedBox(width: 8),
+                              Text(
+                                '(${lang['native']!})',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) => setState(() => _selectedLanguage = value!),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade200),
+                      ),
+                      child: const Text(
+                        'Language changes will take effect after restarting the app.',
+                        style: TextStyle(fontSize: 12, color: Colors.blue),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              SwitchListTile(
-                title: const Text('Show Native Names'),
-                subtitle: const Text('Display names in native language'),
-                value: true,
-                onChanged: (value) {
-                  // TODO: Implement native names
-                },
-                secondary: const Icon(Icons.translate),
+              _buildSettingCard(
+                title: 'Region & Currency',
+                icon: Icons.public,
+                child: Column(
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _selectedRegion,
+                      decoration: const InputDecoration(
+                        labelText: 'Region',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.location_on),
+                      ),
+                      items: _regions.map((region) {
+                        return DropdownMenuItem(
+                          value: region['name'],
+                          child: Text(region['name']!),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() => _selectedRegion = value!);
+                        _updateCurrency();
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.green.shade200),
+                      ),
+                      child: Text(
+                        'Currency: $_selectedCurrency',
+                        style: const TextStyle(fontSize: 12, color: Colors.green),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              SwitchListTile(
-                title: const Text('Currency Symbol'),
-                subtitle: const Text('Show currency symbols'),
-                value: true,
-                onChanged: (value) {
-                  // TODO: Implement currency symbols
-                },
-                secondary: const Icon(Icons.attach_money),
+              _buildSettingCard(
+                title: 'Date & Time Format',
+                icon: Icons.calendar_today,
+                child: Column(
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _selectedDateFormat,
+                      decoration: const InputDecoration(
+                        labelText: 'Date Format',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.date_range),
+                      ),
+                      items: _dateFormats.map((format) {
+                        return DropdownMenuItem(
+                          value: format,
+                          child: Text(format),
+                        );
+                      }).toList(),
+                      onChanged: (value) => setState(() => _selectedDateFormat = value!),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: _selectedTimeFormat,
+                      decoration: const InputDecoration(
+                        labelText: 'Time Format',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.access_time),
+                      ),
+                      items: _timeFormats.map((format) {
+                        return DropdownMenuItem(
+                          value: format,
+                          child: Text(format),
+                        );
+                      }).toList(),
+                      onChanged: (value) => setState(() => _selectedTimeFormat = value!),
+                    ),
+                  ],
+                ),
+              ),
+              _buildSettingCard(
+                title: 'Localization Features',
+                icon: Icons.settings,
+                child: Column(
+                  children: [
+                    SwitchListTile(
+                      title: const Text('Auto-detect Region'),
+                      subtitle: const Text('Automatically detect your region'),
+                      value: true,
+                      onChanged: (value) {},
+                      secondary: const Icon(Icons.location_searching),
+                    ),
+                    SwitchListTile(
+                      title: const Text('Show Native Names'),
+                      subtitle: const Text('Display names in native language'),
+                      value: true,
+                      onChanged: (value) {},
+                      secondary: const Icon(Icons.translate),
+                    ),
+                    SwitchListTile(
+                      title: const Text('Currency Symbol'),
+                      subtitle: const Text('Show currency symbols'),
+                      value: true,
+                      onChanged: (value) {},
+                      secondary: const Icon(Icons.attach_money),
+                    ),
+                  ],
+                ),
               ),
             ],
-          ),
-        ),
+          );
 
-        const SizedBox(height: 24),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _saveSettings,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange.shade700,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: _isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Text(
-                    'Save Language Settings',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-          ),
-        ),
-      ],
-    );
-
-    if (isWindows) {
+    if (isWindows(context)) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Language & Region'),
@@ -404,7 +485,11 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.language, color: Colors.orange, size: 28),
+                          const Icon(
+                            Icons.language,
+                            color: Colors.orange,
+                            size: 28,
+                          ),
                           const SizedBox(width: 12),
                           const Text(
                             'Language & Region',

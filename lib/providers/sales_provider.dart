@@ -49,10 +49,6 @@ class SalesProvider with ChangeNotifier {
     String businessId, {
     List<String>? shopIds,
   }) async {
-    debugPrint(
-      'fetchAndSetSales called with businessId: $businessId, shopIds: $shopIds',
-    );
-
     // Check if online and if business is premium
     bool isOnline = await ApiService.isOnline();
     final businessProvider = BusinessProvider();
@@ -60,9 +56,6 @@ class SalesProvider with ChangeNotifier {
 
     if (!isOnline || !isPremium) {
       // Offline mode or non-premium business: load from local database
-      debugPrint(
-        'SalesProvider: Loading sales from local database (offline: ${!isOnline}, premium: $isPremium)',
-      );
       try {
         final localSales = await DBHelper.getData('sales');
         final localSaleItems = await DBHelper.getData('sale_items');
@@ -77,12 +70,8 @@ class SalesProvider with ChangeNotifier {
         await _mapSalesAndItems(_sales, localSaleItems, localReturnItems);
 
         notifyListeners();
-        debugPrint(
-          'SalesProvider: Loaded ${_sales.length} sales from local database',
-        );
         return;
       } catch (e) {
-        debugPrint('Error loading sales from local database: $e');
         _sales = [];
         notifyListeners();
         return;
@@ -90,7 +79,6 @@ class SalesProvider with ChangeNotifier {
     }
 
     // Online mode and premium business: fetch from API
-    debugPrint('SalesProvider: Loading sales from API');
     List<Sale> allSales = [];
     List<dynamic> allSaleItems = [];
     List<dynamic> allReturnItems = [];
@@ -118,7 +106,6 @@ class SalesProvider with ChangeNotifier {
       // Now map sales and sale items
       await _mapSalesAndItems(allSales, allSaleItems, allReturnItems);
     } catch (e) {
-      debugPrint('Error in fetchAndSetSales: $e');
     }
   }
 
@@ -130,7 +117,6 @@ class SalesProvider with ChangeNotifier {
     List<dynamic> allReturnItems,
   ) async {
     final query = 'sales?businessId=$businessId&shopId=$shopId';
-    debugPrint('Fetching sales for shopId: $shopId with query: $query');
 
     try {
       final response1 = await ApiService.get(query);
@@ -143,31 +129,23 @@ class SalesProvider with ChangeNotifier {
       final response4 = await ApiService.get(
         'returns?businessId=$businessId&shopId=$shopId',
       );
-      debugPrint('Sales response status: ${response1.statusCode}');
-      debugPrint('Sale items response status: ${response2.statusCode}');
-      debugPrint('Return items response status: ${response3.statusCode}');
-      debugPrint('Returns response status: ${response4.statusCode}');
 
       if (response1.statusCode == 200 && response2.statusCode == 200) {
         // Process sales data
         final salesData = _parseJsonResponse(response1.body, 'sales');
         if (salesData != null) {
           final salesDataList = _processSalesData(salesData);
-          debugPrint('Sales data list length: ${salesDataList.length}');
           final salesObjects = _convertToSales(salesDataList);
           allSales.addAll(salesObjects);
         } else {
-          debugPrint('No sales data found for shopId: $shopId');
         }
 
         // Process sale items data
         final saleItemsData = _parseJsonResponse(response2.body, 'sale_items');
         if (saleItemsData != null) {
           final saleItemsList = _processSaleItemsData(saleItemsData);
-          debugPrint('Sale items data length: ${saleItemsList.length}');
           allSaleItems.addAll(saleItemsList);
         } else {
-          debugPrint('No sale items data found for shopId: $shopId');
         }
 
         // Process return items data
@@ -178,13 +156,10 @@ class SalesProvider with ChangeNotifier {
           );
           if (returnItemsData != null) {
             final returnItemsList = _processReturnItemsData(returnItemsData);
-            debugPrint('Return items data length: ${returnItemsList.length}');
             allReturnItems.addAll(returnItemsList);
           } else {
-            debugPrint('No return items data found for shopId: $shopId');
           }
         } else {
-          debugPrint('Failed to fetch return items for shopId: $shopId');
         }
 
         // Process returns data to get originalSaleId mapping
@@ -192,20 +167,15 @@ class SalesProvider with ChangeNotifier {
           final returnsData = _parseJsonResponse(response4.body, 'returns');
           if (returnsData != null) {
             final returnsList = _processReturnsData(returnsData);
-            debugPrint('Returns data length: ${returnsList.length}');
             // Store returns data for mapping
             _returnsData = returnsList;
           } else {
-            debugPrint('No returns data found for shopId: $shopId');
           }
         } else {
-          debugPrint('Failed to fetch returns for shopId: $shopId');
         }
       } else {
-        debugPrint('Failed to fetch sales or sale items for shopId: $shopId');
       }
     } catch (e) {
-      debugPrint('Error fetching data for shopId: $shopId, error: $e');
     }
   }
 
@@ -216,9 +186,6 @@ class SalesProvider with ChangeNotifier {
     List<dynamic> allReturnItems,
   ) async {
     final query = 'sales?businessId=$businessId';
-    debugPrint(
-      'Fetching all sales for businessId: $businessId with query: $query',
-    );
 
     try {
       final response1 = await ApiService.get(query);
@@ -229,31 +196,23 @@ class SalesProvider with ChangeNotifier {
         'return_items?businessId=$businessId',
       );
       final response4 = await ApiService.get('returns?businessId=$businessId');
-      debugPrint('Sales response status: ${response1.statusCode}');
-      debugPrint('Sale items response status: ${response2.statusCode}');
-      debugPrint('Return items response status: ${response3.statusCode}');
-      debugPrint('Returns response status: ${response4.statusCode}');
 
       if (response1.statusCode == 200 && response2.statusCode == 200) {
         // Process sales data
         final salesData = _parseJsonResponse(response1.body, 'sales');
         if (salesData != null) {
           final salesDataList = _processSalesData(salesData);
-          debugPrint('Sales data list length: ${salesDataList.length}');
           final salesObjects = _convertToSales(salesDataList);
           allSales.addAll(salesObjects);
         } else {
-          debugPrint('No sales data found for businessId: $businessId');
         }
 
         // Process sale items data
         final saleItemsData = _parseJsonResponse(response2.body, 'sale_items');
         if (saleItemsData != null) {
           final saleItemsList = _processSaleItemsData(saleItemsData);
-          debugPrint('Sale items data length: ${saleItemsList.length}');
           allSaleItems.addAll(saleItemsList);
         } else {
-          debugPrint('No sale items data found for businessId: $businessId');
         }
 
         // Process return items data
@@ -264,17 +223,10 @@ class SalesProvider with ChangeNotifier {
           );
           if (returnItemsData != null) {
             final returnItemsList = _processReturnItemsData(returnItemsData);
-            debugPrint('Return items data length: ${returnItemsList.length}');
             allReturnItems.addAll(returnItemsList);
           } else {
-            debugPrint(
-              'No return items data found for businessId: $businessId',
-            );
           }
         } else {
-          debugPrint(
-            'Failed to fetch return items for businessId: $businessId',
-          );
         }
 
         // Process returns data to get originalSaleId mapping
@@ -282,22 +234,15 @@ class SalesProvider with ChangeNotifier {
           final returnsData = _parseJsonResponse(response4.body, 'returns');
           if (returnsData != null) {
             final returnsList = _processReturnsData(returnsData);
-            debugPrint('Returns data length: ${returnsList.length}');
             // Store returns data for mapping
             _returnsData = returnsList;
           } else {
-            debugPrint('No returns data found for businessId: $businessId');
           }
         } else {
-          debugPrint('Failed to fetch returns for businessId: $businessId');
         }
       } else {
-        debugPrint(
-          'Failed to fetch sales or sale items for businessId: $businessId',
-        );
       }
     } catch (e) {
-      debugPrint('Error fetching data for businessId: $businessId, error: $e');
     }
   }
 
@@ -309,7 +254,6 @@ class SalesProvider with ChangeNotifier {
     List<dynamic> allSaleItems,
     List<dynamic> allReturnItems,
   ) async {
-    debugPrint('Mapping sales, sale items, and return items...');
     try {
       // Create a map of return items by original sale ID and product ID for quick lookup
       final Map<String, Map<String, dynamic>> returnItemsBySaleAndProduct = {};
@@ -352,7 +296,6 @@ class SalesProvider with ChangeNotifier {
                           itemMap != null && itemMap['saleId'] == sale.id,
                     )
                     .toList();
-            debugPrint('Sale id: ${sale.id} has ${relevantItems.length} items');
 
             final saleItems =
                 relevantItems
@@ -381,11 +324,8 @@ class SalesProvider with ChangeNotifier {
             );
           }).toList();
 
-      debugPrint('Total sales after mapping: ${_sales.length}');
       notifyListeners();
-      debugPrint('Listeners notified.');
     } catch (e) {
-      debugPrint('Error mapping sales and sale items: $e');
     }
   }
 
@@ -409,11 +349,9 @@ class SalesProvider with ChangeNotifier {
             return [decoded];
           }
         } catch (e) {
-          debugPrint('Error decoding nested returns data: $e');
         }
       }
     } catch (e) {
-      debugPrint('Error processing returns data: $e');
     }
     return [];
   }
@@ -438,11 +376,9 @@ class SalesProvider with ChangeNotifier {
             return [decoded];
           }
         } catch (e) {
-          debugPrint('Error decoding nested return items data: $e');
         }
       }
     } catch (e) {
-      debugPrint('Error processing return items data: $e');
     }
     return [];
   }
@@ -459,12 +395,8 @@ class SalesProvider with ChangeNotifier {
           final sale = Sale.fromJson(Map<String, dynamic>.from(item));
           sales.add(sale);
         } else {
-          debugPrint('Skipping invalid sale item: $item');
         }
       } catch (e) {
-        debugPrint(
-          'Error converting sale item to Sale object: $e, item: $item',
-        );
       }
     }
     return sales;
@@ -474,23 +406,18 @@ class SalesProvider with ChangeNotifier {
   dynamic _parseJsonResponse(String responseBody, String dataType) {
     try {
       if (responseBody.trim().isEmpty) {
-        debugPrint('Empty response body for $dataType');
         return null;
       }
 
       final data = json.decode(responseBody);
-      debugPrint('Decoded $dataType data: $data');
 
       // Handle the case where the API returns null
       if (data == null) {
-        debugPrint('API returned null for $dataType');
         return null;
       }
 
       return data;
     } catch (e) {
-      debugPrint('Error decoding $dataType data: $e');
-      debugPrint('Response body: $responseBody');
       return null;
     }
   }
@@ -515,11 +442,9 @@ class SalesProvider with ChangeNotifier {
             return [decoded];
           }
         } catch (e) {
-          debugPrint('Error decoding nested sales data: $e');
         }
       }
     } catch (e) {
-      debugPrint('Error processing sales data: $e');
     }
     return [];
   }
@@ -544,11 +469,9 @@ class SalesProvider with ChangeNotifier {
             return [decoded];
           }
         } catch (e) {
-          debugPrint('Error decoding nested sale items data: $e');
         }
       }
     } catch (e) {
-      debugPrint('Error processing sale items data: $e');
     }
     return [];
   }
@@ -593,7 +516,6 @@ class SalesProvider with ChangeNotifier {
         returnedReason: returnedReason,
       );
     } catch (e) {
-      debugPrint('Error creating SaleItem: $e, itemMap: $itemMap');
       return null;
     }
   }
@@ -746,28 +668,19 @@ class SalesProvider with ChangeNotifier {
     String saleId,
     List<ReturnItem> returnItems,
   ) async {
-    debugPrint(
-      'Updating sale items for return: Sale ID: $saleId, Items: ${returnItems.length}',
-    );
-
     final saleIndex = _sales.indexWhere((sale) => sale.id == saleId);
     if (saleIndex == -1) {
-      debugPrint('Sale not found: $saleId');
       return;
     }
 
     final sale = _sales[saleIndex];
     final businessProvider = BusinessProvider();
 
-    debugPrint('Found sale: ${sale.id} with ${sale.items.length} items');
-
     // Calculate total return amount
     final totalReturnAmount = returnItems.fold(
       0.0,
       (sum, item) => sum + (item.originalPrice * item.quantity),
     );
-
-    debugPrint('Total return amount: $totalReturnAmount');
 
     // Update sale items with returned quantities
     final updatedItems =
@@ -781,10 +694,6 @@ class SalesProvider with ChangeNotifier {
                   originalPrice: saleItem.product.price,
                   reason: '',
                 ),
-          );
-
-          debugPrint(
-            'Updating sale item: ${saleItem.product.name} - Returned: ${returnItem.quantity} units - Reason: ${returnItem.reason}',
           );
 
           return SaleItem(
@@ -812,17 +721,11 @@ class SalesProvider with ChangeNotifier {
       discount: sale.discount,
     );
 
-    debugPrint(
-      'Updated sale totals - Original: ${sale.totalAmount}, New: ${updatedSale.totalAmount}',
-    );
-
     // Update in memory
     _sales[saleIndex] = updatedSale;
 
     // Update in database
     if (!businessProvider.isPremium || !(await ApiService.isOnline())) {
-      debugPrint('Updating sale in local database...');
-
       // Update sale totals
       await DBHelper.update('sales', {
         'id': sale.id,
@@ -842,8 +745,6 @@ class SalesProvider with ChangeNotifier {
 
       // Update individual sale items with returned quantities
       for (final item in updatedItems) {
-        debugPrint('Updating sale item in database: ${item.product.name}');
-
         // Find the existing sale item record to update
         final existingItems = await DBHelper.getData('sale_items');
         final existingItem = existingItems.firstWhere(
@@ -854,10 +755,6 @@ class SalesProvider with ChangeNotifier {
         );
 
         if (existingItem.isNotEmpty) {
-          debugPrint(
-            'Found existing sale item with ID: ${existingItem['id']} (type: ${existingItem['id'].runtimeType})',
-          );
-
           await DBHelper.update('sale_items', {
             'saleId': sale.id,
             'productId': item.product.id,
@@ -869,17 +766,9 @@ class SalesProvider with ChangeNotifier {
             'shopId': sale.shopId,
             'synced': 0,
           }, existingItem['id'].toString());
-
-          debugPrint('Updated sale item successfully');
-        } else {
-          debugPrint(
-            'Warning: No existing sale item found for ${item.product.name}',
-          );
         }
       }
     } else {
-      debugPrint('Updating sale via API...');
-
       // Online mode - update via API
       await ApiService.put('sales/${sale.id}', {
         'totalAmount': updatedSale.totalAmount,
@@ -910,7 +799,6 @@ class SalesProvider with ChangeNotifier {
       }
     }
 
-    debugPrint('Updated sale ${sale.id} with return information');
     notifyListeners();
   }
 

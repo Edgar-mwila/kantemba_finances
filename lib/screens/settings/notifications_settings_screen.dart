@@ -135,204 +135,149 @@ class _NotificationsSettingsScreenState
 
   @override
   Widget build(BuildContext context) {
-    Widget content = ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Business Notifications Section
-        _buildSettingCard(
-          title: 'Business Notifications',
-          icon: Icons.business,
-          child: Column(
+    Widget content = isWindows(context)
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SwitchListTile(
-                title: const Text('Sales Notifications'),
-                subtitle: const Text(
-                  'Get notified of new sales and transactions',
-                ),
-                value: _salesNotif,
-                onChanged: (value) => setState(() => _salesNotif = value),
-                secondary: const Icon(Icons.point_of_sale),
-              ),
-              SwitchListTile(
-                title: const Text('Low Stock Alerts'),
-                subtitle: const Text(
-                  'Get notified when inventory is running low',
-                ),
-                value: _lowStockNotif,
-                onChanged: (value) => setState(() => _lowStockNotif = value),
-                secondary: const Icon(Icons.inventory),
-              ),
-              SwitchListTile(
-                title: const Text('Expense Notifications'),
-                subtitle: const Text('Get notified of new expenses and costs'),
-                value: _expenseNotif,
-                onChanged: (value) => setState(() => _expenseNotif = value),
-                secondary: const Icon(Icons.receipt),
-              ),
-              SwitchListTile(
-                title: const Text('Report Notifications'),
-                subtitle: const Text('Get notified when reports are ready'),
-                value: _reportNotif,
-                onChanged: (value) => setState(() => _reportNotif = value),
-                secondary: const Icon(Icons.assessment),
-              ),
-            ],
-          ),
-        ),
-
-        // System Notifications Section
-        _buildSettingCard(
-          title: 'System Notifications',
-          icon: Icons.settings,
-          child: Column(
-            children: [
-              SwitchListTile(
-                title: const Text('Backup Notifications'),
-                subtitle: const Text('Get notified of backup status and sync'),
-                value: _backupNotif,
-                onChanged: (value) => setState(() => _backupNotif = value),
-                secondary: const Icon(Icons.backup),
-              ),
-              SwitchListTile(
-                title: const Text('Security Notifications'),
-                subtitle: const Text(
-                  'Get notified of security events and login attempts',
-                ),
-                value: _securityNotif,
-                onChanged: (value) => setState(() => _securityNotif = value),
-                secondary: const Icon(Icons.security),
-              ),
-            ],
-          ),
-        ),
-
-        // Notification Preferences Section
-        _buildSettingCard(
-          title: 'Notification Preferences',
-          icon: Icons.notifications,
-          child: Column(
-            children: [
-              SwitchListTile(
-                title: const Text('Sound'),
-                subtitle: const Text('Play sound for notifications'),
-                value: _soundEnabled,
-                onChanged: (value) => setState(() => _soundEnabled = value),
-                secondary: const Icon(Icons.volume_up),
-              ),
-              SwitchListTile(
-                title: const Text('Vibration'),
-                subtitle: const Text('Vibrate device for notifications'),
-                value: _vibrationEnabled,
-                onChanged: (value) => setState(() => _vibrationEnabled = value),
-                secondary: const Icon(Icons.vibration),
-              ),
-              SwitchListTile(
-                title: const Text('LED Light'),
-                subtitle: const Text('Use LED light for notifications'),
-                value: _ledEnabled,
-                onChanged: (value) => setState(() => _ledEnabled = value),
-                secondary: const Icon(Icons.lightbulb),
-              ),
-              ListTile(
-                title: const Text('Notification Sound'),
-                subtitle: Text(_notificationSound),
-                trailing: DropdownButton<String>(
-                  value: _notificationSound,
-                  items: const [
-                    DropdownMenuItem(value: 'default', child: Text('Default')),
-                    DropdownMenuItem(value: 'chime', child: Text('Chime')),
-                    DropdownMenuItem(value: 'bell', child: Text('Bell')),
-                    DropdownMenuItem(value: 'none', child: Text('None')),
-                  ],
-                  onChanged:
-                      (value) => setState(() => _notificationSound = value!),
-                ),
-              ),
-              ListTile(
-                title: const Text('Notification Timing'),
-                subtitle: Text(_notificationTime),
-                trailing: DropdownButton<String>(
-                  value: _notificationTime,
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'immediate',
-                      child: Text('Immediate'),
+              _buildSettingCard(
+                title: 'Business Notifications',
+                icon: Icons.business,
+                child: Column(
+                  children: [
+                    SwitchListTile(
+                      title: const Text('Sales Notifications'),
+                      subtitle: const Text('Get notified of new sales and transactions'),
+                      value: _salesNotif,
+                      onChanged: (value) => setState(() => _salesNotif = value),
+                      secondary: const Icon(Icons.point_of_sale),
                     ),
-                    DropdownMenuItem(value: 'hourly', child: Text('Hourly')),
-                    DropdownMenuItem(value: 'daily', child: Text('Daily')),
-                  ],
-                  onChanged:
-                      (value) => setState(() => _notificationTime = value!),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // Test Notification Section
-        _buildSettingCard(
-          title: 'Test Notifications',
-          icon: Icons.try_sms_star,
-          child: Column(
-            children: [
-              const Text(
-                'Test your notification settings to ensure they work correctly.',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _testNotification,
-                  icon: const Icon(Icons.notifications),
-                  label: const Text('Send Test Notification'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade700,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 24),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _saveSettings,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.shade700,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child:
-                _isLoading
-                    ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                    : const Text(
-                      'Save Notification Settings',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    SwitchListTile(
+                      title: const Text('Low Stock Alerts'),
+                      subtitle: const Text('Get notified when inventory is running low'),
+                      value: _lowStockNotif,
+                      onChanged: (value) => setState(() => _lowStockNotif = value),
+                      secondary: const Icon(Icons.inventory),
                     ),
-          ),
-        ),
-      ],
-    );
+                    SwitchListTile(
+                      title: const Text('Expense Notifications'),
+                      subtitle: const Text('Get notified of new expenses and costs'),
+                      value: _expenseNotif,
+                      onChanged: (value) => setState(() => _expenseNotif = value),
+                      secondary: const Icon(Icons.receipt),
+                    ),
+                    SwitchListTile(
+                      title: const Text('Report Notifications'),
+                      subtitle: const Text('Get notified when reports are ready'),
+                      value: _reportNotif,
+                      onChanged: (value) => setState(() => _reportNotif = value),
+                      secondary: const Icon(Icons.assessment),
+                    ),
+                  ],
+                ),
+              ),
+              _buildSettingCard(
+                title: 'Notification Preferences',
+                icon: Icons.notifications,
+                child: Column(
+                  children: [
+                    SwitchListTile(
+                      title: const Text('Sound'),
+                      subtitle: const Text('Play sound for notifications'),
+                      value: _soundEnabled,
+                      onChanged: (value) => setState(() => _soundEnabled = value),
+                      secondary: const Icon(Icons.volume_up),
+                    ),
+                    SwitchListTile(
+                      title: const Text('Vibration'),
+                      subtitle: const Text('Vibrate device for notifications'),
+                      value: _vibrationEnabled,
+                      onChanged: (value) => setState(() => _vibrationEnabled = value),
+                      secondary: const Icon(Icons.vibration),
+                    ),
+                    SwitchListTile(
+                      title: const Text('LED Light'),
+                      subtitle: const Text('Use LED light for notifications'),
+                      value: _ledEnabled,
+                      onChanged: (value) => setState(() => _ledEnabled = value),
+                      secondary: const Icon(Icons.lightbulb),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          )
+        : ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _buildSettingCard(
+                title: 'Business Notifications',
+                icon: Icons.business,
+                child: Column(
+                  children: [
+                    SwitchListTile(
+                      title: const Text('Sales Notifications'),
+                      subtitle: const Text('Get notified of new sales and transactions'),
+                      value: _salesNotif,
+                      onChanged: (value) => setState(() => _salesNotif = value),
+                      secondary: const Icon(Icons.point_of_sale),
+                    ),
+                    SwitchListTile(
+                      title: const Text('Low Stock Alerts'),
+                      subtitle: const Text('Get notified when inventory is running low'),
+                      value: _lowStockNotif,
+                      onChanged: (value) => setState(() => _lowStockNotif = value),
+                      secondary: const Icon(Icons.inventory),
+                    ),
+                    SwitchListTile(
+                      title: const Text('Expense Notifications'),
+                      subtitle: const Text('Get notified of new expenses and costs'),
+                      value: _expenseNotif,
+                      onChanged: (value) => setState(() => _expenseNotif = value),
+                      secondary: const Icon(Icons.receipt),
+                    ),
+                    SwitchListTile(
+                      title: const Text('Report Notifications'),
+                      subtitle: const Text('Get notified when reports are ready'),
+                      value: _reportNotif,
+                      onChanged: (value) => setState(() => _reportNotif = value),
+                      secondary: const Icon(Icons.assessment),
+                    ),
+                  ],
+                ),
+              ),
+              _buildSettingCard(
+                title: 'Notification Preferences',
+                icon: Icons.notifications,
+                child: Column(
+                  children: [
+                    SwitchListTile(
+                      title: const Text('Sound'),
+                      subtitle: const Text('Play sound for notifications'),
+                      value: _soundEnabled,
+                      onChanged: (value) => setState(() => _soundEnabled = value),
+                      secondary: const Icon(Icons.volume_up),
+                    ),
+                    SwitchListTile(
+                      title: const Text('Vibration'),
+                      subtitle: const Text('Vibrate device for notifications'),
+                      value: _vibrationEnabled,
+                      onChanged: (value) => setState(() => _vibrationEnabled = value),
+                      secondary: const Icon(Icons.vibration),
+                    ),
+                    SwitchListTile(
+                      title: const Text('LED Light'),
+                      subtitle: const Text('Use LED light for notifications'),
+                      value: _ledEnabled,
+                      onChanged: (value) => setState(() => _ledEnabled = value),
+                      secondary: const Icon(Icons.lightbulb),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
 
-    if (isWindows) {
+    if (isWindows(context)) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Notifications Settings'),

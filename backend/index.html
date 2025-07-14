@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kantemba Finances (Beta) - Smart Business Management</title>
+  <meta name="description" content="Kantemba Finances: The all-in-one app for sales, inventory, expenses, management, and advanced business reports. Download the beta APK or Windows app now!">
+  <link rel="icon" href="/favicon.ico">
+  <style>
+    :root {
+      --primary: #2e7d32;
+      --primary-dark: #27642a;
+      --accent: #43a047;
+      --bg: #f9f9f9;
+      --white: #fff;
+      --text: #222;
+      --muted: #666;
+      --shadow: 0 2px 12px #0001;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--white);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 2.5em 1.5em 4em 1.5em;
+      margin-top: 2em;
+      margin-bottom: 2em;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2em;
+    }
+    header h1 {
+      color: var(--primary);
+      font-size: 2.5em;
+      margin-bottom: 0.2em;
+    }
+    header p {
+      color: var(--muted);
+      font-size: 1.2em;
+      margin-top: 0;
+    }
+    .analysis {
+      background: #e8f5e9;
+      border-left: 5px solid var(--accent);
+      border-radius: 8px;
+      padding: 1.5em 1.2em 1.2em 1.2em;
+      margin-bottom: 2em;
+      box-shadow: 0 1px 6px #0001;
+    }
+    .analysis h2 {
+      color: var(--primary-dark);
+      margin-top: 0;
+      font-size: 1.3em;
+      margin-bottom: 0.5em;
+    }
+    .analysis ul {
+      margin: 0.5em 0 0 1.2em;
+      padding: 0;
+      color: var(--muted);
+      font-size: 1em;
+    }
+    .analysis li {
+      margin-bottom: 0.4em;
+    }
+    .features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2em;
+      margin-bottom: 2.5em;
+    }
+    .feature {
+      flex: 1 1 260px;
+      background: #f4fff6;
+      border-left: 5px solid var(--primary);
+      border-radius: 8px;
+      padding: 1.5em 1.2em 1.2em 1.2em;
+      box-shadow: 0 1px 6px #0001;
+      min-width: 220px;
+      margin-bottom: 0.5em;
+      transition: box-shadow 0.2s;
+    }
+    .feature:hover {
+      box-shadow: 0 4px 16px #0002;
+    }
+    .feature h2 {
+      color: var(--primary-dark);
+      margin-top: 0;
+      font-size: 1.3em;
+      margin-bottom: 0.5em;
+    }
+    .feature ul {
+      margin: 0.5em 0 0 1.2em;
+      padding: 0;
+      color: var(--muted);
+      font-size: 1em;
+    }
+    .feature li {
+      margin-bottom: 0.4em;
+    }
+    .download-btns {
+      position: fixed;
+      right: 2em;
+      bottom: 2em;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 1em;
+      align-items: flex-end;
+    }
+    .download-btn {
+      background: var(--primary);
+      color: var(--white);
+      border: none;
+      border-radius: 50px;
+      padding: 1.1em 2.2em;
+      font-size: 1.2em;
+      font-weight: bold;
+      box-shadow: 0 4px 16px #0002;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.7em;
+    }
+    .download-btn:hover {
+      background: var(--primary-dark);
+      box-shadow: 0 8px 24px #0003;
+    }
+    .apk-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.98em;
+      margin-top: 2.5em;
+    }
+    @media (max-width: 700px) {
+      .container {
+        padding: 1.2em 0.3em 4em 0.3em;
+        margin-top: 0.5em;
+      }
+      .features {
+        flex-direction: column;
+        gap: 1.2em;
+      }
+      .download-btns {
+        right: 1em;
+        bottom: 1em;
+      }
+      .download-btn {
+        padding: 0.9em 1.5em;
+        font-size: 1em;
+      }
+    }
+    @media (max-width: 400px) {
+      .container {
+        padding: 0.2em 0.1em 4em 0.1em;
+      }
+      .download-btns {
+        right: 0.2em;
+        bottom: 0.2em;
+      }
+      .download-btn {
+        padding: 0.7em 1em;
+        font-size: 0.95em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Kantemba Finances <span style="font-size:0.6em; color:var(--accent);">(Beta)</span></h1>
+      <p>
+        The all-in-one business management app for small shops, retailers, and entrepreneurs.<br>
+        <strong style="color:var(--primary-dark)">Track sales, manage inventory, control expenses, and get advanced reports—all in one place.</strong>
+      </p>
+    </header>
+    <section class="analysis">
+      <h2>What’s Included in the Free Version?</h2>
+      <ul>
+        <li><strong>Unlimited Sales & Inventory:</strong> Add, edit, and track as many sales and inventory items as you want—no limits on records.</li>
+        <li><strong>Expense Tracking:</strong> Log unlimited expenses, categorize them, and attach notes for better analysis.</li>
+        <li><strong>Basic Reports:</strong> Access daily, weekly, and monthly sales and expense summaries. Export basic reports to CSV.</li>
+        <li><strong>Offline Mode:</strong> Use the app without an internet connection. Data syncs when you’re back online.</li>
+        <li><strong>Data Backup:</strong> Manual backup and restore of your business data.</li>
+        <li><strong>Security:</strong> PIN code protection and basic user access controls.</li>
+        <li><strong>Support:</strong> Access to help and support resources directly from the app.</li>
+      </ul>
+      <p style="color:var(--muted); font-size:0.98em; margin-top:1em;">
+        <strong>Upgrade to Premium</strong> for advanced analytics, unlimited shops/employees, tax tools, and priority support.<br>
+        <em>All core business features are free—no hidden charges.</em>
+      </p>
+    </section>
+    <section class="features">
+      <div class="feature">
+        <h2>Sales Management</h2>
+        <ul>
+          <li>Quickly record and track every sale, including itemized receipts</li>
+          <li>Support for discounts, returns, and multiple payment methods</li>
+          <li>Daily, weekly, and monthly sales summaries</li>
+          <li>Associate sales with specific shops or employees</li>
+        </ul>
+      </div>
+      <div class="feature">
+        <h2>Inventory Management</h2>
+        <ul>
+          <li>Real-time stock tracking for all your products</li>
+          <li>Low stock alerts and restock reminders</li>
+          <li>Bulk import and export of inventory data</li>
+          <li>Mark and analyze damaged or lost goods</li>
+          <li>Multi-shop inventory separation</li>
+        </ul>
+      </div>
+      <div class="feature">
+        <h2>Expense Management</h2>
+        <ul>
+          <li>Log all business expenses with categories and notes</li>
+          <li>Attach expenses to specific shops or users</li>
+          <li>Automatic expense tracking for inventory purchases</li>
+          <li>Expense analytics and trends over time</li>
+        </ul>
+      </div>
+      <div class="feature">
+        <h2>Advanced Reports & Analytics</h2>
+        <ul>
+          <li>Profit & Loss, Balance Sheet, and Cash Flow reports</li>
+          <li>Tax summary and compliance tools</li>
+          <li>Visual charts for sales, expenses, and inventory trends</li>
+          <li>Export reports to CSV for further analysis</li>
+        </ul>
+      </div>
+    </section>
+    <div class="apk-note">
+      <strong>Ready to try it?</strong><br>
+      Download the beta APK or Windows app below. For Android and Windows only.<br>
+      <span style="color:var(--muted); font-size:0.95em;">Android users: You may need to enable "Install from unknown sources" in your device settings.</span>
+    </div>
+  </div>
+  <div class="download-btns">
+    <a class="download-btn" href="/kantemba_finances_beta.apk" download>
+      <svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17h16" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Download APK
+    </a>
+    <a class="download-btn" href="/kantemba_finances_windows.exe" download>
+      <svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 4h18v16H3V4zm2 2v12h14V6H5zm4 2h2v2H9V8zm0 4h2v2H9v-2zm4-4h2v2h-2V8zm0 4h2v2h-2v-2z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Download for Windows
+    </a>
+  </div>
+</body>
+</html>

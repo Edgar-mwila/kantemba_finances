@@ -30,55 +30,45 @@ class UsersProvider with ChangeNotifier {
       final userData = prefs.getString('current_user');
       final businessId = prefs.getString('business_id');
       final token = await ApiService.getToken();
-      print("userData: $userData");
 
       if (userData != null && businessId != null) {
         final userMap = json.decode(userData);
         _currentUser = _userFromMap(userMap);
-        print("Restored user: ${_currentUser?.name} (${_currentUser?.role})");
 
         // Check if we're online before validating token
         final isOnline = await ApiService.isOnline();
-        print("Is online during session restore: $isOnline");
 
         if (isOnline && token != 'LocalLoginToken') {
           // Only validate token if online
           final isValidToken = await _validateStoredToken();
-          print("Token validation result: $isValidToken");
 
           if (!isValidToken) {
             // Token is invalid, clear the session
-            print("Token invalid, clearing session");
             await _clearStoredSession();
             _currentUser = null;
           } else {
             // Restore all providers with the saved business and user data
-            print("Token valid, restoring providers");
             initialize_providers(context, _currentUser!).catchError((e) {
               debugPrint('Provider initialization error: $e');
             });
           }
         } else {
           // Offline mode: just restore the user session without API calls
-          print("Offline mode: restoring user session without API calls");
           // Set up basic providers for offline mode
           initialize_providers(context, _currentUser!).catchError((e) {
             debugPrint('Provider initialization error: $e');
           });
         }
       } else {
-        print('No stored session found');
+        // print('No stored session found'); // Removed print
       }
     } catch (e) {
-      print('Error during session restoration: $e');
+      // print('Error during session restoration: $e'); // Removed print
       // If there's any error restoring the session, clear it
       await _clearStoredSession();
       _currentUser = null;
     } finally {
       _isInitialized = true;
-      print(
-        "Session restoration complete. Current user: ${_currentUser?.name}",
-      );
       notifyListeners();
     }
   }
@@ -125,7 +115,7 @@ class UsersProvider with ChangeNotifier {
       final response = await ApiService.get('users/validate');
       return response.statusCode == 200;
     } catch (e) {
-      print('Token validation error: $e');
+      // print('Token validation error: $e'); // Removed print
       // If there's a network error, we'll assume the token is still valid
       // but the server might be unreachable. In a production app, you might
       // want to be more strict about this.
@@ -206,9 +196,6 @@ class UsersProvider with ChangeNotifier {
       // Check if online and if business is premium
       bool isOnline = await ApiService.isOnline();
       bool isPremium = businessProvider.isPremium;
-      debugPrint(
-        'Provider initialization - isOnline: $isOnline, isPremium: $isPremium',
-      );
 
       if (isOnline && isPremium) {
         // Online mode and premium business: fetch data from API
@@ -328,12 +315,10 @@ class UsersProvider with ChangeNotifier {
       }
 
       bool isOnline = await ApiService.isOnline();
-      debugPrint('Is online: $isOnline');
 
       if (isOnline) {
         // Test backend connection first
         bool backendReachable = await ApiService.testConnection();
-        debugPrint('Backend reachable: $backendReachable');
 
         if (!backendReachable) {
           if (context.mounted) {

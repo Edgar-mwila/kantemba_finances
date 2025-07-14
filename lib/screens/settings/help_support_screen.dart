@@ -90,24 +90,24 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   ) async {
     switch (method['title']) {
       case 'Email Support':
-    final email = Uri(
-      scheme: 'mailto',
+        final email = Uri(
+          scheme: 'mailto',
           path: method['action'],
-      query: 'subject=Kantemba%20Finances%20Support',
-    );
-    if (await canLaunchUrl(email)) {
-      await launchUrl(email);
-    } else {
+          query: 'subject=Kantemba%20Finances%20Support',
+        );
+        if (await canLaunchUrl(email)) {
+          await launchUrl(email);
+        } else {
           _showErrorSnackBar('Could not open email app.');
-    }
+        }
         break;
       case 'WhatsApp Support':
-    final whatsapp = Uri.parse(
+        final whatsapp = Uri.parse(
           'https://wa.me/${method['action']}?text=Hello%20Kantemba%20Support',
-    );
-    if (await canLaunchUrl(whatsapp)) {
-      await launchUrl(whatsapp);
-    } else {
+        );
+        if (await canLaunchUrl(whatsapp)) {
+          await launchUrl(whatsapp);
+        } else {
           _showErrorSnackBar('Could not open WhatsApp.');
         }
         break;
@@ -244,144 +244,113 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    Widget content = ListView(
-      padding: const EdgeInsets.all(16),
+  Widget _buildResourcesList() {
+    return Column(
       children: [
-        // FAQ Section
-        _buildSettingCard(
-          title: 'Frequently Asked Questions',
-          icon: Icons.help,
-          child: Column(
-            children: _faqs.map((faq) => _buildFAQItem(faq)).toList(),
-          ),
+        ListTile(
+          leading: const Icon(Icons.book),
+          title: const Text('User Manual'),
+          subtitle: const Text('Complete guide to using the app'),
+          onTap: () {
+            // TODO: Open user manual
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('User manual coming soon!')),
+            );
+          },
         ),
-
-        // Contact Support Section
-        _buildSettingCard(
-          title: 'Contact Support',
-          icon: Icons.support_agent,
-          child: Column(
-            children:
-                _contactMethods
-                    .map((method) => _buildContactMethod(method))
-                    .toList(),
-          ),
+        ListTile(
+          leading: const Icon(Icons.video_library),
+          title: const Text('Video Tutorials'),
+          subtitle: const Text('Learn with step-by-step videos'),
+          onTap: () {
+            // TODO: Open video tutorials
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Video tutorials coming soon!'),
+              ),
+            );
+          },
         ),
-
-        // Resources Section
-        _buildSettingCard(
-          title: 'Resources',
-          icon: Icons.library_books,
-          child: Column(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.book),
-                title: const Text('User Manual'),
-                subtitle: const Text('Complete guide to using the app'),
-                onTap: () {
-                  // TODO: Open user manual
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('User manual coming soon!')),
-                  );
-                },
+        ListTile(
+          leading: const Icon(Icons.forum),
+          title: const Text('Community Forum'),
+          subtitle: const Text('Connect with other users'),
+          onTap: () {
+            // TODO: Open community forum
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Community forum coming soon!'),
               ),
-              ListTile(
-                leading: const Icon(Icons.video_library),
-                title: const Text('Video Tutorials'),
-                subtitle: const Text('Learn with step-by-step videos'),
-                onTap: () {
-                  // TODO: Open video tutorials
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Video tutorials coming soon!'),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.forum),
-                title: const Text('Community Forum'),
-                subtitle: const Text('Connect with other users'),
-                onTap: () {
-                  // TODO: Open community forum
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Community forum coming soon!'),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-
-        // About Section
-        _buildSettingCard(
-          title: 'About',
-          icon: Icons.info,
-          child: Column(
-            children: [
-              const ListTile(
-                leading: Icon(Icons.apps),
-                title: Text('Kantemba Finances'),
-                subtitle: Text('Version 1.0.0'),
-              ),
-              const ListTile(
-                leading: Icon(Icons.description),
-                title: Text('Description'),
-                subtitle: Text(
-                  'A comprehensive business finance management app designed for Zambian businesses.',
-                ),
-              ),
-              const ListTile(
-                leading: Icon(Icons.developer_mode),
-                title: Text('Developer'),
-                subtitle: Text('Kantemba Technologies'),
-              ),
-              const ListTile(
-                leading: Icon(Icons.copyright),
-                title: Text('Copyright'),
-                subtitle: Text(
-                  '© 2024 Kantemba Technologies. All rights reserved.',
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      // TODO: Open privacy policy
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Privacy policy coming soon!'),
-                        ),
-                      );
-                    },
-                    child: const Text('Privacy Policy'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      // TODO: Open terms of service
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Terms of service coming soon!'),
-                        ),
-                      );
-                    },
-                    child: const Text('Terms of Service'),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ],
     );
+  }
 
-    if (isWindows) {
+  @override
+  Widget build(BuildContext context) {
+    Widget content = isWindows(context)
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // FAQ Section
+              _buildSettingCard(
+                title: 'Frequently Asked Questions',
+                icon: Icons.help,
+                child: Column(
+                  children: _faqs.map((faq) => _buildFAQItem(faq)).toList(),
+                ),
+              ),
+              // Contact Support Section
+              _buildSettingCard(
+                title: 'Contact Support',
+                icon: Icons.support_agent,
+                child: Column(
+                  children: _contactMethods
+                      .map((method) => _buildContactMethod(method))
+                      .toList(),
+                ),
+              ),
+              // Resources Section
+              _buildSettingCard(
+                title: 'Resources',
+                icon: Icons.library_books,
+                child: _buildResourcesList(),
+              ),
+            ],
+          )
+        : ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // FAQ Section
+              _buildSettingCard(
+                title: 'Frequently Asked Questions',
+                icon: Icons.help,
+                child: Column(
+                  children: _faqs.map((faq) => _buildFAQItem(faq)).toList(),
+                ),
+              ),
+              // Contact Support Section
+              _buildSettingCard(
+                title: 'Contact Support',
+                icon: Icons.support_agent,
+                child: Column(
+                  children: _contactMethods
+                      .map((method) => _buildContactMethod(method))
+                      .toList(),
+                ),
+              ),
+              // Resources Section
+              _buildSettingCard(
+                title: 'Resources',
+                icon: Icons.library_books,
+                child: _buildResourcesList(),
+              ),
+            ],
+          );
+
+    if (isWindows(context)) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Help & Support'),
@@ -391,47 +360,47 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
         body: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(32.0),
-        child: ConstrainedBox(
+            child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 800),
               child: Card(
                 elevation: 4,
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Row(
                         children: [
                           const Icon(Icons.help, color: Colors.teal, size: 28),
                           const SizedBox(width: 12),
-                              const Text(
+                          const Text(
                             'Help & Support',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                      ],
-                        ),
-                        const SizedBox(height: 24),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
                       content,
                     ],
-                        ),
-                        ),
-                        ),
-                        ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       );
     } else {
-    return Scaffold(
+      return Scaffold(
         appBar: AppBar(
           title: const Text('Help & Support'),
           backgroundColor: Colors.teal.shade700,
           foregroundColor: Colors.white,
         ),
-      body: content,
-    );
+        body: content,
+      );
     }
   }
 }

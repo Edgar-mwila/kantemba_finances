@@ -156,7 +156,6 @@ class _ReturnModalState extends State<ReturnModal> {
         Navigator.of(context).pop();
       }
     } catch (e) {
-      print('Error processing return: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -176,7 +175,7 @@ class _ReturnModalState extends State<ReturnModal> {
 
   @override
   Widget build(BuildContext context) {
-    if (isWindows) {
+    if (isWindows(context)) {
       // Desktop layout: Centered, max width, more padding, two-column if space allows
       return Center(
         child: ConstrainedBox(
@@ -309,9 +308,9 @@ class _ReturnModalState extends State<ReturnModal> {
                                                                     returnItem.quantity >
                                                                             1
                                                                         ? () => _updateQuantity(
-                                                                      returnItem,
+                                                                          returnItem,
                                                                           returnItem.quantity -
-                                                                          1,
+                                                                              1,
                                                                         )
                                                                         : null,
                                                                 tooltip:
@@ -334,9 +333,9 @@ class _ReturnModalState extends State<ReturnModal> {
                                                                     returnItem.quantity <
                                                                             saleItem.quantity
                                                                         ? () => _updateQuantity(
-                                                                      returnItem,
+                                                                          returnItem,
                                                                           returnItem.quantity +
-                                                                          1,
+                                                                              1,
                                                                         )
                                                                         : null,
                                                                 tooltip:
@@ -541,113 +540,113 @@ class _ReturnModalState extends State<ReturnModal> {
     return SingleChildScrollView(
       child: Container(
         padding: const EdgeInsets.all(10),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Return Items',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Sale ID: ${widget.sale.id}',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Return Items',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Sale ID: ${widget.sale.id}',
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 16),
+            ),
+            const SizedBox(height: 16),
 
-          // Items selection
-          Text(
-            'Select Items to Return:',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          Container(
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: widget.sale.items.length,
-              itemBuilder: (context, index) {
-                final saleItem = widget.sale.items[index];
-                final isSelected = _selectedItems.any(
-                  (item) => item.product.id == saleItem.product.id,
-                );
-                final returnItem = _selectedItems.firstWhere(
-                  (item) => item.product.id == saleItem.product.id,
-                  orElse:
-                      () => ReturnItem(
-                        product: saleItem.product,
-                        quantity: 0,
-                        originalPrice: saleItem.product.price,
-                        reason: '',
-                      ),
-                );
-
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                  child: ExpansionTile(
-                    title: Row(
-                      children: [
-                        Checkbox(
-                          value: isSelected,
-                          onChanged: (value) => _toggleItem(saleItem),
+            // Items selection
+            Text(
+              'Select Items to Return:',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Container(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: widget.sale.items.length,
+                itemBuilder: (context, index) {
+                  final saleItem = widget.sale.items[index];
+                  final isSelected = _selectedItems.any(
+                    (item) => item.product.id == saleItem.product.id,
+                  );
+                  final returnItem = _selectedItems.firstWhere(
+                    (item) => item.product.id == saleItem.product.id,
+                    orElse:
+                        () => ReturnItem(
+                          product: saleItem.product,
+                          quantity: 0,
+                          originalPrice: saleItem.product.price,
+                          reason: '',
                         ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                saleItem.product.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                'Original Qty: ${saleItem.quantity}',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
+                  );
+
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    child: ExpansionTile(
+                      title: Row(
+                        children: [
+                          Checkbox(
+                            value: isSelected,
+                            onChanged: (value) => _toggleItem(saleItem),
                           ),
-                        ),
-                        Text(
-                          'K${saleItem.product.price.toStringAsFixed(2)}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    children:
-                        isSelected
-                            ? [
-                              Padding(
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  saleItem.product.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  'Original Qty: ${saleItem.quantity}',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            'K${saleItem.product.price.toStringAsFixed(2)}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      children:
+                          isSelected
+                              ? [
+                                Padding(
                                   padding: const EdgeInsets.all(10),
-                                child: Column(
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Text('Return Quantity: '),
-                                        Expanded(
-                                          child: Row(
-                                            children: [
-                                              IconButton(
-                                                onPressed:
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Text('Return Quantity: '),
+                                          Expanded(
+                                            child: Row(
+                                              children: [
+                                                IconButton(
+                                                  onPressed:
                                                       returnItem.quantity > 1
                                                           ? () => _updateQuantity(
-                                                      returnItem,
+                                                            returnItem,
                                                             returnItem
                                                                     .quantity -
                                                                 1,
@@ -657,68 +656,68 @@ class _ReturnModalState extends State<ReturnModal> {
                                                   icon: const Icon(
                                                     Icons.remove,
                                                   ),
-                                              ),
-                                              Text(
-                                                '${returnItem.quantity}',
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
                                                 ),
-                                              ),
-                                              IconButton(
-                                                onPressed:
+                                                Text(
+                                                  '${returnItem.quantity}',
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed:
                                                       returnItem.quantity <
                                                               saleItem.quantity
                                                           ? () => _updateQuantity(
-                                                      returnItem,
+                                                            returnItem,
                                                             returnItem
                                                                     .quantity +
                                                                 1,
                                                           )
                                                           : null,
                                                   tooltip: 'Increase quantity',
-                                                icon: const Icon(Icons.add),
-                                              ),
-                                            ],
+                                                  icon: const Icon(Icons.add),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    TextField(
-                                      decoration: const InputDecoration(
-                                        labelText: 'Reason for this item',
-                                        border: OutlineInputBorder(),
+                                        ],
                                       ),
-                                      onChanged:
-                                          (value) => _updateItemReason(
-                                            returnItem,
-                                            value,
-                                          ),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 8),
+                                      TextField(
+                                        decoration: const InputDecoration(
+                                          labelText: 'Reason for this item',
+                                          border: OutlineInputBorder(),
+                                        ),
+                                        onChanged:
+                                            (value) => _updateItemReason(
+                                              returnItem,
+                                              value,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ]
-                            : [],
-                  ),
-                );
-              },
+                              ]
+                              : [],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // General reason
-          TextField(
-            controller: _reasonController,
-            decoration: const InputDecoration(
-              labelText: 'General Return Reason',
-              border: OutlineInputBorder(),
-              hintText: 'e.g., Customer changed mind, defective items',
+            // General reason
+            TextField(
+              controller: _reasonController,
+              decoration: const InputDecoration(
+                labelText: 'General Return Reason',
+                border: OutlineInputBorder(),
+                hintText: 'e.g., Customer changed mind, defective items',
+              ),
+              maxLines: 2,
             ),
-            maxLines: 2,
-          ),
 
             const SizedBox(height: 8),
 
@@ -760,73 +759,73 @@ class _ReturnModalState extends State<ReturnModal> {
               ),
             ),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-          // Summary
-          if (_selectedItems.isNotEmpty) ...[
-            Card(
-              color: Colors.blue.shade50,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Return Summary',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text('Items to return: ${_selectedItems.length}'),
-                    Text(
-                      'Total return amount: K${_totalReturnAmount.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+            // Summary
+            if (_selectedItems.isNotEmpty) ...[
+              Card(
+                color: Colors.blue.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Return Summary',
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Text('Items to return: ${_selectedItems.length}'),
+                      Text(
+                        'Total return amount: K${_totalReturnAmount.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-          ],
+              const SizedBox(height: 16),
+            ],
 
-          // Action buttons
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed:
+            // Action buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed:
                         _isProcessing
                             ? null
                             : () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed:
-                      _isProcessing || _selectedItems.isEmpty
-                          ? null
-                          : _processReturn,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
+                    child: const Text('Cancel'),
                   ),
-                  child:
-                      _isProcessing
-                          ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                          : const Text('Process Return'),
                 ),
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed:
+                        _isProcessing || _selectedItems.isEmpty
+                            ? null
+                            : _processReturn,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                    ),
+                    child:
+                        _isProcessing
+                            ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Text('Process Return'),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

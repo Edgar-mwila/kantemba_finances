@@ -19,7 +19,7 @@ class ReturnsScreen extends StatelessWidget {
         // Use filtered returns based on current shop
         final returns = returnsData.getReturnsForShop(shopProvider.currentShop);
 
-        if (isWindows) {
+        if (isWindows(context)) {
           // Desktop layout: Centered, max width, table-like returns list, dialogs for details
           return Scaffold(
             appBar: AppBar(title: const Text('Returns')),

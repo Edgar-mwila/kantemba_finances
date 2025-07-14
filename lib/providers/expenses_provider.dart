@@ -73,7 +73,7 @@ class ExpensesProvider with ChangeNotifier {
                     amount: (item['amount'] as num).toDouble(),
                     date: DateTime.parse(item['date']),
                     category: item['category'],
-                    createdBy: item['createdBy'],
+                    createdBy: item['createdBy'] ?? 'Default',
                     shopId: item['shopId'],
                   ),
                 )

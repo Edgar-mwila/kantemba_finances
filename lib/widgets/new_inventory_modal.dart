@@ -77,11 +77,15 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
     final existingItems = inventoryProvider.items;
     final itemNames = existingItems.map((e) => e.name).toList();
 
-    if (isWindows) {
+    if (isWindows(context)) {
+      final screenHeight = MediaQuery.of(context).size.height;
       // Desktop layout: Centered, max width, more padding, two-column form
       return Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 700),
+          constraints: BoxConstraints(
+            maxWidth: 700,
+            maxHeight: screenHeight * 0.8,
+          ),
           child: Padding(
             padding: const EdgeInsets.all(32.0),
             child: Form(
@@ -90,11 +94,22 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Add Inventory Purchase',
-                    style: Theme.of(context).textTheme.headlineSmall,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Add Inventory Purchase',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.of(context).pop(),
+                        tooltip: 'Close',
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
                   Row(
                     children: [
                       Expanded(
@@ -413,7 +428,7 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
     try {
       final usersProvider = Provider.of<UsersProvider>(context, listen: false);
       final shopProvider = Provider.of<ShopProvider>(context, listen: false);
-      
+
       // Ensure user session is available
       if (usersProvider.currentUser == null) {
         // Try to wait for initialization
@@ -425,12 +440,12 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
             attempts++;
           }
         }
-        
+
         if (usersProvider.currentUser == null) {
           throw Exception('No user is logged in! Please log in again.');
         }
       }
-      
+
       final currentUser = usersProvider.currentUser!;
       debugPrint('Current user: ${currentUser.name} (${currentUser.id})');
 
@@ -457,7 +472,6 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
         );
       } else {
         // Add new inventory item
-        print('Adding new inventory item: $_itemName');
         final newItem = InventoryItem(
           id:
               '${currentShop.name.replaceAll(' ', '_')}_inventory_${DateTime.now().millisecondsSinceEpoch}', // Will be set by provider

@@ -519,10 +519,6 @@ class InventoryProvider with ChangeNotifier {
       // Calculate the value of damaged goods
       final damagedValue = damagedUnits * item.price;
 
-      debugPrint(
-        'Damaged goods: ${item.name} - ${damagedUnits} units - ${updatedItem.damagedRecords.length} total records',
-      );
-
       if (!businessProvider.isPremium || !(await ApiService.isOnline())) {
         // Update inventory
         await DBHelper.update('inventories', {

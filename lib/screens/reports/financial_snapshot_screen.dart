@@ -153,7 +153,8 @@ class _FinancialSnapshotScreenState extends State<FinancialSnapshotScreen> {
           for (final item in sale.items) {
             final itemName = item.product.name;
             itemSales[itemName] =
-                (itemSales[itemName] ?? 0.0) + item.totalAmount;
+                (itemSales[itemName] ?? 0.0) +
+                (item.product.price * item.quantity);
           }
         }
         final topItems =
@@ -266,10 +267,10 @@ class _FinancialSnapshotScreenState extends State<FinancialSnapshotScreen> {
           ),
         );
 
-        if (isWindows) {
+        if (isWindows(context)) {
           content = Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1200),
+              constraints: const BoxConstraints(maxWidth: 900),
               child: Card(
                 elevation: 2,
                 child: Padding(
