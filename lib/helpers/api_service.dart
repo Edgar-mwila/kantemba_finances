@@ -2,10 +2,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart'; // Added for debugPrint
 
 class ApiService {
   static const String baseUrl =
       'http://10.0.2.2:4000/api'; // Replace with your backend URL
+  static const Duration timeout = Duration(seconds: 10); // Add timeout
 
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -17,7 +19,7 @@ class ApiService {
     return http.get(
       Uri.parse('$baseUrl/$endpoint'),
       headers: token != null ? {'Authorization': 'Bearer $token'} : {},
-    );
+    ).timeout(timeout);
   }
 
   static Future<http.Response> post(
@@ -32,7 +34,7 @@ class ApiService {
         if (token != null) 'Authorization': 'Bearer $token',
       },
       body: json.encode(data),
-    );
+    ).timeout(timeout);
   }
 
   static Future<http.Response> put(
@@ -47,7 +49,7 @@ class ApiService {
         if (token != null) 'Authorization': 'Bearer $token',
       },
       body: json.encode(data),
-    );
+    ).timeout(timeout);
   }
 
   static Future<http.Response> delete(String endpoint) async {
@@ -55,7 +57,7 @@ class ApiService {
     return http.delete(
       Uri.parse('$baseUrl/$endpoint'),
       headers: token != null ? {'Authorization': 'Bearer $token'} : {},
-    );
+    ).timeout(timeout);
   }
 
   static Future<void> saveToken(String token) async {
@@ -69,12 +71,34 @@ class ApiService {
   }
 
   static Future<bool> isOnline() async {
-    final connectivityResult = await Connectivity().checkConnectivity();
-    return connectivityResult != ConnectivityResult.none;
+    try {
+      final connectivityResult = await Connectivity().checkConnectivity();
+      return connectivityResult != ConnectivityResult.none;
+    } catch (e) {
+      // If connectivity check fails, assume offline
+      return false;
+    }
   }
 
   static Future<bool> batchSync(Map<String, dynamic> allData) async {
-    final response = await post('sync', allData);
-    return response.statusCode == 200;
+    try {
+      final response = await post('sync', allData);
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<bool> testConnection() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/health'),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 5));
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Backend connection test failed: $e');
+      return false;
+    }
   }
 }

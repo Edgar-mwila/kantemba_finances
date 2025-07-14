@@ -21,277 +21,358 @@ class EmployeeManagementScreen extends StatelessWidget {
     final isPremium = businessProvider.isPremium;
 
     return Scaffold(
-      body: isWindows
-          ? Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 900),
-                child: Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Employee Management',
-                            style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                          ),
-                          if (isPremium)
-                            ElevatedButton.icon(
-                              onPressed: () => _showUserDialog(
+      body:
+          isWindows
+              ? Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 900),
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Employee Management',
+                              style: Theme.of(
                                 context,
-                                usersProvider,
-                                businessProvider,
-                              ),
-                              icon: const Icon(Icons.add),
-                              label: const Text('Add Employee'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green.shade700,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                              ),
-                            )
-                          else
-                            ElevatedButton.icon(
-                              onPressed: () => _showUpgradeDialog(context),
-                              icon: const Icon(Icons.star),
-                              label: const Text('Upgrade for Employees'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.grey,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                              ).textTheme.headlineMedium!.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
                               ),
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      // Search and filter row
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              decoration: InputDecoration(
-                                hintText: 'Search employees...',
-                                prefixIcon: const Icon(Icons.search),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                            if (isPremium)
+                              ElevatedButton.icon(
+                                onPressed:
+                                    () => _showUserDialog(
+                                      context,
+                                      usersProvider,
+                                      businessProvider,
+                                    ),
+                                icon: const Icon(Icons.add),
+                                label: const Text('Add Employee'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green.shade700,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 16,
+                                  ),
                                 ),
-                                filled: true,
-                                fillColor: Colors.grey.shade50,
+                              )
+                            else
+                              ElevatedButton.icon(
+                                onPressed: () => _showUpgradeDialog(context),
+                                icon: const Icon(Icons.star),
+                                label: const Text('Upgrade for Employees'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 16,
+                                  ),
+                                ),
                               ),
-                              onChanged: (value) {
-                                // TODO: Implement search functionality
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          PopupMenuButton<String>(
-                            icon: const Icon(Icons.filter_list),
-                            onSelected: (value) {
-                              // TODO: Implement filter functionality
-                            },
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(
-                                value: 'all',
-                                child: Text('All Employees'),
-                              ),
-                              const PopupMenuItem(
-                                value: 'admin',
-                                child: Text('Admins Only'),
-                              ),
-                              const PopupMenuItem(
-                                value: 'manager',
-                                child: Text('Managers Only'),
-                              ),
-                              const PopupMenuItem(
-                                value: 'employee',
-                                child: Text('Employees Only'),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      // Table header
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                        color: Colors.grey.shade100,
-                        child: Row(
-                          children: const [
-                            Expanded(flex: 3, child: Text('Name', style: TextStyle(fontWeight: FontWeight.bold))),
-                            Expanded(flex: 2, child: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
-                            Expanded(flex: 2, child: Text('Contact', style: TextStyle(fontWeight: FontWeight.bold))),
-                            Expanded(flex: 2, child: Text('Shop', style: TextStyle(fontWeight: FontWeight.bold))),
                           ],
                         ),
-                      ),
-                      const Divider(height: 0),
-                      Expanded(
-                        child: users.isEmpty
-                            ? const Center(child: Text('No employees found.'))
-                            : ListView.builder(
-                                itemCount: users.length,
-                                itemBuilder: (ctx, i) {
-                                  final user = users[i];
-                                  final shop = shopProvider.shops.firstWhere(
-                                    (shop) => shop.id == user.shopId,
-                                    orElse: () => Shop(id: '', name: 'Unassigned', businessId: ''),
-                                  );
-                                  return InkWell(
-                                    onTap: () => _showEmployeeDetails(context, user, shop),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                                      decoration: BoxDecoration(
-                                        border: Border(
-                                          bottom: BorderSide(color: Colors.grey.shade200),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Expanded(flex: 3, child: Text(user.name)),
-                                          Expanded(flex: 2, child: Text(user.role)),
-                                          Expanded(flex: 2, child: Text(user.contact)),
-                                          Expanded(flex: 2, child: Text(shop.name, style: TextStyle(color: Colors.grey.shade600, fontSize: 12))),
-                                        ],
-                                      ),
-                                    ),
-                                  );
+                        const SizedBox(height: 24),
+                        // Search and filter row
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                decoration: InputDecoration(
+                                  hintText: 'Search employees...',
+                                  prefixIcon: const Icon(Icons.search),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey.shade50,
+                                ),
+                                onChanged: (value) {
+                                  // TODO: Implement search functionality
                                 },
                               ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            )
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Employee Management',
-                        style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          Icon(Icons.people, color: Colors.green.shade700, size: 24),
-                          const SizedBox(width: 8),
-                          Text(
-                            '${users.length}',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.w500,
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  // Filter and search bar
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: 'Search employees...',
-                            prefixIcon: const Icon(Icons.search),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
+                            const SizedBox(width: 12),
+                            PopupMenuButton<String>(
+                              icon: const Icon(Icons.filter_list),
+                              onSelected: (value) {
+                                // TODO: Implement filter functionality
+                              },
+                              itemBuilder:
+                                  (context) => [
+                                    const PopupMenuItem(
+                                      value: 'all',
+                                      child: Text('All Employees'),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'admin',
+                                      child: Text('Admins Only'),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'manager',
+                                      child: Text('Managers Only'),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'employee',
+                                      child: Text('Employees Only'),
+                                    ),
+                                  ],
                             ),
-                            filled: true,
-                            fillColor: Colors.grey.shade50,
-                          ),
-                          onChanged: (value) {
-                            // TODO: Implement search functionality
-                          },
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      PopupMenuButton<String>(
-                        icon: const Icon(Icons.filter_list),
-                        onSelected: (value) {
-                          // TODO: Implement filter functionality
-                        },
-                        itemBuilder:
-                            (context) => [
-                              const PopupMenuItem(
-                                value: 'all',
-                                child: Text('All Employees'),
+                        const SizedBox(height: 24),
+                        // Table header
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 12,
+                          ),
+                          color: Colors.grey.shade100,
+                          child: Row(
+                            children: const [
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  'Name',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
                               ),
-                              const PopupMenuItem(
-                                value: 'admin',
-                                child: Text('Admins Only'),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  'Role',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
                               ),
-                              const PopupMenuItem(
-                                value: 'manager',
-                                child: Text('Managers Only'),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  'Contact',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
                               ),
-                              const PopupMenuItem(
-                                value: 'employee',
-                                child: Text('Employees Only'),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  'Shop',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
                               ),
                             ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: users.length,
-                      itemBuilder:
-                          (ctx, i) => _buildEmployeeCard(
-                            context,
-                            users[i],
-                            shopProvider,
-                            usersProvider,
-                            businessProvider,
-                            currentUser,
                           ),
+                        ),
+                        const Divider(height: 0),
+                        Expanded(
+                          child:
+                              users.isEmpty
+                                  ? const Center(
+                                    child: Text('No employees found.'),
+                                  )
+                                  : ListView.builder(
+                                    itemCount: users.length,
+                                    itemBuilder: (ctx, i) {
+                                      final user = users[i];
+                                      final shop = shopProvider.shops
+                                          .firstWhere(
+                                            (shop) => shop.id == user.shopId,
+                                            orElse:
+                                                () => Shop(
+                                                  id: '',
+                                                  name: 'Unassigned',
+                                                  businessId: '',
+                                                ),
+                                          );
+                                      return InkWell(
+                                        onTap:
+                                            () => _showEmployeeDetails(
+                                              context,
+                                              user,
+                                              shop,
+                                            ),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 12,
+                                            horizontal: 12,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            border: Border(
+                                              bottom: BorderSide(
+                                                color: Colors.grey.shade200,
+                                              ),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                flex: 3,
+                                                child: Text(user.name),
+                                              ),
+                                              Expanded(
+                                                flex: 2,
+                                                child: Text(user.role),
+                                              ),
+                                              Expanded(
+                                                flex: 2,
+                                                child: Text(user.contact),
+                                              ),
+                                              Expanded(
+                                                flex: 2,
+                                                child: Text(
+                                                  shop.name,
+                                                  style: TextStyle(
+                                                    color: Colors.grey.shade600,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed:
-                          isPremium
-                              ? () => _showUserDialog(
-                                context,
-                                usersProvider,
-                                businessProvider,
-                              )
-                              : () => _showUpgradeDialog(context),
-                      icon: const Icon(Icons.add, color: Colors.white),
-                      label: const Text(
-                        'Add Employee',
-                        style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
+              )
+              : Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Employee Management',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.headlineMedium!.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.people,
+                              color: Colors.green.shade700,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${users.length}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    // Filter and search bar
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: 'Search employees...',
+                              prefixIcon: const Icon(Icons.search),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey.shade50,
+                            ),
+                            onChanged: (value) {
+                              // TODO: Implement search functionality
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.filter_list),
+                          onSelected: (value) {
+                            // TODO: Implement filter functionality
+                          },
+                          itemBuilder:
+                              (context) => [
+                                const PopupMenuItem(
+                                  value: 'all',
+                                  child: Text('All Employees'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'admin',
+                                  child: Text('Admins Only'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'manager',
+                                  child: Text('Managers Only'),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'employee',
+                                  child: Text('Employees Only'),
+                                ),
+                              ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: users.length,
+                        itemBuilder:
+                            (ctx, i) => _buildEmployeeCard(
+                              context,
+                              users[i],
+                              shopProvider,
+                              usersProvider,
+                              businessProvider,
+                              currentUser,
+                            ),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            isPremium ? Colors.green.shade700 : Colors.grey,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed:
+                            isPremium
+                                ? () => _showUserDialog(
+                                  context,
+                                  usersProvider,
+                                  businessProvider,
+                                )
+                                : () => _showUpgradeDialog(context),
+                        icon: const Icon(Icons.add, color: Colors.white),
+                        label: const Text(
+                          'Add Employee',
+                          style: TextStyle(fontSize: 18, color: Colors.white),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              isPremium ? Colors.green.shade700 : Colors.grey,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
     );
   }
 

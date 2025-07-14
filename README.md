@@ -1,4 +1,4 @@
-# kantemba_finances
+# Kantemba Finances
 
 A new Flutter project.
 

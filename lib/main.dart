@@ -23,6 +23,7 @@ import 'package:kantemba_finances/screens/premium_screen.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:kantemba_finances/helpers/sync_manager.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
+import 'package:kantemba_finances/widgets/splash_screen.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() async {
@@ -74,6 +75,8 @@ class _KantembaFinancesAppState extends State<KantembaFinancesApp> {
       title: 'Kantemba Finances',
       theme: ThemeData(
         primarySwatch: Colors.green,
+        primaryColor: Colors.green,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         visualDensity: VisualDensity.adaptivePlatformDensity,
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF2E7D32),
@@ -122,8 +125,19 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Future<void> _initializeApp() async {
+    print('Starting app initialization...');
     final usersProvider = Provider.of<UsersProvider>(context, listen: false);
     await usersProvider.initialize(context);
+
+    // Add a small delay to ensure all providers are properly initialized
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    print(
+      'App initialization complete. Current user: ${usersProvider.currentUser?.name}',
+    );
+    print(
+      'App initialization complete. Current user details: ${usersProvider.currentUser?.toJson()}',
+    );
     setState(() {
       _isInitializing = false;
     });
@@ -172,40 +186,20 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Widget build(BuildContext context) {
     final usersProvider = Provider.of<UsersProvider>(context);
 
+    print(
+      'AuthWrapper build - isInitializing: $_isInitializing, isInitialized: ${usersProvider.isInitialized}, currentUser: ${usersProvider.currentUser?.name}',
+    );
+
     if (_isInitializing || !usersProvider.isInitialized) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.account_balance,
-                size: 80,
-                color: Colors.green.shade700,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Kantemba Finances',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green.shade700,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const SizedBox(height: 32),
-              const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-              ),
-            ],
-          ),
-        ),
-      );
+      print('Showing splash screen...');
+      return const SplashScreen();
     }
 
     if (usersProvider.currentUser == null) {
+      print('No current user, showing InitialChoiceScreen');
       return const InitialChoiceScreen();
     }
+    print('User found, showing MainAppScreen');
     return const MainAppScreen();
   }
 }
@@ -406,20 +400,23 @@ class _MainAppScreenState extends State<MainAppScreen> {
               onPressed: () async {
                 final confirm = await showDialog<bool>(
                   context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('Log out'),
-                    content: const Text('Are you sure you want to log out?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: const Text('Cancel'),
+                  builder:
+                      (ctx) => AlertDialog(
+                        title: const Text('Log out'),
+                        content: const Text(
+                          'Are you sure you want to log out?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            child: const Text('Log out'),
+                          ),
+                        ],
                       ),
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        child: const Text('Log out'),
-                      ),
-                    ],
-                  ),
                 );
                 if (confirm == true) {
                   await usersProvider.logout();
@@ -432,20 +429,22 @@ class _MainAppScreenState extends State<MainAppScreen> {
           children: [
             NavigationRail(
               selectedIndex: _selectedIndex,
-              onDestinationSelected: (index) => setState(() => _selectedIndex = index),
+              onDestinationSelected:
+                  (index) => setState(() => _selectedIndex = index),
               labelType: NavigationRailLabelType.all,
-              destinations: navItems
-                  .map((item) => NavigationRailDestination(
-                        icon: Icon(item.icon),
-                        label: Text(item.title),
-                      ))
-                  .toList(),
+              destinations:
+                  navItems
+                      .map(
+                        (item) => NavigationRailDestination(
+                          icon: Icon(item.icon),
+                          label: Text(item.title),
+                        ),
+                      )
+                      .toList(),
             ),
             const VerticalDivider(thickness: 1, width: 1),
             // Main content area
-            Expanded(
-              child: navItems[_selectedIndex].screen,
-            ),
+            Expanded(child: navItems[_selectedIndex].screen),
           ],
         ),
       );

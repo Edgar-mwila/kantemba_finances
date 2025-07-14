@@ -4,7 +4,6 @@ import 'package:kantemba_finances/providers/shop_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/models/expense.dart';
 import 'package:kantemba_finances/providers/expenses_provider.dart';
-import 'package:kantemba_finances/providers/inventory_provider.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
 
@@ -22,17 +21,9 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
   DateTime _date = DateTime.now();
   String _category = 'Uncategorized';
   bool _isLoading = false;
-  bool _isGoodsDamaged = false;
-  String? _selectedItemId;
-  int _damagedUnits = 0;
-  double _unitPrice = 0.0;
 
   @override
   Widget build(BuildContext context) {
-    final inventoryProvider = Provider.of<InventoryProvider>(context);
-    final items = inventoryProvider.items;
-    // final itemNames = items.map((e) => e.name).toList();
-
     if (isWindows) {
       // Desktop layout: Centered, max width, more padding, two-column form
       return Center(
@@ -76,8 +67,6 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
                                 decimal: true,
                               ),
                               validator: (value) {
-                                if (_isGoodsDamaged)
-                                  return null; // calculated automatically
                                 if (value == null || value.isEmpty)
                                   return 'Enter amount';
                                 final parsed = double.tryParse(value);
@@ -86,11 +75,8 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
                                 return null;
                               },
                               onSaved: (value) {
-                                if (!_isGoodsDamaged)
                                   _amount = double.parse(value!);
                               },
-                              enabled: !_isGoodsDamaged,
-                              initialValue: !_isGoodsDamaged ? '' : null,
                             ),
                             const SizedBox(height: 16),
                             DropdownButtonFormField<String>(
@@ -104,7 +90,6 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
                                         'Utilities',
                                         'Rent',
                                         'Salaries',
-                                        'Goods Damaged',
                                         'Other',
                                       ]
                                       .map(
@@ -117,8 +102,6 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
                               onChanged: (val) {
                                 setState(() {
                                   _category = val ?? 'Uncategorized';
-                                  if (_category == 'Goods Damaged')
-                                    _isGoodsDamaged = true;
                                 });
                               },
                             ),
@@ -130,84 +113,8 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
                         child: Column(
                           children: [
                             ListTile(
-                              title: const Text('Goods Damaged'),
-                              leading: Checkbox(
-                                value: _isGoodsDamaged,
-                                onChanged: (val) {
-                                  setState(() {
-                                    _isGoodsDamaged = val ?? false;
-                                    if (!_isGoodsDamaged) {
-                                      _selectedItemId = null;
-                                      _damagedUnits = 0;
-                                      _unitPrice = 0.0;
-                                    }
-                                  });
-                                },
-                              ),
-                            ),
-                            if (_isGoodsDamaged) ...[
-                              DropdownButtonFormField<String>(
-                                decoration: const InputDecoration(
-                                  labelText: 'Select Item',
-                                ),
-                                items:
-                                    items.map((item) {
-                                      return DropdownMenuItem<String>(
-                                        value: item.id,
-                                        child: Text(item.name),
-                                      );
-                                    }).toList(),
-                                onChanged: (val) {
-                                  setState(() {
-                                    _selectedItemId = val;
-                                    final item = items.firstWhere(
-                                      (e) => e.id == val,
-                                    );
-                                    _unitPrice = item.price;
-                                  });
-                                },
-                                validator:
-                                    (val) => val == null ? 'Select item' : null,
-                              ),
-                              TextFormField(
-                                decoration: const InputDecoration(
-                                  labelText: 'Number of Damaged Units',
-                                ),
-                                keyboardType: TextInputType.number,
-                                validator: (value) {
-                                  if (!_isGoodsDamaged) return null;
-                                  if (value == null || value.isEmpty)
-                                    return 'Enter number of units';
-                                  final parsed = int.tryParse(value);
-                                  if (parsed == null || parsed <= 0)
-                                    return 'Enter a valid number';
-                                  if (_selectedItemId != null) {
-                                    final item = items.firstWhere(
-                                      (e) => e.id == _selectedItemId,
-                                    );
-                                    if (parsed > item.quantity)
-                                      return 'Not enough stock';
-                                  }
-                                  return null;
-                                },
-                                onSaved:
-                                    (value) =>
-                                        _damagedUnits = int.parse(value!),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Text(
-                                  'Unit Price: K${_unitPrice.toStringAsFixed(2)}',
-                                ),
-                              ),
-                            ],
-                            ListTile(
-                              title: Text(
-                                'Date: ${_date.toLocal().toString().split(' ')[0]}',
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.calendar_today),
-                                onPressed: () async {
+                              title: GestureDetector(
+                                onTap: () async {
                                   final picked = await showDatePicker(
                                     context: context,
                                     initialDate: _date,
@@ -220,7 +127,17 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
                                     });
                                   }
                                 },
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      'Date: ${_date.toLocal().toString().split(' ')[0]}',
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Icon(Icons.calendar_today, size: 20),
+                                  ],
+                                ),
                               ),
+                              trailing: null,
                             ),
                           ],
                         ),
@@ -275,8 +192,6 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
                   decoration: const InputDecoration(labelText: 'Amount'),
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
                   validator: (value) {
-                    if (_isGoodsDamaged)
-                      return null; // calculated automatically
                     if (value == null || value.isEmpty) return 'Enter amount';
                     final parsed = double.tryParse(value);
                     if (parsed == null || parsed <= 0)
@@ -284,75 +199,9 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
                     return null;
                   },
                   onSaved: (value) {
-                    if (!_isGoodsDamaged) _amount = double.parse(value!);
+                    _amount = double.parse(value!);
                   },
-                  enabled: !_isGoodsDamaged,
-                  initialValue: !_isGoodsDamaged ? '' : null,
                 ),
-                ListTile(
-                  title: const Text('Goods Damaged'),
-                  leading: Checkbox(
-                    value: _isGoodsDamaged,
-                    onChanged: (val) {
-                      setState(() {
-                        _isGoodsDamaged = val ?? false;
-                        if (!_isGoodsDamaged) {
-                          _selectedItemId = null;
-                          _damagedUnits = 0;
-                          _unitPrice = 0.0;
-                        }
-                      });
-                    },
-                  ),
-                ),
-                if (_isGoodsDamaged) ...[
-                  DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(labelText: 'Select Item'),
-                    items:
-                        items.map((item) {
-                          return DropdownMenuItem<String>(
-                            value: item.id,
-                            child: Text(item.name),
-                          );
-                        }).toList(),
-                    onChanged: (val) {
-                      setState(() {
-                        _selectedItemId = val;
-                        final item = items.firstWhere((e) => e.id == val);
-                        _unitPrice = item.price;
-                      });
-                    },
-                    validator: (val) => val == null ? 'Select item' : null,
-                  ),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Number of Damaged Units',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (!_isGoodsDamaged) return null;
-                      if (value == null || value.isEmpty)
-                        return 'Enter number of units';
-                      final parsed = int.tryParse(value);
-                      if (parsed == null || parsed <= 0)
-                        return 'Enter a valid number';
-                      if (_selectedItemId != null) {
-                        final item = items.firstWhere(
-                          (e) => e.id == _selectedItemId,
-                        );
-                        if (parsed > item.quantity) return 'Not enough stock';
-                      }
-                      return null;
-                    },
-                    onSaved: (value) => _damagedUnits = int.parse(value!),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      'Unit Price: K${_unitPrice.toStringAsFixed(2)}',
-                    ),
-                  ),
-                ],
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(labelText: 'Category'),
                   value: _category,
@@ -362,7 +211,6 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
                             'Utilities',
                             'Rent',
                             'Salaries',
-                            'Goods Damaged',
                             'Other',
                           ]
                           .map(
@@ -375,17 +223,12 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
                   onChanged: (val) {
                     setState(() {
                       _category = val ?? 'Uncategorized';
-                      if (_category == 'Goods Damaged') _isGoodsDamaged = true;
                     });
                   },
                 ),
                 ListTile(
-                  title: Text(
-                    'Date: ${_date.toLocal().toString().split(' ')[0]}',
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.calendar_today),
-                    onPressed: () async {
+                  title: GestureDetector(
+                    onTap: () async {
                       final picked = await showDatePicker(
                         context: context,
                         initialDate: _date,
@@ -398,7 +241,17 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
                         });
                       }
                     },
+                    child: Row(
+                      children: [
+                        Text(
+                          'Date: ${_date.toLocal().toString().split(' ')[0]}',
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.calendar_today, size: 20),
+                      ],
+                    ),
                   ),
+                  trailing: null,
                 ),
                 const SizedBox(height: 16),
                 _isLoading
@@ -422,60 +275,31 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
       _isLoading = true;
     });
 
+    try {
     final usersProvider = Provider.of<UsersProvider>(context, listen: false);
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
     final currentUser = usersProvider.currentUser;
-    print(
-      "currentUser: ${currentUser?.name}, shopProvider: ${shopProvider.currentShop?.name}",
-    );
     if (currentUser == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No user is logged in!')));
-      setState(() {
-        _isLoading = false;
-      });
-      return;
+        throw Exception('No user is logged in!');
     }
 
     final expensesProvider = Provider.of<ExpensesProvider>(
       context,
       listen: false,
     );
-    final inventoryProvider = Provider.of<InventoryProvider>(
-      context,
-      listen: false,
-    );
 
     final currentShop = shopProvider.currentShop;
     if (currentShop == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No shop is selected!')));
-      setState(() {
-        _isLoading = false;
-      });
-      return;
-    }
-
-    if (_isGoodsDamaged && _selectedItemId != null) {
-      // Calculate amount and update inventory
-      final item = inventoryProvider.items.firstWhere(
-        (e) => e.id == _selectedItemId,
-      );
-      _amount = item.price * _damagedUnits;
-      await inventoryProvider.decreaseStockForDamagedGoods(
-        _selectedItemId!,
-        _damagedUnits,
-      );
+        throw Exception('No shop is selected!');
     }
 
     final expense = Expense(
-      id: '', // Will be set by provider
+        id:
+            '${currentShop.name.replaceAll(' ', '_')}_expense_${DateTime.now().millisecondsSinceEpoch}', // Will be set by provider
       description: _description,
       amount: _amount,
       date: _date,
-      category: _isGoodsDamaged ? 'Goods Damaged' : _category,
+        category: _category,
       shopId: currentShop.id,
       createdBy: currentUser.id,
     );
@@ -489,6 +313,29 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
     setState(() {
       _isLoading = false;
     });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Expense added!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        await Future.delayed(const Duration(milliseconds: 500));
     Navigator.of(context).pop();
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add expense: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

@@ -2,195 +2,436 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
 
-class HelpSupportScreen extends StatelessWidget {
+class HelpSupportScreen extends StatefulWidget {
   const HelpSupportScreen({super.key});
 
-  void _contactSupport(BuildContext context) async {
+  @override
+  State<HelpSupportScreen> createState() => _HelpSupportScreenState();
+}
+
+class _HelpSupportScreenState extends State<HelpSupportScreen> {
+  final List<Map<String, String>> _faqs = [
+    {
+      'question': 'How do I upgrade to premium?',
+      'answer':
+          'Go to the Premium screen and follow the instructions. Premium features include advanced reporting, unlimited employees, and priority support.',
+    },
+    {
+      'question': 'How do I restore my data?',
+      'answer':
+          'Use the Backup & Data settings to import a backup. You can restore from JSON or CSV files.',
+    },
+    {
+      'question': 'How do I add employees?',
+      'answer':
+          'Go to Employee Management in Settings. You can add employees and assign them to specific shops with different permission levels.',
+    },
+    {
+      'question': 'How do I generate reports?',
+      'answer':
+          'Navigate to the Reports screen to access balance sheet, profit & loss, cash flow, and tax summary reports.',
+    },
+    {
+      'question': 'How do I manage inventory?',
+      'answer':
+          'Use the Inventory screen to add, edit, and track your stock. You can also manage damaged goods and track stock levels.',
+    },
+    {
+      'question': 'How do I record sales?',
+      'answer':
+          'Use the Sales screen to record new sales transactions. You can select items from inventory and calculate totals automatically.',
+    },
+    {
+      'question': 'How do I track expenses?',
+      'answer':
+          'Use the Expenses screen to record business expenses. Categorize them for better reporting and analysis.',
+    },
+    {
+      'question': 'How do I manage multiple shops?',
+      'answer':
+          'Go to Shop Management in Settings to add and manage multiple shop locations. Each shop can have its own inventory and sales.',
+    },
+  ];
+
+  final List<Map<String, dynamic>> _contactMethods = [
+    {
+      'title': 'Email Support',
+      'subtitle': 'Get detailed help via email',
+      'icon': Icons.email,
+      'color': Colors.blue,
+      'action': 'support@kantemba.com',
+    },
+    {
+      'title': 'WhatsApp Support',
+      'subtitle': 'Quick help via WhatsApp',
+      'icon': Icons.chat,
+      'color': Colors.green,
+      'action': '+260971234567',
+    },
+    {
+      'title': 'Phone Support',
+      'subtitle': 'Call us directly',
+      'icon': Icons.phone,
+      'color': Colors.orange,
+      'action': '+260971234567',
+    },
+    {
+      'title': 'Live Chat',
+      'subtitle': 'Chat with support team',
+      'icon': Icons.support_agent,
+      'color': Colors.purple,
+      'action': 'chat',
+    },
+  ];
+
+  void _contactSupport(
+    BuildContext context,
+    Map<String, dynamic> method,
+  ) async {
+    switch (method['title']) {
+      case 'Email Support':
     final email = Uri(
       scheme: 'mailto',
-      path: 'support@kantemba.com',
+          path: method['action'],
       query: 'subject=Kantemba%20Finances%20Support',
     );
     if (await canLaunchUrl(email)) {
       await launchUrl(email);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open email app.')),
-      );
+          _showErrorSnackBar('Could not open email app.');
     }
-  }
-
-  void _contactWhatsApp(BuildContext context) async {
+        break;
+      case 'WhatsApp Support':
     final whatsapp = Uri.parse(
-      'https://wa.me/260971234567?text=Hello%20Kantemba%20Support',
+          'https://wa.me/${method['action']}?text=Hello%20Kantemba%20Support',
     );
     if (await canLaunchUrl(whatsapp)) {
       await launchUrl(whatsapp);
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Could not open WhatsApp.')));
+          _showErrorSnackBar('Could not open WhatsApp.');
+        }
+        break;
+      case 'Phone Support':
+        final phone = Uri.parse('tel:${method['action']}');
+        if (await canLaunchUrl(phone)) {
+          await launchUrl(phone);
+        } else {
+          _showErrorSnackBar('Could not open phone app.');
+        }
+        break;
+      case 'Live Chat':
+        _showLiveChatDialog(context);
+        break;
     }
+  }
+
+  void _showLiveChatDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Live Chat'),
+            content: const Text(
+              'Live chat is currently available during business hours (8 AM - 6 PM CAT). Please try again during these hours or use email support.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Widget _buildSettingCard({
+    required String title,
+    required IconData icon,
+    required Widget child,
+    Color? color,
+  }) {
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: color ?? Colors.teal.shade700, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFAQItem(Map<String, String> faq) {
+    return ExpansionTile(
+      title: Text(
+        faq['question']!,
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            faq['answer']!,
+            style: TextStyle(color: Colors.grey.shade700),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildContactMethod(Map<String, dynamic> method) {
+    return Card(
+      elevation: 2,
+      child: InkWell(
+        onTap: () => _contactSupport(context, method),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(method['icon'], color: method['color'], size: 24),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      method['title'],
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      method['subtitle'],
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios, size: 16),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     Widget content = ListView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16),
       children: [
-        const Text(
-          'Frequently Asked Questions',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        // FAQ Section
+        _buildSettingCard(
+          title: 'Frequently Asked Questions',
+          icon: Icons.help,
+          child: Column(
+            children: _faqs.map((faq) => _buildFAQItem(faq)).toList(),
+          ),
         ),
-        const SizedBox(height: 8),
-        const Text(
-          'Q: How do I upgrade to premium?\nA: Go to the Premium screen and follow the instructions.',
+
+        // Contact Support Section
+        _buildSettingCard(
+          title: 'Contact Support',
+          icon: Icons.support_agent,
+          child: Column(
+            children:
+                _contactMethods
+                    .map((method) => _buildContactMethod(method))
+                    .toList(),
+          ),
         ),
-        const SizedBox(height: 8),
-        const Text(
-          'Q: How do I restore my data?\nA: Use the Backup & Data settings to import a backup.',
+
+        // Resources Section
+        _buildSettingCard(
+          title: 'Resources',
+          icon: Icons.library_books,
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.book),
+                title: const Text('User Manual'),
+                subtitle: const Text('Complete guide to using the app'),
+                onTap: () {
+                  // TODO: Open user manual
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('User manual coming soon!')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.video_library),
+                title: const Text('Video Tutorials'),
+                subtitle: const Text('Learn with step-by-step videos'),
+                onTap: () {
+                  // TODO: Open video tutorials
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Video tutorials coming soon!'),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.forum),
+                title: const Text('Community Forum'),
+                subtitle: const Text('Connect with other users'),
+                onTap: () {
+                  // TODO: Open community forum
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Community forum coming soon!'),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 24),
-        const Text(
-          'Contact Support',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        ElevatedButton.icon(
-          icon: const Icon(Icons.email),
-          label: const Text('Email Support'),
-          onPressed: () => _contactSupport(context),
-        ),
-        const SizedBox(height: 8),
-        ElevatedButton.icon(
-          icon: const Icon(Icons.chat),
-          label: const Text('WhatsApp Support'),
-          onPressed: () => _contactWhatsApp(context),
-        ),
-        const SizedBox(height: 24),
-        const Text('About', style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        const Text(
-          'Kantemba Finances v1.0.0\nA comprehensive business finance management app.',
+
+        // About Section
+        _buildSettingCard(
+          title: 'About',
+          icon: Icons.info,
+          child: Column(
+            children: [
+              const ListTile(
+                leading: Icon(Icons.apps),
+                title: Text('Kantemba Finances'),
+                subtitle: Text('Version 1.0.0'),
+              ),
+              const ListTile(
+                leading: Icon(Icons.description),
+                title: Text('Description'),
+                subtitle: Text(
+                  'A comprehensive business finance management app designed for Zambian businesses.',
+                ),
+              ),
+              const ListTile(
+                leading: Icon(Icons.developer_mode),
+                title: Text('Developer'),
+                subtitle: Text('Kantemba Technologies'),
+              ),
+              const ListTile(
+                leading: Icon(Icons.copyright),
+                title: Text('Copyright'),
+                subtitle: Text(
+                  '© 2024 Kantemba Technologies. All rights reserved.',
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      // TODO: Open privacy policy
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Privacy policy coming soon!'),
+                        ),
+                      );
+                    },
+                    child: const Text('Privacy Policy'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      // TODO: Open terms of service
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Terms of service coming soon!'),
+                        ),
+                      );
+                    },
+                    child: const Text('Terms of Service'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
     );
 
     if (isWindows) {
-      // Desktop: Center, max width, two-column layout for FAQ and support actions
-      content = Center(
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Help & Support'),
+          backgroundColor: Colors.teal.shade700,
+          foregroundColor: Colors.white,
+        ),
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(32.0),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 700),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final isWide = constraints.maxWidth > 500;
-              return isWide
-                  ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // FAQ
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text(
-                                'Frequently Asked Questions',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                'Q: How do I upgrade to premium?\nA: Go to the Premium screen and follow the instructions.',
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                'Q: How do I restore my data?\nA: Use the Backup & Data settings to import a backup.',
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 32),
-                        // Contact/Support
-                        Expanded(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.help, color: Colors.teal, size: 28),
+                          const SizedBox(width: 12),
                               const Text(
-                                'Contact Support',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 8),
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.email),
-                                label: const Text('Email Support'),
-                                onPressed: () => _contactSupport(context),
-                              ),
-                              const SizedBox(height: 8),
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.chat),
-                                label: const Text('WhatsApp Support'),
-                                onPressed: () => _contactWhatsApp(context),
-                              ),
-                              const SizedBox(height: 24),
-                              const Text('About', style: TextStyle(fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Kantemba Finances v1.0.0\nA comprehensive business finance management app.',
-                              ),
-                            ],
+                            'Help & Support',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
-                    )
-                  : ListView(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        const Text(
-                          'Frequently Asked Questions',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Q: How do I upgrade to premium?\nA: Go to the Premium screen and follow the instructions.',
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Q: How do I restore my data?\nA: Use the Backup & Data settings to import a backup.',
                         ),
                         const SizedBox(height: 24),
-                        const Text(
-                          'Contact Support',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                      content,
+                    ],
                         ),
-                        const SizedBox(height: 8),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.email),
-                          label: const Text('Email Support'),
-                          onPressed: () => _contactSupport(context),
                         ),
-                        const SizedBox(height: 8),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.chat),
-                          label: const Text('WhatsApp Support'),
-                          onPressed: () => _contactWhatsApp(context),
                         ),
-                        const SizedBox(height: 24),
-                        const Text('About', style: TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Kantemba Finances v1.0.0\nA comprehensive business finance management app.',
                         ),
-                      ],
-                    );
-            },
           ),
         ),
       );
-    }
-
+    } else {
     return Scaffold(
-      appBar: AppBar(title: const Text('Help & Support')),
+        appBar: AppBar(
+          title: const Text('Help & Support'),
+          backgroundColor: Colors.teal.shade700,
+          foregroundColor: Colors.white,
+        ),
       body: content,
     );
+    }
   }
 }

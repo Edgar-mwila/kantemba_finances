@@ -18,25 +18,32 @@ class DBHelper {
           'CREATE TABLE shops(id TEXT PRIMARY KEY, name TEXT, businessId TEXT, synced INTEGER DEFAULT 0)',
         );
         await db.execute(
-          'CREATE TABLE inventories(id TEXT PRIMARY KEY, name TEXT, price REAL, quantity INTEGER, lowStockThreshold INTEGER, createdBy TEXT, shopId TEXT, synced INTEGER DEFAULT 0)',
+          'CREATE TABLE inventories(id TEXT PRIMARY KEY, name TEXT, price REAL, quantity INTEGER, lowStockThreshold INTEGER, createdBy TEXT, shopId TEXT, damagedRecords TEXT DEFAULT "[]", synced INTEGER DEFAULT 0)',
         );
         await db.execute(
           'CREATE TABLE expenses(id TEXT PRIMARY KEY, description TEXT, amount REAL, date TEXT, category TEXT, createdBy TEXT, shopId TEXT, synced INTEGER DEFAULT 0)',
         );
         await db.execute(
-          'CREATE TABLE sales(id TEXT PRIMARY KEY, totalAmount REAL, grandTotal REAL, vat REAL, turnoverTax REAL, levy REAL, date TEXT, createdBy TEXT, shopId TEXT, synced INTEGER DEFAULT 0)',
+          'CREATE TABLE sales(id TEXT PRIMARY KEY, totalAmount REAL, grandTotal REAL, vat REAL, turnoverTax REAL, levy REAL, date TEXT, createdBy TEXT, shopId TEXT, customerName TEXT, customerPhone TEXT, discount REAL DEFAULT 0, synced INTEGER DEFAULT 0)',
         );
         await db.execute(
-          'CREATE TABLE sale_items(id INTEGER PRIMARY KEY AUTOINCREMENT, saleId TEXT, productId TEXT, productName TEXT, price REAL, quantity INTEGER, synced INTEGER DEFAULT 0)',
+          'CREATE TABLE sale_items(id INTEGER PRIMARY KEY AUTOINCREMENT, saleId TEXT, productId TEXT, productName TEXT, price REAL, quantity INTEGER, returnedQuantity INTEGER DEFAULT 0, returnedReason TEXT DEFAULT "", shopId TEXT, synced INTEGER DEFAULT 0)',
         );
         await db.execute(
           'CREATE TABLE returns(id TEXT PRIMARY KEY, originalSaleId TEXT, totalReturnAmount REAL, grandReturnAmount REAL, vat REAL, turnoverTax REAL, levy REAL, date TEXT, shopId TEXT, businessId TEXT, createdBy TEXT, reason TEXT, status TEXT, approvedBy TEXT, rejectedBy TEXT, rejectionReason TEXT, approvedAt TEXT, rejectedAt TEXT, synced INTEGER DEFAULT 0)',
         );
         await db.execute(
-          'CREATE TABLE return_items(id INTEGER PRIMARY KEY AUTOINCREMENT, returnId TEXT, productId TEXT, productName TEXT, quantity INTEGER, originalPrice REAL, reason TEXT, synced INTEGER DEFAULT 0)',
+          'CREATE TABLE return_items(id INTEGER PRIMARY KEY AUTOINCREMENT, returnId TEXT, productId TEXT, productName TEXT, quantity INTEGER, originalPrice REAL, reason TEXT, shopId TEXT, synced INTEGER DEFAULT 0)',
         );
       },
-      version: 2,
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 4) {
+          // Add returnedQuantity and returnedReason columns to sale_items table
+          await db.execute('ALTER TABLE sale_items ADD COLUMN returnedQuantity INTEGER DEFAULT 0');
+          await db.execute('ALTER TABLE sale_items ADD COLUMN returnedReason TEXT DEFAULT ""');
+        }
+      },
+      version: 4,
     );
   }
 

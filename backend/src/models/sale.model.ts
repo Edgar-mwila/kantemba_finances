@@ -16,6 +16,9 @@ interface SaleAttributes {
   date: Date;
   createdBy: string;
   shopId?: string | null;
+  customerName?: string | null;
+  customerPhone?: string | null;
+  discount?: number;
 }
 
 interface SaleCreationAttributes extends Optional<SaleAttributes, 'id'> {}
@@ -30,6 +33,9 @@ class Sale extends Model<SaleAttributes, SaleCreationAttributes> implements Sale
   public date!: Date;
   public createdBy!: string;
   public shopId?: string | null;
+  public customerName?: string | null;
+  public customerPhone?: string | null;
+  public discount?: number;
 }
 
 Sale.init(
@@ -60,6 +66,19 @@ Sale.init(
         key: 'id',
       },
       onDelete: 'SET NULL',
+    },
+    customerName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    customerPhone: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    discount: {
+      type: DataTypes.FLOAT,
+      allowNull: true,
+      defaultValue: 0,
     },
   },
   {

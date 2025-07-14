@@ -5,9 +5,15 @@ import 'package:kantemba_finances/models/inventory_item.dart';
 import 'package:kantemba_finances/models/return.dart';
 import 'package:kantemba_finances/models/sale.dart';
 import 'package:kantemba_finances/models/shop.dart';
+import 'package:kantemba_finances/models/expense.dart';
 import 'package:flutter/material.dart';
 import 'package:kantemba_finances/helpers/db_helper.dart';
 import 'package:kantemba_finances/providers/business_provider.dart';
+import 'package:kantemba_finances/providers/inventory_provider.dart';
+import 'package:kantemba_finances/providers/sales_provider.dart';
+import 'package:kantemba_finances/providers/expenses_provider.dart';
+import 'package:kantemba_finances/providers/users_provider.dart';
+import 'package:provider/provider.dart';
 
 class ReturnsProvider with ChangeNotifier {
   List<Return> _returns = [];
@@ -39,6 +45,77 @@ class ReturnsProvider with ChangeNotifier {
   }
 
   Future<void> fetchReturns(String businessId, {List<String>? shopIds}) async {
+    // Check if online and if business is premium
+    bool isOnline = await ApiService.isOnline();
+    final businessProvider = BusinessProvider();
+    bool isPremium = businessProvider.isPremium;
+
+    if (!isOnline || !isPremium) {
+      // Offline mode or non-premium business: load from local database
+      debugPrint(
+        'ReturnsProvider: Loading returns from local database (offline: ${!isOnline}, premium: $isPremium)',
+      );
+      try {
+        final localReturns = await DBHelper.getData('returns');
+        final localReturnItems = await DBHelper.getData('return_items');
+
+        // Map returnId to items
+        final Map<String, List<ReturnItem>> itemsByReturnId = {};
+        for (final item in localReturnItems) {
+          final returnId = item['returnId'] as String;
+          itemsByReturnId.putIfAbsent(returnId, () => []);
+          itemsByReturnId[returnId]!.add(
+            ReturnItem(
+              product: InventoryItem(
+                id: item['productId'],
+                name: item['productName'],
+                price: (item['originalPrice'] as num).toDouble(),
+                quantity: 0,
+                shopId: item['shopId'],
+                createdBy: '',
+              ),
+              quantity: item['quantity'] as int,
+              originalPrice: (item['originalPrice'] as num).toDouble(),
+              reason: item['reason'] ?? '',
+            ),
+          );
+        }
+
+        _returns =
+            localReturns.map((json) {
+              final ret = Return.fromJson(json);
+              return Return(
+                id: ret.id,
+                originalSaleId: ret.originalSaleId,
+                items: itemsByReturnId[ret.id] ?? [],
+                totalReturnAmount: ret.totalReturnAmount,
+                grandReturnAmount: ret.grandReturnAmount,
+                vat: ret.vat,
+                turnoverTax: ret.turnoverTax,
+                levy: ret.levy,
+                date: ret.date,
+                shopId: ret.shopId,
+                createdBy: ret.createdBy,
+                reason: ret.reason,
+                status: ret.status,
+              );
+            }).toList();
+
+        notifyListeners();
+        debugPrint(
+          'ReturnsProvider: Loaded ${_returns.length} returns from local database',
+        );
+        return;
+      } catch (e) {
+        debugPrint('Error loading returns from local database: $e');
+        _returns = [];
+        notifyListeners();
+        return;
+      }
+    }
+
+    // Online mode and premium business: fetch from API
+    debugPrint('ReturnsProvider: Loading returns from API');
     List<Return> allReturns = [];
 
     try {
@@ -71,87 +148,6 @@ class ReturnsProvider with ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('Error fetching returns: $e');
-    }
-  }
-
-  Future<void> createReturn(
-    Sale originalSale,
-    List<ReturnItem> returnItems,
-    String reason,
-    String createdBy,
-    String shopId,
-  ) async {
-    try {
-      // Calculate return amounts
-      final totalReturnAmount = returnItems.fold(
-        0.0,
-        (sum, item) => sum + item.totalAmount,
-      );
-
-      // Calculate taxes proportionally
-      final originalTotal = originalSale.totalAmount;
-      final returnRatio = totalReturnAmount / originalTotal;
-
-      final vat = originalSale.vat * returnRatio;
-      final turnoverTax = originalSale.turnoverTax * returnRatio;
-      final levy = originalSale.levy * returnRatio;
-
-      final grandReturnAmount = totalReturnAmount + vat + turnoverTax + levy;
-
-      final returnId = 'RET_${DateTime.now().millisecondsSinceEpoch}';
-
-      final newReturn = Return(
-        id: returnId,
-        originalSaleId: originalSale.id,
-        items: returnItems,
-        totalReturnAmount: totalReturnAmount,
-        grandReturnAmount: grandReturnAmount,
-        vat: vat,
-        turnoverTax: turnoverTax,
-        levy: levy,
-        date: DateTime.now(),
-        shopId: shopId,
-        createdBy: createdBy,
-        reason: reason,
-        status: 'approved', // Always approved
-      );
-
-      // Add to local list
-      _returns.add(newReturn);
-      notifyListeners();
-
-      // Send to API
-      final response = await ApiService.post('returns', newReturn.toJson());
-      if (response.statusCode != 201) {
-        debugPrint('Failed to create return: ${response.statusCode}');
-        // Remove from local list if API call failed
-        _returns.remove(newReturn);
-        notifyListeners();
-        throw Exception('Failed to create return');
-      }
-
-      // Update inventory (restock items)
-      await _updateInventoryForReturn(returnItems, shopId);
-    } catch (e) {
-      debugPrint('Error creating return: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> _updateInventoryForReturn(
-    List<ReturnItem> returnItems,
-    String shopId,
-  ) async {
-    try {
-      for (final returnItem in returnItems) {
-        // Increase inventory quantity
-        await ApiService.put('inventory/${returnItem.product.id}', {
-          'quantity': returnItem.product.quantity + returnItem.quantity,
-        });
-      }
-    } catch (e) {
-      debugPrint('Error updating inventory for return: $e');
-      rethrow;
     }
   }
 
@@ -322,10 +318,202 @@ class ReturnsProvider with ChangeNotifier {
           'synced': 0,
         });
       }
+
+      // Add return to local list
+      _returns.add(ret);
       notifyListeners();
       return;
     }
     await ApiService.post('returns', ret.toJson());
+  }
+
+  Future<void> createReturn(
+    Sale originalSale,
+    List<ReturnItem> returnItems,
+    String reason,
+    String createdBy,
+    String shopId,
+    BuildContext context,
+  ) async {
+    try {
+      // Calculate return amounts
+      final totalReturnAmount = returnItems.fold(
+        0.0,
+        (sum, item) => sum + item.totalAmount,
+      );
+
+      // Calculate taxes proportionally
+      final originalTotal = originalSale.totalAmount;
+      final returnRatio = totalReturnAmount / originalTotal;
+
+      final vat = originalSale.vat * returnRatio;
+      final turnoverTax = originalSale.turnoverTax * returnRatio;
+      final levy = originalSale.levy * returnRatio;
+
+      final grandReturnAmount = totalReturnAmount + vat + turnoverTax + levy;
+
+      final returnId = 'RET_${DateTime.now().millisecondsSinceEpoch}';
+
+      final newReturn = Return(
+        id: returnId,
+        originalSaleId: originalSale.id,
+        items: returnItems,
+        totalReturnAmount: totalReturnAmount,
+        grandReturnAmount: grandReturnAmount,
+        vat: vat,
+        turnoverTax: turnoverTax,
+        levy: levy,
+        date: DateTime.now(),
+        shopId: shopId,
+        createdBy: createdBy,
+        reason: reason,
+        status: 'approved', // Always approved
+      );
+
+      // Save return to database
+      final businessProvider = Provider.of<BusinessProvider>(
+        context,
+        listen: false,
+      );
+      await addReturnHybrid(newReturn, businessProvider);
+
+      // Update inventory and sales based on return reasons
+      await _updateInventoryAndSalesForReturn(
+        returnItems,
+        originalSale,
+        reason,
+        context,
+      );
+
+      // Create expense for damaged goods
+      if (reason.toLowerCase().contains('damaged') ||
+          reason.toLowerCase().contains('defective') ||
+          reason.toLowerCase().contains('spoiled')) {
+        await _createDamagedGoodsExpense(newReturn, context);
+      }
+    } catch (e) {
+      debugPrint('Error creating return: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> _updateInventoryAndSalesForReturn(
+    List<ReturnItem> returnItems,
+    Sale originalSale,
+    String reason,
+    BuildContext context,
+  ) async {
+    try {
+      final inventoryProvider = Provider.of<InventoryProvider>(
+        context,
+        listen: false,
+      );
+      final salesProvider = Provider.of<SalesProvider>(context, listen: false);
+
+      final isDamagedGoods =
+          reason.toLowerCase().contains('damaged') ||
+          reason.toLowerCase().contains('defective') ||
+          reason.toLowerCase().contains('spoiled');
+
+      debugPrint(
+        'Processing return with ${returnItems.length} items. Damaged goods: $isDamagedGoods',
+      );
+
+      // Update inventory quantities
+      for (final returnItem in returnItems) {
+        try {
+          debugPrint(
+            'Processing return item: ${returnItem.product.name} (ID: ${returnItem.product.id}) - ${returnItem.quantity} units',
+          );
+
+          final inventoryItem = inventoryProvider.items.firstWhere(
+            (item) => item.id == returnItem.product.id,
+            orElse: () => returnItem.product,
+          );
+
+          debugPrint(
+            'Found inventory item: ${inventoryItem.name} - Current quantity: ${inventoryItem.quantity}',
+          );
+
+          if (isDamagedGoods) {
+            // For damaged goods, reduce inventory and mark as damaged
+            debugPrint(
+              'Processing damaged goods return: ${returnItem.product.name} - ${returnItem.quantity} units',
+            );
+            inventoryProvider.decreaseStockForDamagedGoods(
+              inventoryItem.id,
+              returnItem.quantity,
+              reason,
+            );
+          } else {
+            // For non-damaged goods, reimburse inventory
+            debugPrint(
+              'Processing regular return: ${returnItem.product.name} - ${returnItem.quantity} units',
+            );
+            await inventoryProvider.reimburseStockForReturn(
+              inventoryItem.id,
+              returnItem.quantity,
+            );
+          }
+        } catch (e) {
+          debugPrint(
+            'Failed to update inventory for ${returnItem.product.name}: $e',
+          );
+          // Continue with other items even if one fails
+        }
+      }
+
+      // Update sales - mark returned items and update database
+      try {
+        debugPrint('Updating sales for return...');
+        await salesProvider.updateSaleItemsFromReturn(
+          originalSale.id,
+          returnItems,
+        );
+        debugPrint('Sales updated successfully');
+      } catch (e) {
+        debugPrint('Failed to update sales for return: $e');
+      }
+
+      debugPrint('Inventory and sales updated for return');
+    } catch (e) {
+      debugPrint('Error updating inventory and sales for return: $e');
+      rethrow; // Re-throw to be handled by the calling function
+    }
+  }
+
+  Future<void> _createDamagedGoodsExpense(
+    Return returnData,
+    BuildContext context,
+  ) async {
+    try {
+      final expensesProvider = Provider.of<ExpensesProvider>(
+        context,
+        listen: false,
+      );
+      final userProvider = Provider.of<UsersProvider>(context, listen: false);
+
+      final expense = Expense(
+        id: 'EXP_DAMAGED_${DateTime.now().millisecondsSinceEpoch}',
+        description: 'Damaged goods write-off - Return ${returnData.id}',
+        amount: returnData.totalReturnAmount,
+        date: returnData.date,
+        category: 'Damaged Goods',
+        createdBy: returnData.createdBy,
+        shopId: returnData.shopId,
+      );
+
+      await expensesProvider.addExpense(
+        expense,
+        userProvider.currentUser?.id ?? returnData.createdBy,
+        returnData.shopId,
+      );
+
+      debugPrint('Created damaged goods expense: ${expense.id}');
+    } catch (e) {
+      debugPrint('Error creating damaged goods expense: $e');
+      // Don't rethrow - expense creation failure shouldn't fail the entire return
+    }
   }
 
   Future<void> syncReturnsToBackend(

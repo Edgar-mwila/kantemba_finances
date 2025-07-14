@@ -33,14 +33,13 @@ class BusinessProvider with ChangeNotifier {
 
   Future<String> createBusiness({
     required String name,
-    required String country,
     required String businessContact,
     required String adminName,
     required String adminContact,
     bool isPremium = false,
   }) async {
     businessName = name;
-    this.country = country;
+    this.country = 'Zambia'; // Fixed to Zambia
     this.businessContact = businessContact;
     this.adminName = adminName;
     this.adminContact = adminContact;
@@ -53,7 +52,7 @@ class BusinessProvider with ChangeNotifier {
       await DBHelper.insert('businesses', {
         'id': id,
         'name': name,
-        'country': country,
+        'country': 'Zambia',
         'businessContact': businessContact,
         'adminName': adminName,
         'adminContact': adminContact,
@@ -66,7 +65,7 @@ class BusinessProvider with ChangeNotifier {
     await ApiService.post('business', {
       'id': id,
       'name': name,
-      'country': country,
+      'country': 'Zambia',
       'businessContact': businessContact,
       'adminName': adminName,
       'adminContact': adminContact,

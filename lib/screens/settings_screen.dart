@@ -133,17 +133,10 @@ class SettingsScreen extends StatelessWidget {
       ),
     ];
 
-    Widget content = Column(
+    Widget content = SingleChildScrollView(
+    child:Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Settings',
-          style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-        ),
-        const SizedBox(height: 20),
         ...settingsItems,
         if (businessProvider.isPremium) ...[
           const SizedBox(height: 20),
@@ -172,7 +165,7 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ],
-    );
+    ),);
 
     if (isWindows) {
       // Desktop: Center, max width, two-column grid for settings

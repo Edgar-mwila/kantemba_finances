@@ -8,7 +8,6 @@ import 'sales_provider.dart';
 import 'returns_provider.dart';
 import 'dart:convert';
 import 'package:provider/provider.dart';
-import 'package:kantemba_finances/models/shop.dart';
 import 'shop_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kantemba_finances/helpers/db_helper.dart';
@@ -30,33 +29,90 @@ class UsersProvider with ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final userData = prefs.getString('current_user');
       final businessId = prefs.getString('business_id');
+      final token = await ApiService.getToken();
+      print("userData: $userData");
 
       if (userData != null && businessId != null) {
         final userMap = json.decode(userData);
         _currentUser = _userFromMap(userMap);
+        print("Restored user: ${_currentUser?.name} (${_currentUser?.role})");
 
-        // Validate the stored token
-        final isValidToken = await _validateStoredToken();
+        // Check if we're online before validating token
+        final isOnline = await ApiService.isOnline();
+        print("Is online during session restore: $isOnline");
 
-        if (!isValidToken) {
-          // Token is invalid, clear the session
-          await _clearStoredSession();
-          _currentUser = null;
+        if (isOnline && token != 'LocalLoginToken') {
+          // Only validate token if online
+          final isValidToken = await _validateStoredToken();
+          print("Token validation result: $isValidToken");
+
+          if (!isValidToken) {
+            // Token is invalid, clear the session
+            print("Token invalid, clearing session");
+            await _clearStoredSession();
+            _currentUser = null;
+          } else {
+            // Restore all providers with the saved business and user data
+            print("Token valid, restoring providers");
+            initialize_providers(context, _currentUser!).catchError((e) {
+              debugPrint('Provider initialization error: $e');
+            });
+          }
         } else {
-          // Restore all providers with the saved business and user data
-          await _restoreProviders(context, businessId);
+          // Offline mode: just restore the user session without API calls
+          print("Offline mode: restoring user session without API calls");
+          // Set up basic providers for offline mode
+          initialize_providers(context, _currentUser!).catchError((e) {
+            debugPrint('Provider initialization error: $e');
+          });
         }
       } else {
         print('No stored session found');
       }
     } catch (e) {
+      print('Error during session restoration: $e');
       // If there's any error restoring the session, clear it
       await _clearStoredSession();
       _currentUser = null;
     } finally {
       _isInitialized = true;
+      print(
+        "Session restoration complete. Current user: ${_currentUser?.name}",
+      );
       notifyListeners();
     }
+  }
+
+  // Method to check and restore user session if needed
+  Future<bool> ensureUserSession(BuildContext context) async {
+    if (_currentUser != null) {
+      return true;
+    }
+
+    // Try to restore session
+    if (!_isInitialized) {
+      await initialize(context);
+    }
+
+    if (_currentUser == null) {
+      // Try to restore from stored data
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final userData = prefs.getString('current_user');
+        final businessId = prefs.getString('business_id');
+
+        if (userData != null && businessId != null) {
+          final userMap = json.decode(userData);
+          _currentUser = _userFromMap(userMap);
+          notifyListeners();
+          return _currentUser != null;
+        }
+      } catch (e) {
+        debugPrint('Error restoring user session: $e');
+      }
+    }
+
+    return _currentUser != null;
   }
 
   // Validate the stored token by making a test API call
@@ -69,110 +125,11 @@ class UsersProvider with ChangeNotifier {
       final response = await ApiService.get('users/validate');
       return response.statusCode == 200;
     } catch (e) {
+      print('Token validation error: $e');
       // If there's a network error, we'll assume the token is still valid
       // but the server might be unreachable. In a production app, you might
       // want to be more strict about this.
       return true;
-    }
-  }
-
-  // Restore all providers with the saved business and user data
-  Future<void> _restoreProviders(
-    BuildContext context,
-    String businessId,
-  ) async {
-    try {
-      final businessProvider = Provider.of<BusinessProvider>(
-        context,
-        listen: false,
-      );
-      final expensesProvider = Provider.of<ExpensesProvider>(
-        context,
-        listen: false,
-      );
-      final inventoryProvider = Provider.of<InventoryProvider>(
-        context,
-        listen: false,
-      );
-      final returnsProvider = Provider.of<ReturnsProvider>(
-        context,
-        listen: false,
-      );
-      final salesProvider = Provider.of<SalesProvider>(context, listen: false);
-      final shopProvider = Provider.of<ShopProvider>(context, listen: false);
-
-      await businessProvider.setBusiness(businessId);
-
-      List<String> shopIds = [];
-      List<Shop> shops = [];
-
-      if (_currentUser!.shopId != null) {
-        // Employee: single shop
-        shopIds = [_currentUser!.shopId!];
-        final shopResponse = await ApiService.get(
-          'shops/${_currentUser!.shopId}',
-        );
-        if (shopResponse.statusCode == 200) {
-          final shopData = json.decode(shopResponse.body);
-          shops = [Shop.fromJson(shopData)];
-        }
-      } else if (_currentUser!.role == 'manager') {
-        // Manager: fetch assigned shopIds from backend
-        final managerShopsResponse = await ApiService.get(
-          'shops?userId=${_currentUser!.id}',
-        );
-        if (managerShopsResponse.statusCode == 200) {
-          final List<dynamic> managerShops = json.decode(
-            managerShopsResponse.body,
-          );
-          shopIds = managerShops.map((e) => e['shopId'] as String).toList();
-          // Fetch all assigned shops
-          for (final shopId in shopIds) {
-            final shopResponse = await ApiService.get('shops/$shopId');
-            if (shopResponse.statusCode == 200) {
-              final shopData = json.decode(shopResponse.body);
-              shops.add(Shop.fromJson(shopData));
-            }
-          }
-        }
-      } else if (_currentUser!.role == 'admin') {
-        // Admin: fetch all shopIds for the business
-        final shopsResponse = await ApiService.get(
-          'shops?businessId=$businessId',
-        );
-        if (shopsResponse.statusCode == 200) {
-          final List<dynamic> shopsData = json.decode(shopsResponse.body);
-          shopIds = shopsData.map((e) => e['id'] as String).toList();
-          shops = shopsData.map((e) => Shop.fromJson(e)).toList();
-        }
-      }
-
-      // Update ShopProvider with the relevant shops
-      shopProvider.setShops(shops);
-      if (shops.isNotEmpty) {
-        shopProvider.setCurrentShop(shops.first);
-      }
-
-      // Fetch and combine data for all relevant shopIds
-      await Future.wait([
-        expensesProvider.fetchAndSetExpenses(businessId, shopIds: shopIds),
-        inventoryProvider.fetchAndSetItems(businessId, shopIds: shopIds),
-        salesProvider.fetchAndSetSales(businessId, shopIds: shopIds),
-        returnsProvider.fetchReturns(businessId, shopIds: shopIds),
-        fetchUsers(businessId),
-      ]);
-
-      // Notify all providers that the user session has been restored
-      businessProvider.notifyListeners();
-      expensesProvider.notifyListeners();
-      inventoryProvider.notifyListeners();
-      salesProvider.notifyListeners();
-      shopProvider.notifyListeners();
-      returnsProvider.notifyListeners();
-    } catch (e) {
-      // If there's any error restoring providers, clear the session
-      await _clearStoredSession();
-      _currentUser = null;
     }
   }
 
@@ -222,131 +179,302 @@ class UsersProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> initialize_providers(BuildContext context, User user) async {
+    try {
+      // Set all providers using the businessId
+      final businessProvider = Provider.of<BusinessProvider>(
+        context,
+        listen: false,
+      );
+      final expensesProvider = Provider.of<ExpensesProvider>(
+        context,
+        listen: false,
+      );
+      final inventoryProvider = Provider.of<InventoryProvider>(
+        context,
+        listen: false,
+      );
+      final salesProvider = Provider.of<SalesProvider>(context, listen: false);
+      final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+      final returnsProvider = Provider.of<ReturnsProvider>(
+        context,
+        listen: false,
+      );
+
+      await businessProvider.setBusiness(user.businessId);
+
+      // Check if online and if business is premium
+      bool isOnline = await ApiService.isOnline();
+      bool isPremium = businessProvider.isPremium;
+      debugPrint(
+        'Provider initialization - isOnline: $isOnline, isPremium: $isPremium',
+      );
+
+      if (isOnline && isPremium) {
+        // Online mode and premium business: fetch data from API
+        await shopProvider.fetchShops(
+          user.businessId,
+          shopIds: user.shopId != null ? [user.shopId!] : [],
+        );
+
+        await Future.wait([
+          expensesProvider.fetchAndSetExpenses(
+            user.businessId,
+            shopIds: shopProvider.shops.map((s) => s.id).toList(),
+          ),
+          inventoryProvider.fetchAndSetItems(
+            user.businessId,
+            shopIds: shopProvider.shops.map((s) => s.id).toList(),
+          ),
+          salesProvider.fetchAndSetSales(
+            user.businessId,
+            shopIds: shopProvider.shops.map((s) => s.id).toList(),
+          ),
+        ]).catchError((e) {
+          debugPrint('Failed to fetch data in parallel: $e');
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error fetching data: ${e.toString()}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return [];
+        });
+
+        await returnsProvider
+            .fetchReturns(
+              user.businessId,
+              shopIds: shopProvider.shops.map((s) => s.id).toList(),
+            )
+            .catchError((e) {
+              debugPrint('Failed to fetch returns: $e');
+            });
+
+        await fetchUsers(user.businessId).catchError((e) {
+          debugPrint('Failed to fetch users: $e');
+        });
+      } else {
+        // Offline mode or non-premium business: load data from local database
+        debugPrint(
+          'Offline mode or non-premium business: loading data from local database',
+        );
+
+        // Load shops from local database
+        await shopProvider.fetchShops(user.businessId);
+
+        // Load other data from local database
+        await Future.wait([
+          expensesProvider.fetchAndSetExpenses(
+            user.businessId,
+            shopIds: shopProvider.shops.map((s) => s.id).toList(),
+          ),
+          inventoryProvider.fetchAndSetItems(
+            user.businessId,
+            shopIds: shopProvider.shops.map((s) => s.id).toList(),
+          ),
+          salesProvider.fetchAndSetSales(
+            user.businessId,
+            shopIds: shopProvider.shops.map((s) => s.id).toList(),
+          ),
+        ]).catchError((e) {
+          debugPrint('Failed to load local data: $e');
+          return [];
+        });
+
+        await returnsProvider
+            .fetchReturns(
+              user.businessId,
+              shopIds: shopProvider.shops.map((s) => s.id).toList(),
+            )
+            .catchError((e) {
+              debugPrint('Failed to load local returns: $e');
+            });
+
+        await fetchAndSetUsersHybrid(businessProvider).catchError((e) {
+          debugPrint('Failed to load local users: $e');
+        });
+      }
+
+      // Notify all providers that the user has logged in
+      businessProvider.notifyListeners();
+      expensesProvider.notifyListeners();
+      inventoryProvider.notifyListeners();
+      salesProvider.notifyListeners();
+      returnsProvider.notifyListeners();
+      shopProvider.notifyListeners();
+
+      debugPrint('Provider initialization complete');
+    } catch (e) {
+      debugPrint('Provider initialization error: $e');
+    }
+  }
+
   Future<bool> login(
     BuildContext context,
-    String businessId,
     String contact,
     String password,
   ) async {
     try {
-      final response = await ApiService.post('users/login', {
-        'businessId': businessId,
-        'contact': contact,
-        'password': password,
-      });
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final user = _userFromMap(data['user']);
-        _currentUser = user;
-        await ApiService.saveToken(data['token']);
-
-        // Save user session to SharedPreferences
-        await _saveUserSession(user, businessId);
-
-        notifyListeners();
-        // Set all providers using the businessId
-        final businessProvider = Provider.of<BusinessProvider>(
-          context,
-          listen: false,
+      // Show immediate feedback
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Checking credentials...'),
+            duration: Duration(seconds: 2),
+          ),
         );
-        final expensesProvider = Provider.of<ExpensesProvider>(
-          context,
-          listen: false,
-        );
-        final inventoryProvider = Provider.of<InventoryProvider>(
-          context,
-          listen: false,
-        );
-        final salesProvider = Provider.of<SalesProvider>(
-          context,
-          listen: false,
-        );
-        final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+      }
 
-        await businessProvider.setBusiness(businessId);
+      bool isOnline = await ApiService.isOnline();
+      debugPrint('Is online: $isOnline');
 
-        List<String> shopIds = [];
-        List<Shop> shops = [];
-        if (user.shopId != null) {
-          // Employee: single shop
-          shopIds = [user.shopId!];
-          // Fetch only the assigned shop
-          final shopResponse = await ApiService.get('shops/${user.shopId}');
-          if (shopResponse.statusCode == 200) {
-            final shopData = json.decode(shopResponse.body);
-            shops = [Shop.fromJson(shopData)];
-          }
-        } else if (user.role == 'manager') {
-          // Manager: fetch assigned shopIds from backend
-          final managerShopsResponse = await ApiService.get(
-            'shops?userId=${user.id}',
-          );
-          if (managerShopsResponse.statusCode == 200) {
-            final List<dynamic> managerShops = json.decode(
-              managerShopsResponse.body,
+      if (isOnline) {
+        // Test backend connection first
+        bool backendReachable = await ApiService.testConnection();
+        debugPrint('Backend reachable: $backendReachable');
+
+        if (!backendReachable) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Cannot reach server. Trying offline login...'),
+                backgroundColor: Colors.orange,
+              ),
             );
-            shopIds = managerShops.map((e) => e['shopId'] as String).toList();
-            // Fetch all assigned shops
-            for (final shopId in shopIds) {
-              final shopResponse = await ApiService.get('shops/$shopId');
-              if (shopResponse.statusCode == 200) {
-                final shopData = json.decode(shopResponse.body);
-                shops.add(Shop.fromJson(shopData));
+          }
+          // Fall through to offline login
+        } else {
+          try {
+            final response = await ApiService.post('users/login', {
+              'contact': contact,
+              'password': password,
+            });
+
+            if (response.statusCode == 200) {
+              final data = json.decode(response.body);
+              final user = _userFromMap(data['user']);
+              _currentUser = user;
+              await ApiService.saveToken(data['token']);
+              await _saveUserSession(user, user.businessId);
+              notifyListeners();
+
+              // Initialize providers in background to avoid blocking UI
+              initialize_providers(context, user).catchError((e) {
+                debugPrint('Provider initialization error: $e');
+              });
+
+              return true;
+            } else {
+              // Handle specific error codes
+              if (response.statusCode == 401) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Invalid credentials. Please check your contact and password.',
+                      ),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'Server error (${response.statusCode}). Please try again.',
+                      ),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               }
+              return false;
+            }
+          } catch (e) {
+            // Network timeout or connection error
+            debugPrint('Online login failed: $e');
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Network timeout. Trying offline login...'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
             }
           }
-        } else if (user.role == 'admin') {
-          // Admin: fetch all shopIds for the business
-          final shopsResponse = await ApiService.get(
-            'shops?businessId=$businessId',
-          );
-          if (shopsResponse.statusCode == 200) {
-            final List<dynamic> shopsData = json.decode(shopsResponse.body);
-            shopIds = shopsData.map((e) => e['id'] as String).toList();
-            shops = shopsData.map((e) => Shop.fromJson(e)).toList();
-          }
         }
-
-        // Update ShopProvider with the relevant shops
-        shopProvider.setShops(shops);
-        if (shops.isNotEmpty) {
-          shopProvider.setCurrentShop(shops.first);
-        }
-
-        // Fetch and combine data for all relevant shopIds
-        await expensesProvider.fetchAndSetExpenses(
-          businessId,
-          shopIds: shopIds,
-        );
-        await inventoryProvider.fetchAndSetItems(businessId, shopIds: shopIds);
-        await salesProvider.fetchAndSetSales(businessId, shopIds: shopIds);
-
-        // Fetch returns data
-        final returnsProvider = Provider.of<ReturnsProvider>(
-          context,
-          listen: false,
-        );
-        await returnsProvider.fetchReturns(businessId, shopIds: shopIds);
-
-        await fetchUsers(businessId);
-        // Notify all providers that the user has logged in
-        businessProvider.notifyListeners();
-        expensesProvider.notifyListeners();
-        inventoryProvider.notifyListeners();
-        salesProvider.notifyListeners();
-        returnsProvider.notifyListeners();
-        shopProvider.notifyListeners();
-
-        return true;
       }
-      return false;
     } catch (e) {
+      debugPrint('Error during login: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Login failed: Please check your credentials and try again.',
+            content: Text('Login error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return false;
+    }
+    // Fallback to local DB login if offline or user not found online
+    try {
+      final users = await DBHelper.getData('users');
+
+      if (users.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'No users found in local database. Please create an account first.',
+              ),
+              backgroundColor: Colors.red,
             ),
+          );
+        }
+        return false;
+      }
+
+      final userMap = users.firstWhere(
+        (u) => u['contact'] == contact && u['password'] == password,
+        orElse: () => <String, dynamic>{},
+      );
+
+      if (userMap.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Invalid credentials. Please check your contact and password.',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return false;
+      }
+
+      final user = _userFromMap(userMap);
+      _currentUser = user;
+      await ApiService.saveToken('LocalLoginToken'); // No token for local login
+      await _saveUserSession(user, user.businessId);
+      notifyListeners();
+
+      // Initialize providers in background
+      initialize_providers(context, user).catchError((e) {
+        debugPrint('Provider initialization error: $e');
+      });
+
+      return true;
+    } catch (e) {
+      debugPrint('Local database error: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Local database error: ${e.toString()}'),
+            backgroundColor: Colors.red,
           ),
         );
       }
@@ -365,7 +493,7 @@ class UsersProvider with ChangeNotifier {
       await DBHelper.insert('users', {
         'id': user.id,
         'name': user.name,
-        'contact': user.contact,
+        'contact': contact,
         'role': user.role,
         'permissions': jsonEncode(user.permissions),
         'shopId': user.shopId ?? '',
@@ -375,6 +503,8 @@ class UsersProvider with ChangeNotifier {
       });
       _users.add(user);
       notifyListeners();
+      // Optionally, if this is a login or first user, persist session
+      await _saveUserSession(user, businessId);
       return;
     }
     // Online: use API
@@ -392,9 +522,12 @@ class UsersProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void setCurrentUser(User user) {
+  Future<void> setCurrentUser(User user, {String? businessId}) async {
     _currentUser = user;
     notifyListeners();
+    if (businessId != null) {
+      await _saveUserSession(user, businessId);
+    }
   }
 
   Future<void> editUser(String id, User updatedUser) async {
@@ -431,12 +564,33 @@ class UsersProvider with ChangeNotifier {
   }
 
   User _userFromMap(Map<String, dynamic> map) {
+    // Handle permissions which might be stored as JSON string or already as List
+    List<String> permissions = [];
+    if (map['permissions'] != null) {
+      if (map['permissions'] is String) {
+        // Parse JSON string to List
+        try {
+          final permissionsList = json.decode(map['permissions'] as String);
+          if (permissionsList is List) {
+            permissions = permissionsList.map((e) => e.toString()).toList();
+          }
+        } catch (e) {
+          debugPrint('Error parsing permissions: $e');
+          permissions = [];
+        }
+      } else if (map['permissions'] is List) {
+        // Already a List, convert to List<String>
+        permissions =
+            (map['permissions'] as List).map((e) => e.toString()).toList();
+      }
+    }
+
     return User(
       id: map['id'] as String,
       name: map['name'] as String,
       contact: map['contact'] as String,
       role: map['role'] as String,
-      permissions: List<String>.from(map['permissions'] ?? []),
+      permissions: permissions,
       shopId: map['shopId'] as String?,
       businessId: map['businessId'] as String,
     );
@@ -452,7 +606,6 @@ class UsersProvider with ChangeNotifier {
     }
     if (await ApiService.isOnline()) {
       await fetchUsers(businessProvider.id!);
-      // Optionally, update local DB with latest online data
     } else {
       final localUsers = await DBHelper.getData('users');
       _users =
@@ -482,6 +635,8 @@ class UsersProvider with ChangeNotifier {
       });
       _users.add(user);
       notifyListeners();
+      // Optionally, if this is a login or first user, persist session
+      await _saveUserSession(user, businessId);
       return;
     }
     await addUser(user, password, contact, businessId);

@@ -18,6 +18,22 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
   String? _name;
   // String? _location;
 
+  String? _validateShopName(String? val, {Shop? editingShop}) {
+    if (val == null || val.trim().isEmpty) return 'Enter shop name';
+    final trimmed = val.trim();
+    if (trimmed.length < 3) return 'Name too short (min 3 chars)';
+    if (trimmed.length > 32) return 'Name too long (max 32 chars)';
+    final validPattern = RegExp(r'^[\w\s\-.,&()]+$');
+    if (!validPattern.hasMatch(trimmed)) return 'Invalid characters';
+    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+    final lower = trimmed.toLowerCase();
+    final exists = shopProvider.shops.any((s) =>
+      s.name.toLowerCase() == lower && (editingShop == null || s.id != editingShop.id)
+    );
+    if (exists) return 'Shop name already exists';
+    return null;
+  }
+
   void _showShopDialog({Shop? shop}) {
     final businessProvider = Provider.of<BusinessProvider>(
       context,
@@ -38,10 +54,8 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
                   TextFormField(
                     initialValue: _name,
                     decoration: InputDecoration(labelText: 'Shop Name'),
-                    validator:
-                        (val) =>
-                            val == null || val.isEmpty ? 'Enter name' : null,
-                    onSaved: (val) => _name = val,
+                    validator: (val) => _validateShopName(val, editingShop: shop),
+                    onSaved: (val) => _name = val?.trim(),
                   ),
                   // TextFormField(
                   //   initialValue: _location,

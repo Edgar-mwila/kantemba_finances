@@ -13,6 +13,7 @@ interface InventoryAttributes {
   lowStockThreshold: number;
   createdBy: string;
   shopId?: string | null;
+  damagedRecords?: string | null;
 }
 
 interface InventoryCreationAttributes extends Optional<InventoryAttributes, 'id' | 'lowStockThreshold'> {}
@@ -25,6 +26,7 @@ class Inventory extends Model<InventoryAttributes, InventoryCreationAttributes> 
   public lowStockThreshold!: number;
   public createdBy!: string;
   public shopId?: string | null;
+  public damagedRecords?: string | null;
 }
 
 Inventory.init(
@@ -56,6 +58,11 @@ Inventory.init(
         key: 'id',
       },
       onDelete: 'SET NULL',
+    },
+    damagedRecords: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: '[]',
     },
   },
   {

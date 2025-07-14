@@ -13,12 +13,26 @@ class ShopProvider with ChangeNotifier {
   Shop? get currentShop => _currentShop;
 
   Future<void> fetchShops(String businessId, {List<String>? shopIds}) async {
-    if (!(await ApiService.isOnline())) {
+    // Check if online and if business is premium
+    bool isOnline = await ApiService.isOnline();
+    final businessProvider = BusinessProvider();
+    bool isPremium = businessProvider.isPremium;
+
+    if (!isOnline || !isPremium) {
+      // Offline mode or non-premium business: load from local database
+      debugPrint(
+        'ShopProvider: Loading shops from local database (offline: ${!isOnline}, premium: $isPremium)',
+      );
       final localShops = await DBHelper.getData('shops');
       _shops = localShops.map((json) => Shop.fromJson(json)).toList();
+      _currentShop = _shops.isNotEmpty ? _shops.first : null;
+      debugPrint('shops: $_shops, currentShop: $_currentShop');
       notifyListeners();
       return;
     }
+
+    // Online mode and premium business: fetch from API
+    debugPrint('ShopProvider: Loading shops from API');
     if (shopIds != null && shopIds.isNotEmpty) {
       // If only one shopId, fetch that shop
       if (shopIds.length == 1) {
@@ -72,7 +86,11 @@ class ShopProvider with ChangeNotifier {
   }
 
   Future<void> addShop(Shop shop) async {
-    if (!(await ApiService.isOnline())) {
+    bool isOnline = await ApiService.isOnline();
+    final businessProvider = BusinessProvider();
+    bool isPremium = businessProvider.isPremium;
+
+    if (!isOnline || !isPremium) {
       await DBHelper.insert('shops', {
         'id': shop.id,
         'name': shop.name,
@@ -111,41 +129,6 @@ class ShopProvider with ChangeNotifier {
     if (response.statusCode == 204) {
       await fetchShops(businessId);
     }
-  }
-
-  Future<void> fetchAndSetShopsHybrid(BusinessProvider businessProvider) async {
-    if (!businessProvider.isPremium) {
-      final localShops = await DBHelper.getData('shops');
-      _shops = localShops.map((json) => Shop.fromJson(json)).toList();
-      notifyListeners();
-      return;
-    }
-    if (await ApiService.isOnline()) {
-      await fetchShops(businessProvider.id!);
-      // Optionally, update local DB with latest online data
-    } else {
-      final localShops = await DBHelper.getData('shops');
-      _shops = localShops.map((json) => Shop.fromJson(json)).toList();
-      notifyListeners();
-    }
-  }
-
-  Future<void> addShopHybrid(
-    Shop shop,
-    BusinessProvider businessProvider,
-  ) async {
-    if (!businessProvider.isPremium || !(await ApiService.isOnline())) {
-      await DBHelper.insert('shops', {
-        'id': shop.id,
-        'name': shop.name,
-        'businessId': shop.businessId,
-        'synced': 0,
-      });
-      _shops.add(shop);
-      notifyListeners();
-      return;
-    }
-    await addShop(shop);
   }
 
   Future<void> syncShopsToBackend(

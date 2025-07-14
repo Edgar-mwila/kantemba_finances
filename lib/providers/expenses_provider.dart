@@ -49,6 +49,45 @@ class ExpensesProvider with ChangeNotifier {
     String businessId, {
     List<String>? shopIds,
   }) async {
+    // Check if online and if business is premium
+    bool isOnline = await ApiService.isOnline();
+    final businessProvider = BusinessProvider();
+    bool isPremium = businessProvider.isPremium;
+
+    if (!isOnline || !isPremium) {
+      // Offline mode or non-premium business: load from local database
+      debugPrint(
+        'ExpensesProvider: Loading expenses from local database (offline: ${!isOnline}, premium: $isPremium)',
+      );
+      try {
+        final localExpenses = await DBHelper.getData('expenses');
+        debugPrint(
+          'ExpensesProvider: Loaded ${localExpenses} expenses from local DB',
+        );
+        _expenses =
+            localExpenses
+                .map(
+                  (item) => Expense(
+                    id: item['id'],
+                    description: item['description'],
+                    amount: (item['amount'] as num).toDouble(),
+                    date: DateTime.parse(item['date']),
+                    category: item['category'],
+                    createdBy: item['createdBy'],
+                    shopId: item['shopId'],
+                  ),
+                )
+                .toList();
+      } catch (e) {
+        debugPrint('Error loading expenses from local DB: $e');
+        _expenses = [];
+      }
+      notifyListeners();
+      return;
+    }
+
+    // Online mode and premium business: fetch from API
+    debugPrint('ExpensesProvider: Loading expenses from API');
     List<Expense> allExpenses = [];
     if (shopIds != null && shopIds.isNotEmpty) {
       for (final shopId in shopIds) {
@@ -142,9 +181,8 @@ class ExpensesProvider with ChangeNotifier {
         'id': expense.id,
         'description': expense.description,
         'amount': expense.amount,
-        'date': expense.date.toIso8601String(),
         'category': expense.category,
-        'createdBy': createdBy,
+        'date': expense.date.toIso8601String(),
         'shopId': shopId,
         'synced': 0,
       });
@@ -157,8 +195,8 @@ class ExpensesProvider with ChangeNotifier {
       'id': expense.id,
       'description': expense.description,
       'amount': expense.amount,
-      'date': expense.date.toIso8601String(),
       'category': expense.category,
+      'date': expense.date.toIso8601String(),
       'createdBy': createdBy,
       'shopId': shopId,
     });
@@ -180,7 +218,7 @@ class ExpensesProvider with ChangeNotifier {
                   amount: (item['amount'] as num).toDouble(),
                   date: DateTime.parse(item['date']),
                   category: item['category'],
-                  createdBy: item['createdBy'],
+                  createdBy: item['createdBy'] ?? 'Default',
                   shopId: item['shopId'],
                 ),
               )
@@ -219,20 +257,20 @@ class ExpensesProvider with ChangeNotifier {
   ) async {
     if (!businessProvider.isPremium || !(await ApiService.isOnline())) {
       await DBHelper.insert('expenses', {
-        'id': '${shopId}_${DateTime.now().toString()}',
+        'id': expense.id,
         'description': expense.description,
-        'amount': (expense.amount as num).toDouble(),
-        'date': expense.date.toIso8601String(),
+        'amount': expense.amount,
         'category': expense.category,
+        'date': expense.date.toIso8601String(),
         'createdBy': createdBy,
         'shopId': shopId,
         'synced': 0,
       });
       _expenses.add(
         Expense(
-          id: '${shopId}_${DateTime.now().toString()}',
+          id: expense.id,
           description: expense.description,
-          amount: (expense.amount as num).toDouble(),
+          amount: expense.amount,
           date: expense.date,
           category: expense.category,
           createdBy: createdBy,

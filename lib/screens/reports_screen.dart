@@ -8,6 +8,7 @@ import 'package:kantemba_finances/screens/reports/profit_loss_screen.dart';
 import 'package:kantemba_finances/screens/reports/cash_flow_screen.dart';
 import 'package:kantemba_finances/screens/reports/balance_sheet_screen.dart';
 import 'package:kantemba_finances/screens/reports/tax_summary_screen.dart';
+import 'package:kantemba_finances/screens/reports/financial_snapshot_screen.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
 import 'package:kantemba_finances/models/user.dart';
 import 'package:kantemba_finances/providers/business_provider.dart';
@@ -41,6 +42,10 @@ class ReportsScreen extends StatelessWidget {
           0.0,
           (sum, item) => sum + item.grandTotal,
         );
+        final totalDiscounts = sales.fold(
+          0.0,
+          (sum, item) => sum + (item.discount),
+        );
         final totalExpenses = expenses.fold(
           0.0,
           (sum, item) => sum + item.amount,
@@ -57,55 +62,19 @@ class ReportsScreen extends StatelessWidget {
             body: SingleChildScrollView(
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1000),
+                  constraints: const BoxConstraints(maxWidth: 1200),
                   child: Padding(
                     padding: const EdgeInsets.all(32.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Financial Snapshot',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 10),
-                        // Grid for summary cards
-                        GridView.count(
-                          crossAxisCount: 2,
-                          shrinkWrap: true,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 2.8,
-                          physics: const NeverScrollableScrollPhysics(),
-                          children: [
-                            _buildSummaryCard(
-                              'Total Sales',
-                              'K${totalSales.toStringAsFixed(2)}',
-                              Colors.green,
-                            ),
-                            _buildSummaryCard(
-                              'Total Expenses',
-                              'K${totalExpenses.toStringAsFixed(2)}',
-                              Colors.red,
-                            ),
-                            _buildSummaryCard(
-                              'Profit / Loss',
-                              'K${profit.toStringAsFixed(2)}',
-                              profit >= 0 ? Colors.blue : Colors.orange,
-                            ),
-                            _buildSummaryCard(
-                              'Stock Value',
-                              'K${totalStockValue.toStringAsFixed(2)}',
-                              Colors.purple,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 32),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Detailed Reports',
-                              style: Theme.of(context).textTheme.headlineSmall,
+                              'Financial Reports',
+                              style: Theme.of(context).textTheme.headlineMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             if (isPremium)
                               ElevatedButton.icon(
@@ -164,20 +133,135 @@ class ReportsScreen extends StatelessWidget {
                               ),
                           ],
                         ),
+                        const SizedBox(height: 24),
+
+                        // Quick Financial Snapshot
+                        Card(
+                          elevation: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.dashboard,
+                                      color: Colors.blue,
+                                      size: 28,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Quick Financial Snapshot',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.headlineSmall?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    ElevatedButton.icon(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (_) =>
+                                                    const FinancialSnapshotScreen(),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.open_in_new),
+                                      label: const Text(
+                                        'View Detailed Snapshot',
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        foregroundColor: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 20),
+                                // Grid for summary cards
+                                GridView.count(
+                                  crossAxisCount: 3,
+                                  shrinkWrap: true,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                  childAspectRatio: 2.5,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  children: [
+                                    _buildSummaryCard(
+                                      'Total Sales',
+                                      'K${totalSales.toStringAsFixed(2)}',
+                                      Colors.green,
+                                      Icons.point_of_sale,
+                                    ),
+                                    _buildSummaryCard(
+                                      'Total Expenses',
+                                      'K${totalExpenses.toStringAsFixed(2)}',
+                                      Colors.red,
+                                      Icons.payments,
+                                    ),
+                                    _buildSummaryCard(
+                                      'Net Profit',
+                                      'K${profit.toStringAsFixed(2)}',
+                                      profit >= 0 ? Colors.blue : Colors.orange,
+                                      Icons.trending_up,
+                                    ),
+                                    _buildSummaryCard(
+                                      'Stock Value',
+                                      'K${totalStockValue.toStringAsFixed(2)}',
+                                      Colors.purple,
+                                      Icons.inventory,
+                                    ),
+                                    _buildSummaryCard(
+                                      'Total Discounts',
+                                      'K${totalDiscounts.toStringAsFixed(2)}',
+                                      Colors.orange,
+                                      Icons.discount,
+                                    ),
+                                    _buildSummaryCard(
+                                      'Profit Margin',
+                                      '${totalSales > 0 ? ((profit / totalSales) * 100).toStringAsFixed(1) : 0.0}%',
+                                      profit >= 0 ? Colors.green : Colors.red,
+                                      Icons.percent,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+
+                        Text(
+                          'Detailed Reports',
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
                         const SizedBox(height: 16),
-                        // Report navigation as a vertical list
+                        // Report navigation as a grid
                         if (currentUser != null &&
                             (currentUser.hasPermission(
                                   UserPermissions.viewReports,
                                 ) ||
                                 currentUser.hasPermission(UserPermissions.all)))
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          GridView.count(
+                            crossAxisCount: 2,
+                            shrinkWrap: true,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 3.5,
+                            physics: const NeverScrollableScrollPhysics(),
                             children: [
-                              _buildReportMenuItem(
+                              _buildReportCard(
                                 context,
-                                Icons.receipt_long,
-                                'Profit & Loss Statement',
+                                Icons.trending_up,
+                                'Profit & Loss',
+                                'View detailed profit and loss statement',
+                                Colors.green,
                                 () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -185,10 +269,12 @@ class ReportsScreen extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              _buildReportMenuItem(
+                              _buildReportCard(
                                 context,
-                                Icons.swap_vert,
-                                'Cash Flow Statement',
+                                Icons.account_balance_wallet,
+                                'Cash Flow',
+                                'Track cash inflows and outflows',
+                                Colors.blue,
                                 () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -196,10 +282,12 @@ class ReportsScreen extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              _buildReportMenuItem(
+                              _buildReportCard(
                                 context,
                                 Icons.account_balance,
                                 'Balance Sheet',
+                                'View assets, liabilities, and equity',
+                                Colors.purple,
                                 () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -207,10 +295,12 @@ class ReportsScreen extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              _buildReportMenuItem(
+                              _buildReportCard(
                                 context,
-                                Icons.receipt,
+                                Icons.receipt_long,
                                 'Tax Summary',
+                                'Review tax obligations and compliance',
+                                Colors.orange,
                                 () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -220,14 +310,6 @@ class ReportsScreen extends StatelessWidget {
                               ),
                             ],
                           ),
-                        if (!(currentUser != null &&
-                            currentUser.hasPermission(
-                              UserPermissions.viewReports,
-                            ) &&
-                            currentUser.hasPermission(UserPermissions.all)))
-                          const Text(
-                            'You do not have permission to view reports.',
-                          ),
                       ],
                     ),
                   ),
@@ -235,182 +317,274 @@ class ReportsScreen extends StatelessWidget {
               ),
             ),
           );
-        }
+        } else {
+          // Mobile layout
+          return Scaffold(
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Quick Financial Snapshot
+                  Card(
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.dashboard, color: Colors.green),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Financial Snapshot',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const Spacer(),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (_) =>
+                                              const FinancialSnapshotScreen(),
+                                    ),
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  foregroundColor: Colors.white,
+                                ),
+                                child: const Icon(Icons.open_in_new),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          // Summary cards in a row
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                _buildMobileSummaryCard(
+                                  'Sales',
+                                  'K${totalSales.toStringAsFixed(2)}',
+                                  Colors.green,
+                                ),
+                                const SizedBox(width: 12),
+                                _buildMobileSummaryCard(
+                                  'Expenses',
+                                  'K${totalExpenses.toStringAsFixed(2)}',
+                                  Colors.red,
+                                ),
+                                const SizedBox(width: 12),
+                                _buildMobileSummaryCard(
+                                  'Profit',
+                                  'K${profit.toStringAsFixed(2)}',
+                                  profit >= 0 ? Colors.blue : Colors.orange,
+                                ),
+                                const SizedBox(width: 12),
+                                _buildMobileSummaryCard(
+                                  'Stock',
+                                  'K${totalStockValue.toStringAsFixed(2)}',
+                                  Colors.purple,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
 
-        // Mobile layout (unchanged)
-        return Scaffold(
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Financial Snapshot',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildSummaryCard(
-                        'Total Sales',
-                        'K${totalSales.toStringAsFixed(2)}',
-                        Colors.green,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _buildSummaryCard(
-                        'Total Expenses',
-                        'K${totalExpenses.toStringAsFixed(2)}',
-                        Colors.red,
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildSummaryCard(
-                        'Profit / Loss',
-                        'K${profit.toStringAsFixed(2)}',
-                        profit >= 0 ? Colors.blue : Colors.orange,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _buildSummaryCard(
-                        'Stock Value',
-                        'K${totalStockValue.toStringAsFixed(2)}',
-                        Colors.purple,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Detailed Reports',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 10),
-                if (currentUser != null &&
-                    (currentUser.hasPermission(UserPermissions.viewReports) ||
-                        currentUser.hasPermission(UserPermissions.all))) ...[
-                  _buildReportMenuItem(
-                    context,
-                    Icons.receipt_long,
-                    'Profit & Loss Statement',
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ProfitLossScreen(),
-                      ),
-                    ),
-                  ),
-                  _buildReportMenuItem(
-                    context,
-                    Icons.swap_vert,
-                    'Cash Flow Statement',
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const CashFlowScreen()),
-                    ),
-                  ),
-                  _buildReportMenuItem(
-                    context,
-                    Icons.account_balance,
-                    'Balance Sheet',
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const BalanceSheetScreen(),
-                      ),
-                    ),
-                  ),
-                  _buildReportMenuItem(
-                    context,
-                    Icons.receipt,
-                    'Tax Summary',
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const TaxSummaryScreen(),
-                      ),
+                  Text(
+                    'Detailed Reports',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed:
-                        isPremium
-                            ? () {
-                              showDialog(
-                                context: context,
-                                builder:
-                                    (ctx) => AlertDialog(
-                                      title: const Text(
-                                        'AI Accounting Assistant',
-                                      ),
-                                      content: const Text(
-                                        'Your detailed AI-powered accounting report will appear here. (Feature coming soon!)',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed:
-                                              () => Navigator.of(ctx).pop(),
-                                          child: const Text('OK'),
-                                        ),
-                                      ],
-                                    ),
-                              );
-                            }
-                            : () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const PremiumScreen(),
-                                ),
-                              );
-                            },
-                    icon: const Icon(Icons.smart_toy),
-                    label: const Text('Get Detailed AI Accounting Report'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isPremium ? Colors.green : Colors.grey,
+
+                  // Report navigation as a list
+                  if (currentUser != null &&
+                      (currentUser.hasPermission(UserPermissions.viewReports) ||
+                          currentUser.hasPermission(UserPermissions.all)))
+                    Column(
+                      children: [
+                        _buildReportMenuItem(
+                          context,
+                          Icons.trending_up,
+                          'Profit & Loss Statement',
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ProfitLossScreen(),
+                            ),
+                          ),
+                        ),
+                        _buildReportMenuItem(
+                          context,
+                          Icons.swap_vert,
+                          'Cash Flow Statement',
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CashFlowScreen(),
+                            ),
+                          ),
+                        ),
+                        _buildReportMenuItem(
+                          context,
+                          Icons.account_balance,
+                          'Balance Sheet',
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const BalanceSheetScreen(),
+                            ),
+                          ),
+                        ),
+                        _buildReportMenuItem(
+                          context,
+                          Icons.receipt_long,
+                          'Tax Summary',
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const TaxSummaryScreen(),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
                 ],
-                if (!(currentUser != null &&
-                    currentUser.hasPermission(UserPermissions.viewReports) &&
-                    currentUser.hasPermission(UserPermissions.all)))
-                  const Text('You do not have permission to view reports.'),
-              ],
+              ),
             ),
-          ),
-        );
+          );
+        }
       },
     );
   }
 
-  Widget _buildSummaryCard(String title, String value, Color color) {
+  Widget _buildSummaryCard(
+    String title,
+    String value,
+    Color color,
+    IconData icon,
+  ) {
     return Card(
-      elevation: 2,
+      elevation: 1,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Icon(icon, color: color, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Text(
               value,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileSummaryCard(String title, String value, Color color) {
+    return Card(
+      elevation: 1,
+      child: Container(
+        width: 120,
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReportCard(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String subtitle,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return Card(
+      elevation: 2,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: color, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                subtitle,
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -423,15 +597,11 @@ class ReportsScreen extends StatelessWidget {
     VoidCallback onTap,
   ) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 8.0),
       child: ListTile(
-        leading: Icon(icon, color: Colors.green.shade700),
-        title: Text(
-          title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        leading: Icon(icon, color: Colors.green),
+        title: Text(title),
+        trailing: const Icon(Icons.arrow_forward_ios),
         onTap: onTap,
       ),
     );

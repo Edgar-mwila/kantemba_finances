@@ -1,14 +1,154 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/providers/expenses_provider.dart';
 import 'package:kantemba_finances/widgets/new_expense_modal.dart';
 import '../providers/shop_provider.dart';
 import '../providers/users_provider.dart';
-import '../models/shop.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
+import '../models/expense.dart';
 
-class ExpensesScreen extends StatelessWidget {
+class ExpensesScreen extends StatefulWidget {
   const ExpensesScreen({super.key});
+
+  @override
+  State<ExpensesScreen> createState() => _ExpensesScreenState();
+}
+
+class _ExpensesScreenState extends State<ExpensesScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _sortBy = 'date'; // 'date', 'amount', 'description'
+  bool _sortAscending = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Expense> _filterAndSortExpenses(List<Expense> expenses) {
+    // Filter expenses based on search query
+    List<Expense> filteredExpenses =
+        expenses.where((expense) {
+          if (_searchQuery.isEmpty) return true;
+
+          final query = _searchQuery.toLowerCase();
+
+          // Search by description
+          if (expense.description.toLowerCase().contains(query)) return true;
+
+          // Search by amount (convert to string for search)
+          if (expense.amount.toString().contains(query)) return true;
+
+          return false;
+        }).toList();
+
+    // Sort expenses
+    filteredExpenses.sort((a, b) {
+      int comparison = 0;
+
+      switch (_sortBy) {
+        case 'date':
+          comparison = a.date.compareTo(b.date);
+          break;
+        case 'amount':
+          comparison = a.amount.compareTo(b.amount);
+          break;
+        case 'description':
+          comparison = a.description.compareTo(b.description);
+          break;
+      }
+
+      return _sortAscending ? comparison : -comparison;
+    });
+
+    return filteredExpenses;
+  }
+
+  Widget _buildSearchAndSortBar() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+      ),
+      child: Column(
+        children: [
+          // Search bar
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search by description or amount...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon:
+                  _searchQuery.isNotEmpty
+                      ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                      : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
+          ),
+          const SizedBox(height: 12),
+
+          // Sort controls
+          Row(
+            children: [
+              const Text(
+                'Sort by: ',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 8),
+              DropdownButton<String>(
+                value: _sortBy,
+                items: const [
+                  DropdownMenuItem(value: 'date', child: Text('Date')),
+                  DropdownMenuItem(value: 'amount', child: Text('Amount')),
+                  DropdownMenuItem(
+                    value: 'description',
+                    child: Text('Description'),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _sortBy = value;
+                    });
+                  }
+                },
+              ),
+              const SizedBox(width: 16),
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    _sortAscending = !_sortAscending;
+                  });
+                },
+                icon: Icon(
+                  _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                ),
+                tooltip: _sortAscending ? 'Sort Descending' : 'Sort Ascending',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,102 +163,194 @@ class ExpensesScreen extends StatelessWidget {
           shopProvider.currentShop,
         );
 
+        final filteredAndSortedExpenses = _filterAndSortExpenses(expenses);
+
         if (isWindows) {
           // Desktop layout: Centered, max width, header add button, table-like list
           return Scaffold(
+            appBar: AppBar(
+              title: const Text('Expenses'),
+              actions: [
+                if (filteredAndSortedExpenses.isNotEmpty)
+                  Text(
+                    '${filteredAndSortedExpenses.length} expenses',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                  ),
+                const SizedBox(width: 16),
+                if (user != null &&
+                    (user.permissions.contains('add_expense') ||
+                        user.permissions.contains('all') ||
+                        user.role == 'admin' ||
+                        user.role == 'owner'))
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder:
+                            (ctx) => Dialog(
+                              child: SizedBox(
+                                width: 400,
+                                child: NewExpenseModal(),
+                              ),
+                            ),
+                      );
+                    },
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Expense'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green.shade700,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                    ),
+                  ),
+                const SizedBox(width: 16),
+              ],
+            ),
             body: Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 900),
+                constraints: const BoxConstraints(maxWidth: 1000),
                 child: Padding(
                   padding: const EdgeInsets.all(32.0),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Expenses',
-                            style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                          ),
-                          if (user != null &&
-                              (user.permissions.contains('add_expense') ||
-                                  user.permissions.contains('all') ||
-                                  user.role == 'admin' ||
-                                  user.role == 'owner'))
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (ctx) => Dialog(
-                                    child: SizedBox(
-                                      width: 400,
-                                      child: NewExpenseModal(),
-                                    ),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.add),
-                              label: const Text('Add Expense'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green.shade700,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
+                      // Search and sort bar
+                      _buildSearchAndSortBar(),
+                      const SizedBox(height: 16),
                       // Table header
                       Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
                         color: Colors.grey.shade100,
                         child: Row(
                           children: const [
-                            Expanded(flex: 3, child: Text('Description', style: TextStyle(fontWeight: FontWeight.bold))),
-                            Expanded(flex: 2, child: Text('Date', style: TextStyle(fontWeight: FontWeight.bold))),
-                            Expanded(flex: 2, child: Text('Shop', style: TextStyle(fontWeight: FontWeight.bold))),
-                            Expanded(flex: 2, child: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold))),
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                'Description',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                'Date',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                'Shop',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Text(
+                                'Amount',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       const Divider(height: 0),
                       Expanded(
-                        child: expenses.isEmpty
-                            ? const Center(child: Text('No expenses found.'))
-                            : ListView.builder(
-                                itemCount: expenses.length,
-                                itemBuilder: (ctx, i) {
-                                  final expense = expenses[i];
-                                  final shop = shopProvider.shops.firstWhere(
-                                    (s) => s.id == expense.shopId,
-                                    orElse: () => Shop(
-                                      id: expense.shopId,
-                                      name: 'Unknown Shop',
-                                      businessId: '',
-                                    ),
-                                  );
-                                  return Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                                    decoration: BoxDecoration(
-                                      border: Border(
-                                        bottom: BorderSide(color: Colors.grey.shade200),
+                        child:
+                            filteredAndSortedExpenses.isEmpty
+                                ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.search_off,
+                                        size: 64,
+                                        color: Colors.grey.shade400,
                                       ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Expanded(flex: 3, child: Text(expense.description)),
-                                        Expanded(flex: 2, child: Text(expense.date.toIso8601String())),
-                                        Expanded(flex: 2, child: Text(shop.name, style: TextStyle(color: Colors.grey.shade600, fontSize: 12))),
-                                        Expanded(flex: 2, child: Text('K${expense.amount.toStringAsFixed(2)}')),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        _searchQuery.isEmpty
+                                            ? 'No expenses found.'
+                                            : 'No expenses match your search.',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                      if (_searchQuery.isNotEmpty) ...[
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Try adjusting your search terms.',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey.shade500,
+                                          ),
+                                        ),
                                       ],
-                                    ),
-                                  );
-                                },
-                              ),
+                                    ],
+                                  ),
+                                )
+                                : ListView.builder(
+                                  itemCount: filteredAndSortedExpenses.length,
+                                  itemBuilder: (ctx, i) {
+                                    final expense =
+                                        filteredAndSortedExpenses[i];
+                                    final shop = shopProvider.shops.firstWhere(
+                                      (s) => s.id == expense.shopId,
+                                      orElse: () => shopProvider.shops.first,
+                                    );
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                        horizontal: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        border: Border(
+                                          bottom: BorderSide(
+                                            color: Colors.grey.shade200,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            flex: 3,
+                                            child: Text(expense.description),
+                                          ),
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              DateFormat(
+                                                'yyyy-MM-dd - kk:mm',
+                                              ).format(expense.date),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              shop.name,
+                                              style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 2,
+                                            child: Text(
+                                              'K${expense.amount.toStringAsFixed(2)}',
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
                       ),
                     ],
                   ),
@@ -128,45 +360,84 @@ class ExpensesScreen extends StatelessWidget {
           );
         }
 
-        // Mobile layout (unchanged)
+        // Mobile layout
         return Scaffold(
           body: Column(
             children: [
+              // Search and sort bar for mobile
+              _buildSearchAndSortBar(),
               Expanded(
-                child: ListView.builder(
-                  itemCount: expenses.length,
-                  itemBuilder: (ctx, i) {
-                    final expense = expenses[i];
-                    final shop = shopProvider.shops.firstWhere(
-                      (s) => s.id == expense.shopId,
-                      orElse:
-                          () => Shop(
-                            id: expense.shopId,
-                            name: 'Unknown Shop',
-                            businessId: '',
+                child:
+                    filteredAndSortedExpenses.isEmpty
+                        ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.search_off,
+                                size: 64,
+                                color: Colors.grey.shade400,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                _searchQuery.isEmpty
+                                    ? 'No expenses found.'
+                                    : 'No expenses match your search.',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              if (_searchQuery.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Try adjusting your search terms.',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                    );
+                        )
+                        : ListView.builder(
+                          itemCount: filteredAndSortedExpenses.length,
+                          itemBuilder: (ctx, i) {
+                            final expense = filteredAndSortedExpenses[i];
+                            final shop = shopProvider.shops.firstWhere(
+                              (s) => s.id == expense.shopId,
+                              orElse: () => shopProvider.shops.first,
+                            );
 
-                    return ListTile(
-                      title: Text(expense.description),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(expense.date.toIso8601String()),
-                          Text(
-                            'Shop: ${shop.name}',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                      trailing: Text('K${expense.amount.toStringAsFixed(2)}'),
-                    );
-                  },
-                ),
+                            return ListTile(
+                              title: Text(expense.description),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    DateFormat(
+                                      'yyyy-MM-dd - kk:mm',
+                                    ).format(expense.date),
+                                  ),
+                                  Text(
+                                    'Shop: ${shop.name}',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              trailing: Text(
+                                'K${expense.amount.toStringAsFixed(2)}',
+                              ),
+                            );
+                          },
+                        ),
               ),
+              // Bottom spacing for floating buttons
+              const SizedBox(height: 80),
             ],
           ),
           floatingActionButton:

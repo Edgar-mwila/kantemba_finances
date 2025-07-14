@@ -35,6 +35,42 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
     super.dispose();
   }
 
+  String? _validateItemName(String? value, List<String> itemNames) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Enter item name';
+    }
+    if (value.trim().length < 3) {
+      return 'Item name must be at least 3 characters';
+    }
+    final lower = value.trim().toLowerCase();
+    if (itemNames.where((name) => name.toLowerCase() == lower).isNotEmpty &&
+        !_isExistingItem) {
+      return 'Item name already exists';
+    }
+    return null;
+  }
+
+  String? _validateUnits(String? value) {
+    if (value == null || value.isEmpty) return 'Enter number of units';
+    final parsed = int.tryParse(value);
+    if (parsed == null || parsed <= 0) return 'Enter a valid number';
+    return null;
+  }
+
+  String? _validateUnitPrice(String? value) {
+    if (value == null || value.isEmpty) return 'Enter unit price';
+    final parsed = double.tryParse(value);
+    if (parsed == null || parsed <= 0) return 'Enter a valid price';
+    return null;
+  }
+
+  String? _validateBulkPrice(String? value) {
+    if (value == null || value.isEmpty) return 'Enter bulk price';
+    final parsed = double.tryParse(value);
+    if (parsed == null || parsed <= 0) return 'Enter a valid price';
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final inventoryProvider = Provider.of<InventoryProvider>(context);
@@ -104,18 +140,20 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                                   ),
                                   validator:
                                       (value) =>
-                                          value == null || value.isEmpty
-                                              ? 'Enter item name'
-                                              : null,
+                                          _validateItemName(value, itemNames),
                                   onChanged: (value) {
                                     setState(() {
                                       _itemName = value;
-                                      _isExistingItem = itemNames.contains(
-                                        value,
+                                      _isExistingItem = itemNames.any(
+                                        (name) =>
+                                            name.toLowerCase() ==
+                                            value.toLowerCase(),
                                       );
                                       if (_isExistingItem) {
                                         final item = existingItems.firstWhere(
-                                          (e) => e.name == value,
+                                          (e) =>
+                                              e.name.toLowerCase() ==
+                                              value.toLowerCase(),
                                         );
                                         _selectedItemId = item.id;
                                         _lowStockThreshold =
@@ -137,14 +175,7 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                               keyboardType: TextInputType.numberWithOptions(
                                 decimal: true,
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty)
-                                  return 'Enter bulk price';
-                                final parsed = double.tryParse(value);
-                                if (parsed == null || parsed <= 0)
-                                  return 'Enter a valid price';
-                                return null;
-                              },
+                              validator: _validateBulkPrice,
                               onSaved:
                                   (value) => _bulkPrice = double.parse(value!),
                             ),
@@ -154,14 +185,7 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                                 labelText: 'Number of Units',
                               ),
                               keyboardType: TextInputType.number,
-                              validator: (value) {
-                                if (value == null || value.isEmpty)
-                                  return 'Enter number of units';
-                                final parsed = int.tryParse(value);
-                                if (parsed == null || parsed <= 0)
-                                  return 'Enter a valid number';
-                                return null;
-                              },
+                              validator: _validateUnits,
                               onSaved: (value) => _units = int.parse(value!),
                             ),
                           ],
@@ -178,21 +202,18 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                               keyboardType: TextInputType.numberWithOptions(
                                 decimal: true,
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty)
-                                  return 'Enter unit price';
-                                final parsed = double.tryParse(value);
-                                if (parsed == null || parsed <= 0)
-                                  return 'Enter a valid price';
-                                return null;
-                              },
+                              validator: _validateUnitPrice,
                               onSaved:
                                   (value) => _unitPrice = double.parse(value!),
                             ),
                             const SizedBox(height: 16),
                             TextFormField(
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 labelText: 'Low Stock Threshold (optional)',
+                                helperText:
+                                    _isExistingItem
+                                        ? 'Cannot edit threshold for existing items'
+                                        : null,
                               ),
                               keyboardType: TextInputType.number,
                               initialValue: _lowStockThreshold.toString(),
@@ -205,6 +226,11 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                               },
                               enabled:
                                   !_isExistingItem, // Only editable for new items
+                              readOnly: _isExistingItem,
+                              style:
+                                  _isExistingItem
+                                      ? TextStyle(color: Colors.grey)
+                                      : null,
                             ),
                             const SizedBox(height: 16),
                             TextFormField(
@@ -288,18 +314,17 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                       controller: _itemNameController,
                       focusNode: focusNode,
                       decoration: const InputDecoration(labelText: 'Item Name'),
-                      validator:
-                          (value) =>
-                              value == null || value.isEmpty
-                                  ? 'Enter item name'
-                                  : null,
+                      validator: (value) => _validateItemName(value, itemNames),
                       onChanged: (value) {
                         setState(() {
                           _itemName = value;
-                          _isExistingItem = itemNames.contains(value);
+                          _isExistingItem = itemNames.any(
+                            (name) => name.toLowerCase() == value.toLowerCase(),
+                          );
                           if (_isExistingItem) {
                             final item = existingItems.firstWhere(
-                              (e) => e.name == value,
+                              (e) =>
+                                  e.name.toLowerCase() == value.toLowerCase(),
                             );
                             _selectedItemId = item.id;
                             _lowStockThreshold = item.lowStockThreshold;
@@ -317,14 +342,7 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                     labelText: 'Bulk Price (total purchase)',
                   ),
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  validator: (value) {
-                    if (value == null || value.isEmpty)
-                      return 'Enter bulk price';
-                    final parsed = double.tryParse(value);
-                    if (parsed == null || parsed <= 0)
-                      return 'Enter a valid price';
-                    return null;
-                  },
+                  validator: _validateBulkPrice,
                   onSaved: (value) => _bulkPrice = double.parse(value!),
                 ),
                 TextFormField(
@@ -332,14 +350,7 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                     labelText: 'Number of Units',
                   ),
                   keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty)
-                      return 'Enter number of units';
-                    final parsed = int.tryParse(value);
-                    if (parsed == null || parsed <= 0)
-                      return 'Enter a valid number';
-                    return null;
-                  },
+                  validator: _validateUnits,
                   onSaved: (value) => _units = int.parse(value!),
                 ),
                 TextFormField(
@@ -347,19 +358,16 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                     labelText: 'Unit Sale Price',
                   ),
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  validator: (value) {
-                    if (value == null || value.isEmpty)
-                      return 'Enter unit price';
-                    final parsed = double.tryParse(value);
-                    if (parsed == null || parsed <= 0)
-                      return 'Enter a valid price';
-                    return null;
-                  },
+                  validator: _validateUnitPrice,
                   onSaved: (value) => _unitPrice = double.parse(value!),
                 ),
                 TextFormField(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Low Stock Threshold (optional)',
+                    helperText:
+                        _isExistingItem
+                            ? 'Cannot edit threshold for existing items'
+                            : null,
                   ),
                   keyboardType: TextInputType.number,
                   initialValue: _lowStockThreshold.toString(),
@@ -371,6 +379,8 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                     }
                   },
                   enabled: !_isExistingItem, // Only editable for new items
+                  readOnly: _isExistingItem,
+                  style: _isExistingItem ? TextStyle(color: Colors.grey) : null,
                 ),
                 TextFormField(
                   decoration: const InputDecoration(
@@ -400,89 +410,116 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
       _isLoading = true;
     });
 
-    final usersProvider = Provider.of<UsersProvider>(context, listen: false);
-    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
-    final currentUser = usersProvider.currentUser;
-    print(
-      "currentUser: ${currentUser?.name}, shopProvider: ${shopProvider.currentShop?.name}",
-    );
-    if (currentUser == null) {
-      ScaffoldMessenger.of(
+    try {
+      final usersProvider = Provider.of<UsersProvider>(context, listen: false);
+      final shopProvider = Provider.of<ShopProvider>(context, listen: false);
+      
+      // Ensure user session is available
+      if (usersProvider.currentUser == null) {
+        // Try to wait for initialization
+        if (!usersProvider.isInitialized) {
+          debugPrint('User provider not initialized, waiting...');
+          int attempts = 0;
+          while (!usersProvider.isInitialized && attempts < 10) {
+            await Future.delayed(const Duration(milliseconds: 100));
+            attempts++;
+          }
+        }
+        
+        if (usersProvider.currentUser == null) {
+          throw Exception('No user is logged in! Please log in again.');
+        }
+      }
+      
+      final currentUser = usersProvider.currentUser!;
+      debugPrint('Current user: ${currentUser.name} (${currentUser.id})');
+
+      final inventoryProvider = Provider.of<InventoryProvider>(
         context,
-      ).showSnackBar(const SnackBar(content: Text('No user is logged in!')));
-      setState(() {
-        _isLoading = false;
-      });
-      return;
-    }
-
-    final inventoryProvider = Provider.of<InventoryProvider>(
-      context,
-      listen: false,
-    );
-    final expensesProvider = Provider.of<ExpensesProvider>(
-      context,
-      listen: false,
-    );
-
-    final currentShop = shopProvider.currentShop;
-    if (currentShop == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('No shop is selected!')));
-      setState(() {
-        _isLoading = false;
-      });
-      return;
-    }
-
-    if (_isExistingItem && _selectedItemId != null) {
-      // Update stock and price for existing item
-      await inventoryProvider.increaseStockAndUpdatePrice(
-        _selectedItemId!,
-        _units,
-        _unitPrice,
+        listen: false,
       );
-    } else {
-      // Add new inventory item
-      print('Adding new inventory item: $_itemName');
-      final newItem = InventoryItem(
-        id: '', // Will be set by provider
-        name: _itemName,
-        price: _unitPrice,
-        quantity: _units,
-        lowStockThreshold: _lowStockThreshold,
+      final expensesProvider = Provider.of<ExpensesProvider>(
+        context,
+        listen: false,
+      );
+
+      final currentShop = shopProvider.currentShop;
+      if (currentShop == null) {
+        throw Exception('No shop is selected!');
+      }
+
+      if (_isExistingItem && _selectedItemId != null) {
+        // Update stock and price for existing item
+        await inventoryProvider.increaseStockAndUpdatePrice(
+          _selectedItemId!,
+          _units,
+          _unitPrice,
+        );
+      } else {
+        // Add new inventory item
+        print('Adding new inventory item: $_itemName');
+        final newItem = InventoryItem(
+          id:
+              '${currentShop.name.replaceAll(' ', '_')}_inventory_${DateTime.now().millisecondsSinceEpoch}', // Will be set by provider
+          name: _itemName,
+          price: _unitPrice,
+          quantity: _units,
+          lowStockThreshold: _lowStockThreshold,
+          shopId: currentShop.id,
+          createdBy: currentUser.id,
+        );
+        await inventoryProvider.addInventoryItem(
+          newItem,
+          currentUser.id,
+          currentShop.id,
+        );
+      }
+
+      // Add bulk purchase as expense
+      final expense = Expense(
+        id:
+            '${currentShop.name.replaceAll(' ', '_')}_expense_${DateTime.now().millisecondsSinceEpoch}', // Will be set by provider
+        description:
+            'Bulk purchase: $_itemName${_description.isNotEmpty ? ' - $_description' : ''}',
+        amount: _bulkPrice,
+        date: DateTime.now(),
+        category: 'Purchases',
         shopId: currentShop.id,
         createdBy: currentUser.id,
       );
-      await inventoryProvider.addInventoryItem(
-        newItem,
+      await expensesProvider.addExpenseHybrid(
+        expense,
         currentUser.id,
         currentShop.id,
+        Provider.of<BusinessProvider>(context, listen: false),
       );
+
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Inventory updated!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        await Future.delayed(const Duration(milliseconds: 500));
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update inventory: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
-
-    // Add bulk purchase as expense
-    final expense = Expense(
-      id: '', // Will be set by provider
-      description:
-          'Bulk purchase: $_itemName${_description.isNotEmpty ? ' - $_description' : ''}',
-      amount: _bulkPrice,
-      date: DateTime.now(),
-      category: 'Purchases',
-      shopId: currentShop.id,
-      createdBy: currentUser.id,
-    );
-    await expensesProvider.addExpenseHybrid(
-      expense,
-      currentUser.id,
-      currentShop.id,
-      Provider.of<BusinessProvider>(context, listen: false),
-    );
-
-    setState(() {
-      _isLoading = false;
-    });
-    Navigator.of(context).pop();
   }
 }

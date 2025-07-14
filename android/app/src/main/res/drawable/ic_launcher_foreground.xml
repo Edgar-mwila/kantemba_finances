@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M54,54m-48,0a48,48 0,1 1,96 0a48,48 0,1 1,-96 0" />
+    
+    <!-- Calculator body -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M30,25 L78,25 L78,75 L30,75 Z" />
+    
+    <!-- Calculator screen -->
+    <path
+        android:fillColor="#E8F5E8"
+        android:pathData="M35,30 L73,30 L73,45 L35,45 Z" />
+    
+    <!-- Calculator buttons -->
+    <path
+        android:fillColor="#81C784"
+        android:pathData="M35,50 L45,50 L45,60 L35,60 Z" />
+    <path
+        android:fillColor="#81C784"
+        android:pathData="M50,50 L60,50 L60,60 L50,60 Z" />
+    <path
+        android:fillColor="#81C784"
+        android:pathData="M65,50 L73,50 L73,60 L65,60 Z" />
+    <path
+        android:fillColor="#81C784"
+        android:pathData="M35,65 L45,65 L45,70 L35,70 Z" />
+    <path
+        android:fillColor="#81C784"
+        android:pathData="M50,65 L60,65 L60,70 L50,70 Z" />
+    <path
+        android:fillColor="#81C784"
+        android:pathData="M65,65 L73,65 L73,70 L65,70 Z" />
+    
+    <!-- Chart bars -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M15,20 L18,20 L18,35 L15,35 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M22,20 L25,20 L25,30 L22,30 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M29,20 L32,20 L32,40 L29,40 Z" />
+    
+    <!-- Coins -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M85,15 A3,3 0 1,1 85,21 A3,3 0 1,1 85,15 Z" />
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M90,20 A3,3 0 1,1 90,26 A3,3 0 1,1 90,20 Z" />
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M85,25 A3,3 0 1,1 85,31 A3,3 0 1,1 85,25 Z" />
+    
+    <!-- Stylized "K" -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,15 L45,15 L45,25 L50,20 L55,20 L50,25 L55,30 L50,30 L45,25 L45,35 L40,35 Z" />
+    
+    <!-- Dollar sign on calculator screen -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M50,35 L52,35 L52,40 L50,40 Z" />
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M49,36 L53,36 L53,37 L49,37 Z" />
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M49,39 L53,39 L53,40 L49,40 Z" />
+</vector> 

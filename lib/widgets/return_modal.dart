@@ -4,7 +4,6 @@ import 'package:kantemba_finances/models/sale.dart';
 import 'package:kantemba_finances/models/return.dart';
 import 'package:kantemba_finances/providers/returns_provider.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
-import 'package:kantemba_finances/providers/business_provider.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
 
 class ReturnModal extends StatefulWidget {
@@ -49,14 +48,11 @@ class _ReturnModalState extends State<ReturnModal> {
   }
 
   void _updateQuantity(ReturnItem returnItem, int newQuantity) {
-    if (newQuantity <= 0) return;
-
     final saleItem = widget.sale.items.firstWhere(
       (item) => item.product.id == returnItem.product.id,
     );
-
+    if (newQuantity < 1) return;
     if (newQuantity > saleItem.quantity) return;
-
     setState(() {
       final index = _selectedItems.indexWhere(
         (item) => item.product.id == returnItem.product.id,
@@ -100,6 +96,17 @@ class _ReturnModalState extends State<ReturnModal> {
       return;
     }
 
+    final itemsWithNoReason =
+        _selectedItems.where((item) => item.reason.trim().isEmpty).toList();
+    if (itemsWithNoReason.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please provide a reason for each returned item'),
+        ),
+      );
+      return;
+    }
+
     if (_reasonController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please provide a reason for the return')),
@@ -117,50 +124,43 @@ class _ReturnModalState extends State<ReturnModal> {
         listen: false,
       );
       final userProvider = Provider.of<UsersProvider>(context, listen: false);
-      final businessProvider = Provider.of<BusinessProvider>(
-        context,
-        listen: false,
-      );
       final currentUser = userProvider.currentUser;
-      print(
-        "currentUser: ${currentUser?.name}, shopProvider: ${businessProvider.id}",
-      );
+
       if (currentUser == null) {
         throw Exception('User not authenticated');
       }
 
-      final ret = Return(
-        id: 'RET_${DateTime.now().millisecondsSinceEpoch}',
-        originalSaleId: widget.sale.id,
-        items: _selectedItems,
-        totalReturnAmount: _totalReturnAmount,
-        grandReturnAmount: 0, // Will be calculated in provider if needed
-        vat: 0,
-        turnoverTax: 0,
-        levy: 0,
-        date: DateTime.now(),
-        shopId: widget.sale.shopId,
-        createdBy: currentUser.id,
-        reason: _reasonController.text.trim(),
-        status: 'approved', // Always approved
+      // Use the comprehensive createReturn method
+      await returnsProvider.createReturn(
+        widget.sale,
+        _selectedItems,
+        _reasonController.text.trim(),
+        currentUser.id,
+        widget.sale.shopId,
+        context,
       );
 
-      await returnsProvider.addReturnHybrid(ret, businessProvider);
-
+      // Show success message and close modal immediately
       if (mounted) {
-        Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Return created successfully'),
+            content: Text(
+              'Return processed successfully! Inventory and sales have been updated.',
+            ),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
           ),
         );
+
+        // Close the modal immediately
+        Navigator.of(context).pop();
       }
     } catch (e) {
+      print('Error processing return: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error creating return: $e'),
+            content: Text('Error processing return: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -206,6 +206,8 @@ class _ReturnModalState extends State<ReturnModal> {
                   style: Theme.of(
                     context,
                   ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -304,12 +306,16 @@ class _ReturnModalState extends State<ReturnModal> {
                                                             children: [
                                                               IconButton(
                                                                 onPressed:
-                                                                    () => _updateQuantity(
+                                                                    returnItem.quantity >
+                                                                            1
+                                                                        ? () => _updateQuantity(
                                                                       returnItem,
-                                                                      returnItem
-                                                                              .quantity -
+                                                                          returnItem.quantity -
                                                                           1,
-                                                                    ),
+                                                                        )
+                                                                        : null,
+                                                                tooltip:
+                                                                    'Decrease quantity',
                                                                 icon: const Icon(
                                                                   Icons.remove,
                                                                 ),
@@ -325,12 +331,16 @@ class _ReturnModalState extends State<ReturnModal> {
                                                               ),
                                                               IconButton(
                                                                 onPressed:
-                                                                    () => _updateQuantity(
+                                                                    returnItem.quantity <
+                                                                            saleItem.quantity
+                                                                        ? () => _updateQuantity(
                                                                       returnItem,
-                                                                      returnItem
-                                                                              .quantity +
+                                                                          returnItem.quantity +
                                                                           1,
-                                                                    ),
+                                                                        )
+                                                                        : null,
+                                                                tooltip:
+                                                                    'Increase quantity',
                                                                 icon:
                                                                     const Icon(
                                                                       Icons.add,
@@ -385,6 +395,66 @@ class _ReturnModalState extends State<ReturnModal> {
                                   'e.g., Customer changed mind, defective items',
                             ),
                             maxLines: 2,
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed:
+                                      _selectedItems.isEmpty
+                                          ? null
+                                          : () {
+                                            setState(() {
+                                              // Set general reason to "damaged"
+                                              _reasonController.text =
+                                                  'damaged';
+
+                                              // Set reason for all selected items to "damaged"
+                                              for (
+                                                int i = 0;
+                                                i < _selectedItems.length;
+                                                i++
+                                              ) {
+                                                _selectedItems[i] = ReturnItem(
+                                                  product:
+                                                      _selectedItems[i].product,
+                                                  quantity:
+                                                      _selectedItems[i]
+                                                          .quantity,
+                                                  originalPrice:
+                                                      _selectedItems[i]
+                                                          .originalPrice,
+                                                  reason: 'damaged',
+                                                );
+                                              }
+                                            });
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'All selected items marked as damaged goods',
+                                                ),
+                                                backgroundColor: Colors.orange,
+                                                duration: Duration(seconds: 2),
+                                              ),
+                                            );
+                                          },
+                                  icon: const Icon(
+                                    Icons.warning,
+                                    color: Colors.orange,
+                                  ),
+                                  label: const Text('Mark as Damaged Goods'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.orange,
+                                    side: const BorderSide(
+                                      color: Colors.orange,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 16),
                           if (_selectedItems.isNotEmpty) ...[
@@ -468,8 +538,9 @@ class _ReturnModalState extends State<ReturnModal> {
     }
 
     // Mobile layout (unchanged)
-    return Container(
-      padding: const EdgeInsets.all(16),
+    return SingleChildScrollView(
+      child: Container(
+        padding: const EdgeInsets.all(10),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -493,6 +564,8 @@ class _ReturnModalState extends State<ReturnModal> {
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 16),
 
@@ -503,7 +576,6 @@ class _ReturnModalState extends State<ReturnModal> {
           ),
           const SizedBox(height: 8),
           Container(
-            constraints: const BoxConstraints(maxHeight: 300),
             child: ListView.builder(
               shrinkWrap: true,
               itemCount: widget.sale.items.length,
@@ -562,7 +634,7 @@ class _ReturnModalState extends State<ReturnModal> {
                         isSelected
                             ? [
                               Padding(
-                                padding: const EdgeInsets.all(16),
+                                  padding: const EdgeInsets.all(10),
                                 child: Column(
                                   children: [
                                     Row(
@@ -573,11 +645,18 @@ class _ReturnModalState extends State<ReturnModal> {
                                             children: [
                                               IconButton(
                                                 onPressed:
-                                                    () => _updateQuantity(
+                                                      returnItem.quantity > 1
+                                                          ? () => _updateQuantity(
                                                       returnItem,
-                                                      returnItem.quantity - 1,
-                                                    ),
-                                                icon: const Icon(Icons.remove),
+                                                            returnItem
+                                                                    .quantity -
+                                                                1,
+                                                          )
+                                                          : null,
+                                                  tooltip: 'Decrease quantity',
+                                                  icon: const Icon(
+                                                    Icons.remove,
+                                                  ),
                                               ),
                                               Text(
                                                 '${returnItem.quantity}',
@@ -588,10 +667,16 @@ class _ReturnModalState extends State<ReturnModal> {
                                               ),
                                               IconButton(
                                                 onPressed:
-                                                    () => _updateQuantity(
+                                                      returnItem.quantity <
+                                                              saleItem.quantity
+                                                          ? () => _updateQuantity(
                                                       returnItem,
-                                                      returnItem.quantity + 1,
-                                                    ),
+                                                            returnItem
+                                                                    .quantity +
+                                                                1,
+                                                          )
+                                                          : null,
+                                                  tooltip: 'Increase quantity',
                                                 icon: const Icon(Icons.add),
                                               ),
                                             ],
@@ -635,6 +720,46 @@ class _ReturnModalState extends State<ReturnModal> {
             maxLines: 2,
           ),
 
+            const SizedBox(height: 8),
+
+            // Damaged goods button
+            OutlinedButton.icon(
+              onPressed:
+                  _selectedItems.isEmpty
+                      ? null
+                      : () {
+                        setState(() {
+                          // Set general reason to "damaged"
+                          _reasonController.text = 'damaged';
+
+                          // Set reason for all selected items to "damaged"
+                          for (int i = 0; i < _selectedItems.length; i++) {
+                            _selectedItems[i] = ReturnItem(
+                              product: _selectedItems[i].product,
+                              quantity: _selectedItems[i].quantity,
+                              originalPrice: _selectedItems[i].originalPrice,
+                              reason: 'damaged',
+                            );
+                          }
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'All selected items marked as damaged goods',
+                            ),
+                            backgroundColor: Colors.orange,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+              icon: const Icon(Icons.warning, color: Colors.orange),
+              label: const Text('Mark as Damaged Goods'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.orange,
+                side: const BorderSide(color: Colors.orange),
+              ),
+            ),
+
           const SizedBox(height: 16),
 
           // Summary
@@ -672,7 +797,9 @@ class _ReturnModalState extends State<ReturnModal> {
               Expanded(
                 child: OutlinedButton(
                   onPressed:
-                      _isProcessing ? null : () => Navigator.of(context).pop(),
+                        _isProcessing
+                            ? null
+                            : () => Navigator.of(context).pop(),
                   child: const Text('Cancel'),
                 ),
               ),
@@ -700,6 +827,7 @@ class _ReturnModalState extends State<ReturnModal> {
             ],
           ),
         ],
+        ),
       ),
     );
   }
