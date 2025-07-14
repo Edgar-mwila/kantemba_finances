@@ -5,8 +5,6 @@
 ![Kantemba Finances](assets/icon/icon.png)
 
 ## 📋 Table of Contents
-
-- [Welcome to Kantemba Finances](#welcome-to-kantemba-finances)
 - [Getting Started](#getting-started)
 - [Core Features](#core-features)
 - [Zambian Tax Compliance](#zambian-tax-compliance)
@@ -17,29 +15,6 @@
 - [Settings & Configuration](#settings--configuration)
 - [Troubleshooting](#troubleshooting)
 - [Support & Contact](#support--contact)
-
-## 🎯 Welcome to Kantemba Finances
-
-**Kantemba Finances** is your complete business management solution designed specifically for Zambian businesses. Whether you run a small shop in Lusaka, a restaurant in Kitwe, or a multi-location business across Zambia, our app helps you manage your finances, track inventory, and stay compliant with ZRA regulations.
-
-### Why Choose Kantemba Finances?
-
-✅ **Zambian Tax Compliant** - Built-in VAT, Turnover Tax, and Levy calculations  
-✅ **Local Currency Support** - Kwacha (K) with proper formatting  
-✅ **ZRA Integration** - Tax reporting and compliance features  
-✅ **Multi-Location Support** - Manage multiple shops across Zambia  
-✅ **Offline Capability** - Works without internet connection  
-✅ **Mobile Money Integration** - Flutterwave payment processing  
-✅ **Local Support** - Zambian customer service team  
-
-### Who Can Use Kantemba Finances?
-
-- **Small Business Owners** - Track daily sales and expenses
-- **Shop Managers** - Manage inventory and staff
-- **Restaurant Owners** - Handle food costs and sales
-- **Market Traders** - Track daily transactions
-- **Multi-Shop Businesses** - Centralized management
-- **Tax Consultants** - Generate ZRA-compliant reports
 
 ## 🚀 Getting Started
 
