@@ -49,18 +49,23 @@ class SalesProvider with ChangeNotifier {
     String businessId, {
     List<String>? shopIds,
   }) async {
-    // Check if online and if business is premium
     bool isOnline = await ApiService.isOnline();
-    final businessProvider = BusinessProvider();
-    bool isPremium = businessProvider.isPremium;
+    final business = await DBHelper.getDataById('businesses', businessId);
+    final isPremium = business?['isPremium'] == 1;
 
     if (!isOnline || !isPremium) {
       // Offline mode or non-premium business: load from local database
       try {
-        final localSales = await DBHelper.getData('sales');
+        final localSales = await DBHelper.getDataByBusinessId(
+          'sales',
+          businessId,
+        );
         final localSaleItems = await DBHelper.getData('sale_items');
         final localReturnItems = await DBHelper.getData('return_items');
-        final localReturns = await DBHelper.getData('returns');
+        final localReturns = await DBHelper.getDataByBusinessId(
+          'returns',
+          businessId,
+        );
 
         _sales = localSales.map((item) => Sale.fromJson(item)).toList();
 
@@ -105,8 +110,7 @@ class SalesProvider with ChangeNotifier {
 
       // Now map sales and sale items
       await _mapSalesAndItems(allSales, allSaleItems, allReturnItems);
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   Future<void> _fetchSalesForShop(
@@ -137,16 +141,14 @@ class SalesProvider with ChangeNotifier {
           final salesDataList = _processSalesData(salesData);
           final salesObjects = _convertToSales(salesDataList);
           allSales.addAll(salesObjects);
-        } else {
-        }
+        } else {}
 
         // Process sale items data
         final saleItemsData = _parseJsonResponse(response2.body, 'sale_items');
         if (saleItemsData != null) {
           final saleItemsList = _processSaleItemsData(saleItemsData);
           allSaleItems.addAll(saleItemsList);
-        } else {
-        }
+        } else {}
 
         // Process return items data
         if (response3.statusCode == 200) {
@@ -157,10 +159,8 @@ class SalesProvider with ChangeNotifier {
           if (returnItemsData != null) {
             final returnItemsList = _processReturnItemsData(returnItemsData);
             allReturnItems.addAll(returnItemsList);
-          } else {
-          }
-        } else {
-        }
+          } else {}
+        } else {}
 
         // Process returns data to get originalSaleId mapping
         if (response4.statusCode == 200) {
@@ -169,14 +169,10 @@ class SalesProvider with ChangeNotifier {
             final returnsList = _processReturnsData(returnsData);
             // Store returns data for mapping
             _returnsData = returnsList;
-          } else {
-          }
-        } else {
-        }
-      } else {
-      }
-    } catch (e) {
-    }
+          } else {}
+        } else {}
+      } else {}
+    } catch (e) {}
   }
 
   Future<void> _fetchAllSales(
@@ -204,16 +200,14 @@ class SalesProvider with ChangeNotifier {
           final salesDataList = _processSalesData(salesData);
           final salesObjects = _convertToSales(salesDataList);
           allSales.addAll(salesObjects);
-        } else {
-        }
+        } else {}
 
         // Process sale items data
         final saleItemsData = _parseJsonResponse(response2.body, 'sale_items');
         if (saleItemsData != null) {
           final saleItemsList = _processSaleItemsData(saleItemsData);
           allSaleItems.addAll(saleItemsList);
-        } else {
-        }
+        } else {}
 
         // Process return items data
         if (response3.statusCode == 200) {
@@ -224,10 +218,8 @@ class SalesProvider with ChangeNotifier {
           if (returnItemsData != null) {
             final returnItemsList = _processReturnItemsData(returnItemsData);
             allReturnItems.addAll(returnItemsList);
-          } else {
-          }
-        } else {
-        }
+          } else {}
+        } else {}
 
         // Process returns data to get originalSaleId mapping
         if (response4.statusCode == 200) {
@@ -236,14 +228,10 @@ class SalesProvider with ChangeNotifier {
             final returnsList = _processReturnsData(returnsData);
             // Store returns data for mapping
             _returnsData = returnsList;
-          } else {
-          }
-        } else {
-        }
-      } else {
-      }
-    } catch (e) {
-    }
+          } else {}
+        } else {}
+      } else {}
+    } catch (e) {}
   }
 
   // Store returns data for mapping
@@ -325,8 +313,7 @@ class SalesProvider with ChangeNotifier {
           }).toList();
 
       notifyListeners();
-    } catch (e) {
-    }
+    } catch (e) {}
   }
 
   // Helper method to process returns data
@@ -348,11 +335,9 @@ class SalesProvider with ChangeNotifier {
           } else if (decoded is Map) {
             return [decoded];
           }
-        } catch (e) {
-        }
+        } catch (e) {}
       }
-    } catch (e) {
-    }
+    } catch (e) {}
     return [];
   }
 
@@ -375,11 +360,9 @@ class SalesProvider with ChangeNotifier {
           } else if (decoded is Map) {
             return [decoded];
           }
-        } catch (e) {
-        }
+        } catch (e) {}
       }
-    } catch (e) {
-    }
+    } catch (e) {}
     return [];
   }
 
@@ -394,10 +377,8 @@ class SalesProvider with ChangeNotifier {
         } else if (item is Map) {
           final sale = Sale.fromJson(Map<String, dynamic>.from(item));
           sales.add(sale);
-        } else {
-        }
-      } catch (e) {
-      }
+        } else {}
+      } catch (e) {}
     }
     return sales;
   }
@@ -441,11 +422,9 @@ class SalesProvider with ChangeNotifier {
           } else if (decoded is Map) {
             return [decoded];
           }
-        } catch (e) {
-        }
+        } catch (e) {}
       }
-    } catch (e) {
-    }
+    } catch (e) {}
     return [];
   }
 
@@ -468,11 +447,9 @@ class SalesProvider with ChangeNotifier {
           } else if (decoded is Map) {
             return [decoded];
           }
-        } catch (e) {
-        }
+        } catch (e) {}
       }
-    } catch (e) {
-    }
+    } catch (e) {}
     return [];
   }
 
@@ -589,10 +566,16 @@ class SalesProvider with ChangeNotifier {
   Future<void> fetchAndSetSalesHybrid(BusinessProvider businessProvider) async {
     if (!businessProvider.isPremium) {
       // Local only
-      final localSales = await DBHelper.getData('sales');
+      final localSales = await DBHelper.getDataByBusinessId(
+        'sales',
+        businessProvider.id!,
+      );
       final localSaleItems = await DBHelper.getData('sale_items');
       final localReturnItems = await DBHelper.getData('return_items');
-      final localReturns = await DBHelper.getData('returns');
+      final localReturns = await DBHelper.getDataByBusinessId(
+        'returns',
+        businessProvider.id!,
+      );
 
       _sales = localSales.map((item) => Sale.fromJson(item)).toList();
       _returnsData = localReturns;
@@ -606,10 +589,16 @@ class SalesProvider with ChangeNotifier {
       await fetchAndSetSales(businessProvider.id!);
     } else {
       // Offline, use local DB
-      final localSales = await DBHelper.getData('sales');
+      final localSales = await DBHelper.getDataByBusinessId(
+        'sales',
+        businessProvider.id!,
+      );
       final localSaleItems = await DBHelper.getData('sale_items');
       final localReturnItems = await DBHelper.getData('return_items');
-      final localReturns = await DBHelper.getData('returns');
+      final localReturns = await DBHelper.getDataByBusinessId(
+        'returns',
+        businessProvider.id!,
+      );
 
       _sales = localSales.map((item) => Sale.fromJson(item)).toList();
       _returnsData = localReturns;
@@ -625,6 +614,7 @@ class SalesProvider with ChangeNotifier {
     String shopId,
     BusinessProvider businessProvider,
   ) async {
+    print("sale being added: ${sale.toJson()}");
     if (!businessProvider.isPremium || !(await ApiService.isOnline())) {
       await DBHelper.insert('sales', {
         'id': sale.id,
@@ -674,6 +664,7 @@ class SalesProvider with ChangeNotifier {
     }
 
     final sale = _sales[saleIndex];
+    print('sale to be updated: ${sale.toJson()}');
     final businessProvider = BusinessProvider();
 
     // Calculate total return amount
@@ -720,6 +711,8 @@ class SalesProvider with ChangeNotifier {
       customerPhone: sale.customerPhone,
       discount: sale.discount,
     );
+
+    print('Updated sale: ${updatedSale.toJson()}');
 
     // Update in memory
     _sales[saleIndex] = updatedSale;
@@ -800,18 +793,5 @@ class SalesProvider with ChangeNotifier {
     }
 
     notifyListeners();
-  }
-
-  Future<void> syncSalesToBackend(
-    BusinessProvider businessProvider, {
-    bool batch = false,
-  }) async {
-    if (batch) return; // Handled by SyncManager
-    if (!businessProvider.isPremium || !(await ApiService.isOnline())) return;
-    final unsynced = await DBHelper.getUnsyncedData('sales');
-    for (final sale in unsynced) {
-      await ApiService.post('sales', sale);
-      await DBHelper.markAsSynced('sales', sale['id']);
-    }
   }
 }

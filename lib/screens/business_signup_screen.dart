@@ -121,12 +121,12 @@ class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
           debugPrint('$stack');
           // Continue with signup even if shop creation fails
         }
-
+        final user_id = DateTime.now().millisecondsSinceEpoch.toString();
         // Add admin as first user (with admin role and no shopId for global access)
         try {
           await Provider.of<UsersProvider>(context, listen: false).addUser(
             User(
-              id: DateTime.now().millisecondsSinceEpoch.toString(),
+              id: user_id,
               name: _adminNameController.text,
               contact: _adminContactController.text,
               role: 'admin',
@@ -146,7 +146,7 @@ class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
         // Set current user as admin
         Provider.of<UsersProvider>(context, listen: false).setCurrentUser(
           User(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            id: user_id,
             name: _adminNameController.text,
             contact: _adminContactController.text,
             role: 'admin',

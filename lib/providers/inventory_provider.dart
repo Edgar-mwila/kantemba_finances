@@ -51,17 +51,19 @@ class InventoryProvider with ChangeNotifier {
     String businessId, {
     List<String>? shopIds,
   }) async {
-    // Check if online and if business is premium
     bool isOnline = await ApiService.isOnline();
-    final businessProvider = BusinessProvider();
-    bool isPremium = businessProvider.isPremium;
+    final business = await DBHelper.getDataById('businesses', businessId);
+    final isPremium = business?['isPremium'] == 1;
 
     if (!isOnline || !isPremium) {
       // Offline mode or non-premium business: load from local database
       debugPrint(
         'InventoryProvider: Loading items from local database (offline: ${!isOnline}, premium: $isPremium)',
       );
-      final localItems = await DBHelper.getData('inventories');
+      final localItems = await DBHelper.getDataByBusinessId(
+        'inventories',
+        businessId,
+      );
       _items =
           localItems.map((item) {
             final damagedRecords =
@@ -620,7 +622,10 @@ class InventoryProvider with ChangeNotifier {
     BusinessProvider businessProvider,
   ) async {
     if (!businessProvider.isPremium) {
-      final localItems = await DBHelper.getData('inventories');
+      final localItems = await DBHelper.getDataByBusinessId(
+        'inventories',
+        businessProvider.id!,
+      );
       _items =
           localItems.map((item) {
             final damagedRecords =
@@ -649,7 +654,10 @@ class InventoryProvider with ChangeNotifier {
     if (await ApiService.isOnline()) {
       await fetchAndSetItems(businessProvider.id!);
     } else {
-      final localItems = await DBHelper.getData('inventories');
+      final localItems = await DBHelper.getDataByBusinessId(
+        'inventories',
+        businessProvider.id!,
+      );
       _items =
           localItems.map((item) {
             final damagedRecords =
@@ -673,37 +681,6 @@ class InventoryProvider with ChangeNotifier {
             );
           }).toList();
       notifyListeners();
-    }
-  }
-
-  Future<void> syncInventoryToBackend(
-    BusinessProvider businessProvider, {
-    bool batch = false,
-  }) async {
-    if (batch) return; // Handled by SyncManager
-    if (!businessProvider.isPremium || !(await ApiService.isOnline())) return;
-
-    final unsynced = await DBHelper.getUnsyncedData('inventories');
-    for (final item in unsynced) {
-      try {
-        // Send to backend via ApiService
-        await ApiService.post('inventory', {
-          'id': item['id'],
-          'name': item['name'],
-          'price': item['price'],
-          'quantity': item['quantity'],
-          'lowStockThreshold': item['lowStockThreshold'],
-          'createdBy': item['createdBy'],
-          'shopId': item['shopId'],
-          'damagedRecords': item['damagedRecords'],
-        });
-
-        // Mark as synced after successful API call
-        await DBHelper.markAsSynced('inventories', item['id']);
-      } catch (e) {
-        debugPrint('Failed to sync inventory item ${item['id']}: $e');
-        // Keep as unsynced for retry later
-      }
     }
   }
 }

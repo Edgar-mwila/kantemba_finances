@@ -32,6 +32,20 @@ class UsersProvider with ChangeNotifier {
       final token = await ApiService.getToken();
 
       if (userData != null && businessId != null) {
+        // await Provider.of<BusinessProvider>(
+        //   context,
+        //   listen: false,
+        // ).fetchAndSetBusinessHybrid(businessId);
+        // if (Provider.of<BusinessProvider>(
+        //       context,
+        //       listen: false,
+        //     ).businessName ==
+        //     null) {
+        //   // If business not found, clear session
+        //   await _clearStoredSession();
+        //   _currentUser = null;
+        //   return;
+        // }
         final userMap = json.decode(userData);
         _currentUser = _userFromMap(userMap);
 
@@ -48,12 +62,22 @@ class UsersProvider with ChangeNotifier {
             _currentUser = null;
           } else {
             // Restore all providers with the saved business and user data
+            final businessProvider = Provider.of<BusinessProvider>(
+              context,
+              listen: false,
+            );
+            await businessProvider.setBusiness(businessId);
             initialize_providers(context, _currentUser!).catchError((e) {
               debugPrint('Provider initialization error: $e');
             });
           }
         } else {
-          // Offline mode: just restore the user session without API calls
+          // Set all providers using the businessId
+          final businessProvider = Provider.of<BusinessProvider>(
+            context,
+            listen: false,
+          );
+          await businessProvider.setBusiness(businessId);
           // Set up basic providers for offline mode
           initialize_providers(context, _currentUser!).catchError((e) {
             debugPrint('Provider initialization error: $e');
@@ -146,6 +170,18 @@ class UsersProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('current_user');
     await prefs.remove('business_id');
+    await prefs.remove('isPremium');
+  }
+
+  Future<void> createTokenForUser(User user) async {
+    final response = await ApiService.post('users/token/', user.toJson());
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      await ApiService.saveToken(data['token']);
+      notifyListeners();
+    } else {
+      throw Exception('Failed to get token for user');
+    }
   }
 
   // Public method to clear stored session (for testing/debugging)
@@ -191,8 +227,13 @@ class UsersProvider with ChangeNotifier {
         listen: false,
       );
 
-      await businessProvider.setBusiness(user.businessId);
+      if (businessProvider.id != null) {
+        await businessProvider.setBusiness(user.businessId);
+      }
 
+      debugPrint(
+        'business after loading is ; id: ${businessProvider.id}, name: ${businessProvider.id}, isPremium: ${businessProvider.isPremium}',
+      );
       // Check if online and if business is premium
       bool isOnline = await ApiService.isOnline();
       bool isPremium = businessProvider.isPremium;
@@ -376,7 +417,6 @@ class UsersProvider with ChangeNotifier {
                   );
                 }
               }
-              return false;
             }
           } catch (e) {
             // Network timeout or connection error
@@ -402,7 +442,6 @@ class UsersProvider with ChangeNotifier {
           ),
         );
       }
-      return false;
     }
     // Fallback to local DB login if offline or user not found online
     try {
@@ -582,17 +621,24 @@ class UsersProvider with ChangeNotifier {
   }
 
   Future<void> fetchAndSetUsersHybrid(BusinessProvider businessProvider) async {
-    if (!businessProvider.isPremium) {
-      final localUsers = await DBHelper.getData('users');
+    if (businessProvider.isPremium && await ApiService.isOnline()) {
+      await fetchUsers(businessProvider.id!);
+    } else {
+      final localUsers = await DBHelper.getDataByBusinessId(
+        'users',
+        businessProvider.id!,
+      );
       _users =
           localUsers.map((item) => _userFromMap(item)).toList().cast<User>();
       notifyListeners();
       return;
     }
-    if (await ApiService.isOnline()) {
-      await fetchUsers(businessProvider.id!);
-    } else {
-      final localUsers = await DBHelper.getData('users');
+
+    if (_users.isEmpty) {
+      final localUsers = await DBHelper.getDataByBusinessId(
+        'users',
+        businessProvider.id!,
+      );
       _users =
           localUsers.map((item) => _userFromMap(item)).toList().cast<User>();
       notifyListeners();
@@ -625,18 +671,5 @@ class UsersProvider with ChangeNotifier {
       return;
     }
     await addUser(user, password, contact, businessId);
-  }
-
-  Future<void> syncUsersToBackend(
-    BusinessProvider businessProvider, {
-    bool batch = false,
-  }) async {
-    if (batch) return; // Handled by SyncManager
-    if (!businessProvider.isPremium || !(await ApiService.isOnline())) return;
-    final unsynced = await DBHelper.getUnsyncedData('users');
-    for (final user in unsynced) {
-      await ApiService.post('users', user);
-      await DBHelper.markAsSynced('users', user['id']);
-    }
   }
 }

@@ -197,7 +197,7 @@ class _NewSaleModalState extends State<NewSaleModal> {
         levy: 0.0,
         date: DateTime.now(),
         shopId: currentShop.id,
-        createdBy: '', // Will be set by provider
+        createdBy: currentUser.id, // Will be set by provider
         customerName: _customerNameController.text.trim(),
         customerPhone: _customerPhoneController.text.trim(),
         discount: _discountAmount,

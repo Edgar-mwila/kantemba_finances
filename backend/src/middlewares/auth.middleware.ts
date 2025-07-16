@@ -4,14 +4,17 @@ import { verifyToken } from '../utils/jwt';
 export function authenticateJWT(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.error('No token provided or invalid format');
     return res.status(401).json({ message: 'No token provided' });
   }
   const token = authHeader.split(' ')[1];
   if (!token || typeof token !== 'string') {
+    console.error('No token provided or invalid format');
     return res.status(401).json({ message: 'No token provided' });
   }
   const payload = verifyToken(token);
   if (!payload) {
+    console.error('Invalid or expired token');
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
   // @ts-ignore
@@ -29,9 +32,11 @@ export function authorizeRolesAndShops(allowedRoles: string[], allowAllShopsForR
     // @ts-ignore
     const user = req.user;
     if (!user) {
+      console.error('Unauthorized access - no user found in request');
       return res.status(401).json({ message: 'Unauthorized' });
     }
     if (!allowedRoles.includes(user.role)) {
+      console.error(`Forbidden access - user role ${user.role} not allowed`);
       return res.status(403).json({ message: 'Forbidden: insufficient role' });
     }
     // If shopId is in params or body, check shop context
@@ -46,6 +51,7 @@ export function authorizeRolesAndShops(allowedRoles: string[], allowAllShopsForR
       }
     } else if (user.role === 'employee') {
       if (!user.shopId || !shopId || user.shopId !== shopId) {
+        
         return res.status(403).json({ message: 'Forbidden: not assigned to this shop' });
       }
     }

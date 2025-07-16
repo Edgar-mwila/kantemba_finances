@@ -1,4 +1,5 @@
-import { DataTypes, Model, type Optional, Sequelize } from 'sequelize';
+import { DataTypes, Model } from 'sequelize';
+import { sequelize } from '../utils/db';
 
 export interface ReturnItemAttributes {
   id?: number;
@@ -20,18 +21,12 @@ export interface ReturnAttributes {
   levy: number;
   date: Date;
   shopId: string;
-  businessId: string;
   createdBy: string;
   reason: string;
   status: 'pending' | 'approved' | 'rejected' | 'completed';
-  approvedBy?: string;
-  rejectedBy?: string;
-  rejectionReason?: string;
-  approvedAt?: Date;
-  rejectedAt?: Date;
 }
 
-export type ReturnCreationAttributes = Optional<ReturnAttributes, 'approvedBy' | 'rejectedBy' | 'rejectionReason' | 'approvedAt' | 'rejectedAt'>;
+export type ReturnCreationAttributes = ReturnAttributes;
 
 export class Return extends Model<ReturnAttributes, ReturnCreationAttributes> implements ReturnAttributes {
   public id!: string;
@@ -43,15 +38,9 @@ export class Return extends Model<ReturnAttributes, ReturnCreationAttributes> im
   public levy!: number;
   public date!: Date;
   public shopId!: string;
-  public businessId!: string;
   public createdBy!: string;
   public reason!: string;
   public status!: 'pending' | 'approved' | 'rejected' | 'completed';
-  public approvedBy?: string;
-  public rejectedBy?: string;
-  public rejectionReason?: string;
-  public approvedAt?: Date;
-  public rejectedAt?: Date;
 
   // timestamps!
   public readonly createdAt!: Date;
@@ -68,7 +57,6 @@ export class ReturnItem extends Model<ReturnItemAttributes> implements ReturnIte
   public reason!: string;
 }
 
-export function initReturnModels(sequelize: Sequelize) {
   Return.init(
     {
       id: { type: DataTypes.STRING, primaryKey: true },
@@ -80,7 +68,6 @@ export function initReturnModels(sequelize: Sequelize) {
       levy: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 0 },
       date: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
       shopId: { type: DataTypes.STRING, allowNull: false },
-      businessId: { type: DataTypes.STRING, allowNull: false },
       createdBy: { type: DataTypes.STRING, allowNull: false },
       reason: { type: DataTypes.STRING, allowNull: false },
       status: { 
@@ -88,17 +75,12 @@ export function initReturnModels(sequelize: Sequelize) {
         allowNull: false, 
         defaultValue: 'pending' 
       },
-      approvedBy: { type: DataTypes.STRING },
-      rejectedBy: { type: DataTypes.STRING },
-      rejectionReason: { type: DataTypes.STRING },
-      approvedAt: { type: DataTypes.DATE },
-      rejectedAt: { type: DataTypes.DATE },
     },
     {
       sequelize,
       tableName: 'returns',
       indexes: [
-        { fields: ['businessId', 'shopId'] },
+        { fields: ['shopId'] },
         { fields: ['originalSaleId'] },
         { fields: ['status'] },
         { fields: ['date'] },
@@ -126,4 +108,3 @@ export function initReturnModels(sequelize: Sequelize) {
 
   Return.hasMany(ReturnItem, { foreignKey: 'returnId', as: 'items', onDelete: 'CASCADE' });
   ReturnItem.belongsTo(Return, { foreignKey: 'returnId', as: 'return' });
-}

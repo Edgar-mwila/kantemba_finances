@@ -3,7 +3,6 @@ import '../models/shop.dart';
 import '../helpers/api_service.dart';
 import 'dart:convert';
 import 'package:kantemba_finances/helpers/db_helper.dart';
-import 'package:kantemba_finances/providers/business_provider.dart';
 
 class ShopProvider with ChangeNotifier {
   List<Shop> _shops = [];
@@ -13,14 +12,16 @@ class ShopProvider with ChangeNotifier {
   Shop? get currentShop => _currentShop;
 
   Future<void> fetchShops(String businessId, {List<String>? shopIds}) async {
-    // Check if online and if business is premium
     bool isOnline = await ApiService.isOnline();
-    final businessProvider = BusinessProvider();
-    bool isPremium = businessProvider.isPremium;
+    final business = await DBHelper.getDataById('businesses', businessId);
+    final isPremium = business?['isPremium'] == 1;
 
     if (!isOnline || !isPremium) {
       // Offline mode or non-premium business: load from local database
-      final localShops = await DBHelper.getData('shops');
+      final localShops = await DBHelper.getDataByBusinessId(
+        'shops',
+        businessId,
+      );
       _shops = localShops.map((json) => Shop.fromJson(json)).toList();
       _currentShop = _shops.isNotEmpty ? _shops.first : null;
       notifyListeners();
@@ -82,8 +83,8 @@ class ShopProvider with ChangeNotifier {
 
   Future<void> addShop(Shop shop) async {
     bool isOnline = await ApiService.isOnline();
-    final businessProvider = BusinessProvider();
-    bool isPremium = businessProvider.isPremium;
+    final business = await DBHelper.getDataById('businesses', shop.businessId);
+    final isPremium = business?['isPremium'] == 1;
 
     if (!isOnline || !isPremium) {
       await DBHelper.insert('shops', {
@@ -123,19 +124,6 @@ class ShopProvider with ChangeNotifier {
     final response = await ApiService.delete('shops/$shopId');
     if (response.statusCode == 204) {
       await fetchShops(businessId);
-    }
-  }
-
-  Future<void> syncShopsToBackend(
-    BusinessProvider businessProvider, {
-    bool batch = false,
-  }) async {
-    if (batch) return; // Handled by SyncManager
-    if (!businessProvider.isPremium || !(await ApiService.isOnline())) return;
-    final unsynced = await DBHelper.getUnsyncedData('shops');
-    for (final shop in unsynced) {
-      // ...send to backend via ApiService...
-      await DBHelper.markAsSynced('shops', shop['id']);
     }
   }
 }

@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:kantemba_finances/helpers/db_helper.dart';
+import 'package:kantemba_finances/providers/users_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutterwave_standard/flutterwave.dart';
 import '../providers/business_provider.dart';
 import 'dart:async';
 import 'package:flutter/services.dart';
-import 'package:kantemba_finances/providers/expenses_provider.dart';
-import 'package:kantemba_finances/providers/inventory_provider.dart';
-import 'package:kantemba_finances/providers/sales_provider.dart';
-import 'package:kantemba_finances/providers/shop_provider.dart';
-import 'package:kantemba_finances/providers/returns_provider.dart';
-import 'package:kantemba_finances/providers/users_provider.dart';
 import 'package:kantemba_finances/helpers/sync_manager.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
+import 'package:kantemba_finances/main.dart';
 
 class PremiumScreen extends StatelessWidget {
   const PremiumScreen({super.key});
@@ -663,16 +660,22 @@ class PremiumScreen extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () {
                     Navigator.of(ctx).pop();
-                    _startPayment(context, isYearly: false);
+                    testPremiumUpgrade(
+                      context,
+                      isYearly: false,
+                    ); // TESTING: Instantly upgrade
                   },
-                  child: const Text('Monthly - USD 4.49 (Mobile Money/Card)'),
+                  child: const Text('Monthly - ZMW 99 (Mobile Money/Card)'),
                 ),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.of(ctx).pop();
-                    _startPayment(context, isYearly: true);
+                    testPremiumUpgrade(
+                      context,
+                      isYearly: true,
+                    ); // TESTING: Instantly upgrade
                   },
-                  child: const Text('Yearly - USD 49.99 (Mobile Money/Card)'),
+                  child: const Text('Yearly - ZMW 899 (Mobile Money/Card)'),
                 ),
                 const SizedBox(height: 12),
                 const Text('Includes 1 month free trial for new subscribers.'),
@@ -688,13 +691,26 @@ class PremiumScreen extends StatelessWidget {
     );
   }
 
+  // TESTING: Instantly upgrade to premium without payment
+  void testPremiumUpgrade(
+    BuildContext context, {
+    required bool isYearly,
+  }) async {
+    await _upgradeToPremium(
+      context,
+      isYearly: isYearly,
+      txRef: "INSTANT_UPGRADE",
+    );
+  }
+
+  // ignore: unused_element
   void _startPayment(BuildContext context, {required bool isYearly}) async {
     final businessProvider = Provider.of<BusinessProvider>(
       context,
       listen: false,
     );
-    final currency = 'USD';
-    final amount = isYearly ? '49.99' : '4.49';
+    final currency = 'ZMW';
+    final amount = isYearly ? '899' : '99';
     final txRef = 'Kantemba_${DateTime.now().millisecondsSinceEpoch}';
     final email = businessProvider.businessContact ?? 'user@kantemba.com';
     final name = businessProvider.businessName ?? 'Kantemba User';
@@ -725,20 +741,15 @@ class PremiumScreen extends StatelessWidget {
         // Payment successful, upgrade to premium
         await _upgradeToPremium(context, isYearly: isYearly, txRef: txRef);
       } else if (response.status == "cancelled") {
-        _showResultDialog(
-          context,
-          'Payment Cancelled',
-          'You cancelled the payment.',
-        );
+        _showResultDialog('Payment Cancelled', 'You cancelled the payment.');
       } else {
         _showResultDialog(
-          context,
           'Payment Failed',
           response.status ?? 'Unknown error.',
         );
       }
     } catch (e) {
-      _showResultDialog(context, 'Payment Error', e.toString());
+      _showResultDialog('Payment Error', e.toString());
     }
   }
 
@@ -747,50 +758,214 @@ class PremiumScreen extends StatelessWidget {
     required bool isYearly,
     required String txRef,
   }) async {
+    print(
+      '🚀 Starting premium upgrade process - txRef: $txRef, isYearly: $isYearly',
+    );
+
     final businessProvider = Provider.of<BusinessProvider>(
       context,
       listen: false,
     );
-    // Show waiting dialog
+
+    final userProvider = Provider.of<UsersProvider>(context, listen: false);
+
+    print(
+      '📊 Initial business state - ID: ${businessProvider.id}, isPremium: ${businessProvider.isPremium}',
+    );
+
+    // Create a ValueNotifier to control the dialog state
+    final progressNotifier = ValueNotifier<int>(0);
+    final messages = [
+      'Verifying Payment',
+      'We are just getting your premium account set up.',
+      'This may take a few moments. Please do not close the app.',
+      'Almost done!',
+    ];
+
+    // Show progressive dialog
     showDialog(
       context: context,
       barrierDismissible: false,
       builder:
-          (ctx) => AlertDialog(
-            title: const Text('Verifying Payment'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Please wait while we verify your payment...'),
-              ],
-            ),
+          (ctx) => ValueListenableBuilder<int>(
+            valueListenable: progressNotifier,
+            builder: (context, currentStep, child) {
+              return AlertDialog(
+                title: const Text('Verifying Payment'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    // Show messages progressively
+                    for (
+                      int i = 0;
+                      i <= currentStep && i < messages.length;
+                      i++
+                    )
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: AnimatedOpacity(
+                          opacity: 1.0,
+                          duration: const Duration(milliseconds: 500),
+                          child: Text(
+                            messages[i],
+                            style: TextStyle(
+                              color:
+                                  i == currentStep
+                                      ? Colors.blue
+                                      : Colors.grey[600],
+                              fontWeight:
+                                  i == currentStep
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
           ),
     );
-    // Poll backend for premium status
-    bool upgraded = false;
-    int attempts = 0;
-    while (!upgraded && attempts < 10) {
-      await Future.delayed(const Duration(seconds: 3));
-      await businessProvider.setBusiness(businessProvider.id!);
-      if (businessProvider.isPremium) {
-        upgraded = true;
-        break;
+
+    try {
+      print('✅ Dialog shown, starting upgrade process...');
+
+      // Step 1: Set premium status
+      await Future.delayed(const Duration(milliseconds: 500));
+      progressNotifier.value = 0;
+      print('📝 Step 1: Setting premium status locally...');
+
+      businessProvider.isPremium = true;
+      await DBHelper.insert('businesses', {
+        'id': businessProvider.id!,
+        'name': businessProvider.businessName!,
+        'country': businessProvider.country!,
+        'businessContact': businessProvider.businessContact!,
+        'adminName': businessProvider.adminName!,
+        'adminContact': businessProvider.adminContact!,
+        'isPremium': businessProvider.isPremium ? 1 : 0,
+        'subscriptionType': isYearly ? 'yearly' : 'monthly',
+        'lastPaymentTxRef': txRef,
+        'subscriptionStartDate': DateTime.now().toIso8601String(),
+        'subscriptionExpiryDate':
+            DateTime.now()
+                .add(
+                  isYearly
+                      ? const Duration(days: 365)
+                      : const Duration(days: 30),
+                )
+                .toIso8601String(),
+      });
+      print('✅ Premium status set locally: ${businessProvider.isPremium}');
+
+      print('🔄 Syncing business to backend...');
+      await businessProvider.syncBusinessToBackend();
+      print('✅ Business synced to backend successfully');
+
+      // Step 2: Show setup message
+      await Future.delayed(const Duration(seconds: 1));
+      progressNotifier.value = 1;
+      print('📝 Step 2: Setup message shown');
+
+      // Step 3: Poll backend for premium status
+      await Future.delayed(const Duration(seconds: 1));
+      progressNotifier.value = 2;
+      print('📝 Step 3: Starting backend polling...');
+
+      bool upgraded = false;
+      int attempts = 0;
+      while (!upgraded && attempts < 10) {
+        print('🔍 Polling attempt ${attempts + 1}/10...');
+        await Future.delayed(const Duration(seconds: 3));
+
+        try {
+          await businessProvider.setBusiness(businessProvider.id!);
+          print(
+            '📊 Backend response - isPremium: ${businessProvider.isPremium}',
+          );
+
+          if (businessProvider.isPremium) {
+            upgraded = true;
+            print('✅ Premium status verified from backend!');
+            break;
+          }
+        } catch (e) {
+          print('❌ Error during polling attempt ${attempts + 1}: $e');
+          print('📊 Stack trace: ${e.toString()}');
+        }
+
+        attempts++;
+        print('⏳ Attempt ${attempts} completed, upgraded: $upgraded');
       }
-      attempts++;
-    }
-    Navigator.of(context, rootNavigator: true).pop(); // Close waiting dialog
-    if (upgraded) {
-      await _syncAllToBackend(context, businessProvider);
-      await SyncManager.batchSyncAndMarkSynced();
-      _showRestartDialog(context);
-    } else {
+
+      if (!upgraded) {
+        print('⚠️ Failed to verify premium status after $attempts attempts');
+      }
+
+      // Step 4: Almost done
+      await Future.delayed(const Duration(milliseconds: 500));
+      progressNotifier.value = 3;
+      print('📝 Step 4: Almost done message shown');
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Close dialog
+      print('🔄 Closing progress dialog...');
+      rootNavigatorKey.currentState?.pop();
+
+      if (upgraded) {
+        print('✅ Upgrade successful! Starting final sync processes...');
+
+        try {
+          print('🔄 Syncing all data to backend...');
+          await _syncAllToBackend(context, businessProvider);
+          print('✅ All data synced to backend');
+
+          print('🔄 Signing user with token');
+          await userProvider.createTokenForUser(userProvider.currentUser!);
+          print('✅ User signed in with token');
+
+          print('🎉 Showing restart dialog...');
+          _showResultDialog(
+            'Your premium upgrade was successful!',
+            'Welcome to the beginning of your premium experience!',
+          );
+        } catch (e) {
+          print('❌ Error during final sync processes: $e');
+          print('📊 Stack trace: ${e.toString()}');
+          _showResultDialog(
+            'Upgrade Partially Complete',
+            'Your premium upgrade was successful, but some sync operations failed. Please restart the app.',
+          );
+        }
+      } else {
+        print('⚠️ Upgrade verification failed - showing pending dialog');
+        _showResultDialog(
+          'Upgrade Pending',
+          'We could not verify your premium status yet. Please try again later.',
+        );
+      }
+    } catch (e, stackTrace) {
+      print('❌ CRITICAL ERROR in _upgradeToPremium: $e');
+      print('📊 Stack trace: $stackTrace');
+
+      // Close dialog on error
+      try {
+        rootNavigatorKey.currentState?.pop();
+      } catch (popError) {
+        print('❌ Error closing dialog: $popError');
+      }
+
       _showResultDialog(
-        context,
-        'Upgrade Pending',
-        'We could not verify your premium status yet. Please try again later.',
+        'Error',
+        'An error occurred during the upgrade process. Please try again. Error: ${e.toString()}',
       );
+    } finally {
+      print('🧹 Cleaning up resources...');
+      progressNotifier.dispose();
+      print('✅ Cleanup completed');
     }
   }
 
@@ -798,68 +973,26 @@ class PremiumScreen extends StatelessWidget {
     BuildContext context,
     BusinessProvider businessProvider,
   ) async {
-    final usersProvider = Provider.of<UsersProvider>(context, listen: false);
-    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
-    final salesProvider = Provider.of<SalesProvider>(context, listen: false);
-    final expensesProvider = Provider.of<ExpensesProvider>(
-      context,
-      listen: false,
-    );
-    final inventoryProvider = Provider.of<InventoryProvider>(
-      context,
-      listen: false,
-    );
-    final returnsProvider = Provider.of<ReturnsProvider>(
-      context,
-      listen: false,
-    );
     await businessProvider.syncBusinessToBackend();
-    await usersProvider.syncUsersToBackend(businessProvider);
-    await shopProvider.syncShopsToBackend(businessProvider);
-    await salesProvider.syncSalesToBackend(businessProvider);
-    await expensesProvider.syncExpensesToBackend(businessProvider);
-    await inventoryProvider.syncInventoryToBackend(businessProvider);
-    await returnsProvider.syncReturnsToBackend(businessProvider);
+    await SyncManager.batchSyncAndMarkSynced();
   }
 
-  void _showRestartDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder:
-          (ctx) => AlertDialog(
-            title: const Text('Upgrade Complete'),
-            content: const Text(
-              'Your business is now premium! The app will restart to enable premium features.',
+  void _showResultDialog(String title, String message) {
+    rootNavigatorKey.currentState?.push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder:
+            (ctx) => AlertDialog(
+              title: Text(title),
+              content: Text(message),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('OK'),
+                ),
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () async {
-                  // Restart the app
-                  await Future.delayed(const Duration(milliseconds: 500));
-                  SystemChannels.platform.invokeMethod('SystemNavigator.pop');
-                },
-                child: const Text('Restart Now'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  void _showResultDialog(BuildContext context, String title, String message) {
-    showDialog(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            title: Text(title),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
+      ),
     );
   }
 

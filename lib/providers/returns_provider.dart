@@ -8,6 +8,7 @@ import 'package:kantemba_finances/models/shop.dart';
 import 'package:flutter/material.dart';
 import 'package:kantemba_finances/helpers/db_helper.dart';
 import 'package:kantemba_finances/providers/business_provider.dart';
+import 'package:kantemba_finances/providers/expenses_provider.dart';
 import 'package:kantemba_finances/providers/inventory_provider.dart';
 import 'package:kantemba_finances/providers/sales_provider.dart';
 import 'package:provider/provider.dart';
@@ -42,10 +43,9 @@ class ReturnsProvider with ChangeNotifier {
   }
 
   Future<void> fetchReturns(String businessId, {List<String>? shopIds}) async {
-    // Check if online and if business is premium
     bool isOnline = await ApiService.isOnline();
-    final businessProvider = BusinessProvider();
-    bool isPremium = businessProvider.isPremium;
+    final business = await DBHelper.getDataById('businesses', businessId);
+    final isPremium = business?['isPremium'] == 1;
 
     if (!isOnline || !isPremium) {
       // Offline mode or non-premium business: load from local database
@@ -53,7 +53,10 @@ class ReturnsProvider with ChangeNotifier {
         'ReturnsProvider: Loading returns from local database (offline: ${!isOnline}, premium: $isPremium)',
       );
       try {
-        final localReturns = await DBHelper.getData('returns');
+        final localReturns = await DBHelper.getDataByBusinessId(
+          'returns',
+          businessId,
+        );
         final localReturnItems = await DBHelper.getData('return_items');
 
         // Map returnId to items
@@ -188,7 +191,10 @@ class ReturnsProvider with ChangeNotifier {
     BusinessProvider businessProvider,
   ) async {
     if (!businessProvider.isPremium) {
-      final localReturns = await DBHelper.getData('returns');
+      final localReturns = await DBHelper.getDataByBusinessId(
+        'returns',
+        businessProvider.id!,
+      );
       final localReturnItems = await DBHelper.getData('return_items');
       // Map returnId to items
       final Map<String, List<ReturnItem>> itemsByReturnId = {};
@@ -237,7 +243,10 @@ class ReturnsProvider with ChangeNotifier {
       await fetchReturns(businessProvider.id!);
       // Optionally, update local DB with latest online data
     } else {
-      final localReturns = await DBHelper.getData('returns');
+      final localReturns = await DBHelper.getDataByBusinessId(
+        'returns',
+        businessProvider.id!,
+      );
       final localReturnItems = await DBHelper.getData('return_items');
       final Map<String, List<ReturnItem>> itemsByReturnId = {};
       for (final item in localReturnItems) {
@@ -399,7 +408,10 @@ class ReturnsProvider with ChangeNotifier {
         listen: false,
       );
       final salesProvider = Provider.of<SalesProvider>(context, listen: false);
-
+      final businessProvider = Provider.of<BusinessProvider>(
+        context,
+        listen: false,
+      );
       final isDamagedGoods =
           reason.toLowerCase().contains('damaged') ||
           reason.toLowerCase().contains('defective') ||
@@ -454,22 +466,13 @@ class ReturnsProvider with ChangeNotifier {
       }
 
       debugPrint('Inventory and sales updated for return');
+      await Provider.of<ExpensesProvider>(
+        context,
+        listen: false,
+      ).fetchAndSetExpenses(businessProvider.id!);
     } catch (e) {
       debugPrint('Error updating inventory and sales for return: $e');
       rethrow; // Re-throw to be handled by the calling function
-    }
-  }
-
-  Future<void> syncReturnsToBackend(
-    BusinessProvider businessProvider, {
-    bool batch = false,
-  }) async {
-    if (batch) return; // Handled by SyncManager
-    if (!businessProvider.isPremium || !(await ApiService.isOnline())) return;
-    final unsynced = await DBHelper.getUnsyncedData('returns');
-    for (final ret in unsynced) {
-      await ApiService.post('returns', ret);
-      await DBHelper.markAsSynced('returns', ret['id']);
     }
   }
 }

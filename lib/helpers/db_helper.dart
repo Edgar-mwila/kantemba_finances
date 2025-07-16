@@ -1,3 +1,4 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart' as sql;
 import 'package:path/path.dart' as path;
 import 'package:sqflite/sqlite_api.dart';
@@ -39,8 +40,12 @@ class DBHelper {
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 4) {
           // Add returnedQuantity and returnedReason columns to sale_items table
-          await db.execute('ALTER TABLE sale_items ADD COLUMN returnedQuantity INTEGER DEFAULT 0');
-          await db.execute('ALTER TABLE sale_items ADD COLUMN returnedReason TEXT DEFAULT ""');
+          await db.execute(
+            'ALTER TABLE sale_items ADD COLUMN returnedQuantity INTEGER DEFAULT 0',
+          );
+          await db.execute(
+            'ALTER TABLE sale_items ADD COLUMN returnedReason TEXT DEFAULT ""',
+          );
         }
       },
       version: 4,
@@ -188,5 +193,20 @@ class DBHelper {
       unsyncedData[table] = await db.query(table, where: 'synced = 0');
     }
     return unsyncedData;
+  }
+
+  static Future<Map<String, dynamic>?> getBusiness() async {
+    final prefs = await SharedPreferences.getInstance();
+    final businessId = prefs.getString('business_id');
+    final db = await DBHelper.database();
+    final result = await db.query(
+      'businesses',
+      where: 'id = ?',
+      whereArgs: [businessId],
+    );
+    if (result.isNotEmpty) {
+      return result.first;
+    }
+    return null;
   }
 }

@@ -7,7 +7,33 @@ import { Expense } from '../models/expense.model';
 import { Sale, SaleItem } from '../models/sale.model';
 import { Return, ReturnItem } from '../models/return.model';
 
+// Utility: Clean foreign keys and remove unknown attributes
+function cleanRecord(record: any, allowedFields: string[], fkFields: string[] = []) {
+  const cleaned: any = {};
+  for (const key of allowedFields) {
+    let value = record[key];
+    // Convert empty string foreign keys to null
+    if (fkFields.includes(key) && (value === '' || value === undefined)) {
+      value = null;
+    }
+    cleaned[key] = value;
+  }
+  return cleaned;
+}
+
 export const syncData = async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  const requestId = `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  // Log incoming request
+  console.log(`[${requestId}] ==================== SYNC REQUEST START ====================`);
+  console.log(`[${requestId}] Method: ${req.method}`);
+  console.log(`[${requestId}] URL: ${req.url}`);
+  console.log(`[${requestId}] Headers:`, JSON.stringify(req.headers, null, 2));
+  console.log(`[${requestId}] User-Agent: ${req.get('User-Agent')}`);
+  console.log(`[${requestId}] IP: ${req.ip}`);
+  console.log(`[${requestId}] Timestamp: ${new Date().toISOString()}`);
+  
   try {
     const {
       business,
@@ -20,6 +46,32 @@ export const syncData = async (req: Request, res: Response) => {
       returns = [],
       return_items = [],
     } = req.body;
+
+    // Log request data summary
+    console.log(`[${requestId}] REQUEST DATA SUMMARY:`);
+    console.log(`[${requestId}] - Business: ${business ? 'Present' : 'Not provided'}`);
+    console.log(`[${requestId}] - Users: ${users.length} items`);
+    console.log(`[${requestId}] - Shops: ${shops.length} items`);
+    console.log(`[${requestId}] - Inventories: ${inventories.length} items`);
+    console.log(`[${requestId}] - Expenses: ${expenses.length} items`);
+    console.log(`[${requestId}] - Sales: ${sales.length} items`);
+    console.log(`[${requestId}] - Sale Items: ${sale_items.length} items`);
+    console.log(`[${requestId}] - Returns: ${returns.length} items`);
+    console.log(`[${requestId}] - Return Items: ${return_items.length} items`);
+    
+    // Log detailed request data (be careful with sensitive data)
+    console.log(`[${requestId}] DETAILED REQUEST DATA:`);
+    if (business) {
+      console.log(`[${requestId}] Business Data:`, JSON.stringify(business, null, 2));
+    }
+    console.log(`[${requestId}] Users Data:`, JSON.stringify(users, null, 2));
+    console.log(`[${requestId}] Shops Data:`, JSON.stringify(shops, null, 2));
+    console.log(`[${requestId}] Inventories Data:`, JSON.stringify(inventories, null, 2));
+    console.log(`[${requestId}] Expenses Data:`, JSON.stringify(expenses, null, 2));
+    console.log(`[${requestId}] Sales Data:`, JSON.stringify(sales, null, 2));
+    console.log(`[${requestId}] Sale Items Data:`, JSON.stringify(sale_items, null, 2));
+    console.log(`[${requestId}] Returns Data:`, JSON.stringify(returns, null, 2));
+    console.log(`[${requestId}] Return Items Data:`, JSON.stringify(return_items, null, 2));
 
     const results: any = {
       business: null,
@@ -35,88 +87,234 @@ export const syncData = async (req: Request, res: Response) => {
 
     // Upsert business
     if (business && business.id) {
+      console.log(`[${requestId}] Processing business: ${business.id}`);
       const [biz, created] = await Business.findOrCreate({ where: { id: business.id }, defaults: business });
       if (!created) {
         await biz.update(business);
       }
       results.business = { id: biz.id, created, updated: !created };
+      console.log(`[${requestId}] Business processed: ${created ? 'Created' : 'Updated'}`);
+    } else {
+      console.warn(`[${requestId}] WARNING: No business object provided in sync payload. This may cause foreign key errors.`);
     }
 
     // Upsert users
+    console.log(`[${requestId}] Processing ${users.length} users...`);
     for (const user of users) {
       try {
-        const [u, created] = await User.findOrCreate({ where: { id: user.id }, defaults: user });
-        if (!created) await u.update(user);
+        // Clean user record
+        const allowedFields = ['id','name','contact','password','role','permissions','businessId','shopId'];
+        const fkFields = ['businessId','shopId'];
+        const cleanedUser = cleanRecord(user, allowedFields, fkFields);
+        // Skip if required FKs are missing
+        if (!cleanedUser.businessId) {
+          console.error(`[${requestId}] Skipping user ${user.id}: missing businessId`);
+          results.users.error++;
+          continue;
+        }
+        const [u, created] = await User.findOrCreate({ where: { id: cleanedUser.id }, defaults: cleanedUser });
+        if (!created) await u.update(cleanedUser);
         results.users.success++;
-      } catch (e) { results.users.error++; }
+        console.log(`[${requestId}] User ${user.id}: ${created ? 'Created' : 'Updated'}`);
+      } catch (e) { 
+        results.users.error++;
+        console.error(`[${requestId}] Error processing user ${user.id}:`, e);
+      }
     }
 
     // Upsert shops
+    console.log(`[${requestId}] Processing ${shops.length} shops...`);
     for (const shop of shops) {
       try {
-        const [s, created] = await Shop.findOrCreate({ where: { id: shop.id }, defaults: shop });
-        if (!created) await s.update(shop);
+        const allowedFields = ['id','name','businessId'];
+        const fkFields = ['businessId'];
+        const cleanedShop = cleanRecord(shop, allowedFields, fkFields);
+        if (!cleanedShop.businessId) {
+          console.error(`[${requestId}] Skipping shop ${shop.id}: missing businessId`);
+          results.shops.error++;
+          continue;
+        }
+        const [s, created] = await Shop.findOrCreate({ where: { id: cleanedShop.id }, defaults: cleanedShop });
+        if (!created) await s.update(cleanedShop);
         results.shops.success++;
-      } catch (e) { results.shops.error++; }
+        console.log(`[${requestId}] Shop ${shop.id}: ${created ? 'Created' : 'Updated'}`);
+      } catch (e) { 
+        results.shops.error++;
+        console.error(`[${requestId}] Error processing shop ${shop.id}:`, e);
+      }
     }
 
     // Upsert inventories
+    console.log(`[${requestId}] Processing ${inventories.length} inventories...`);
     for (const item of inventories) {
       try {
-        const [inv, created] = await Inventory.findOrCreate({ where: { id: item.id }, defaults: item });
-        if (!created) await inv.update(item);
+        const allowedFields = ['id','name','price','quantity','lowStockThreshold','createdBy','shopId','damagedRecords'];
+        const fkFields = ['createdBy','shopId'];
+        const cleanedItem = cleanRecord(item, allowedFields, fkFields);
+        if (!cleanedItem.createdBy || !cleanedItem.shopId) {
+          console.error(`[${requestId}] Skipping inventory ${item.id}: missing createdBy or shopId`);
+          results.inventories.error++;
+          continue;
+        }
+        const [inv, created] = await Inventory.findOrCreate({ where: { id: cleanedItem.id }, defaults: cleanedItem });
+        if (!created) await inv.update(cleanedItem);
         results.inventories.success++;
-      } catch (e) { results.inventories.error++; }
+        console.log(`[${requestId}] Inventory ${item.id}: ${created ? 'Created' : 'Updated'}`);
+      } catch (e) { 
+        results.inventories.error++;
+        console.error(`[${requestId}] Error processing inventory ${item.id}:`, e);
+      }
     }
 
     // Upsert expenses
+    console.log(`[${requestId}] Processing ${expenses.length} expenses...`);
     for (const expense of expenses) {
       try {
-        const [exp, created] = await Expense.findOrCreate({ where: { id: expense.id }, defaults: expense });
-        if (!created) await exp.update(expense);
+        const allowedFields = ['id','description','amount','date','category','createdBy','shopId'];
+        const fkFields = ['createdBy','shopId'];
+        const cleanedExpense = cleanRecord(expense, allowedFields, fkFields);
+        if (!cleanedExpense.createdBy || !cleanedExpense.shopId) {
+          console.error(`[${requestId}] Skipping expense ${expense.id}: missing createdBy or shopId`);
+          results.expenses.error++;
+          continue;
+        }
+        const [exp, created] = await Expense.findOrCreate({ where: { id: cleanedExpense.id }, defaults: cleanedExpense });
+        if (!created) await exp.update(cleanedExpense);
         results.expenses.success++;
-      } catch (e) { results.expenses.error++; }
+        console.log(`[${requestId}] Expense ${expense.id}: ${created ? 'Created' : 'Updated'}`);
+      } catch (e) { 
+        results.expenses.error++;
+        console.error(`[${requestId}] Error processing expense ${expense.id}:`, e);
+      }
     }
 
     // Upsert sales
+    console.log(`[${requestId}] Processing ${sales.length} sales...`);
     for (const sale of sales) {
       try {
-        const [s, created] = await Sale.findOrCreate({ where: { id: sale.id }, defaults: sale });
-        if (!created) await s.update(sale);
+        const allowedFields = ['id','totalAmount','grandTotal','vat','turnoverTax','levy','date','createdBy','shopId','customerName','customerPhone','discount'];
+        const fkFields = ['createdBy','shopId'];
+        const cleanedSale = cleanRecord(sale, allowedFields, fkFields);
+        if (!cleanedSale.createdBy || !cleanedSale.shopId) {
+          console.error(`[${requestId}] Skipping sale ${sale.id}: missing createdBy or shopId`);
+          results.sales.error++;
+          continue;
+        }
+        const [s, created] = await Sale.findOrCreate({ where: { id: cleanedSale.id }, defaults: cleanedSale });
+        if (!created) await s.update(cleanedSale);
         results.sales.success++;
-      } catch (e) { results.sales.error++; }
+        console.log(`[${requestId}] Sale ${sale.id}: ${created ? 'Created' : 'Updated'}`);
+      } catch (e) { 
+        results.sales.error++;
+        console.error(`[${requestId}] Error processing sale ${sale.id}:`, e);
+      }
     }
 
     // Upsert sale_items
+    console.log(`[${requestId}] Processing ${sale_items.length} sale items...`);
     for (const item of sale_items) {
       try {
-        const [si, created] = await SaleItem.findOrCreate({ where: { id: item.id }, defaults: item });
-        if (!created) await si.update(item);
+        const allowedFields = ['id','saleId','productId','productName','price','quantity'];
+        const fkFields = ['saleId'];
+        const cleanedItem = cleanRecord(item, allowedFields, fkFields);
+        if (!cleanedItem.saleId) {
+          console.error(`[${requestId}] Skipping sale item ${item.id}: missing saleId`);
+          results.sale_items.error++;
+          continue;
+        }
+        const [si, created] = await SaleItem.findOrCreate({ where: { id: cleanedItem.id }, defaults: cleanedItem });
+        if (!created) await si.update(cleanedItem);
         results.sale_items.success++;
-      } catch (e) { results.sale_items.error++; }
+        console.log(`[${requestId}] Sale item ${item.id}: ${created ? 'Created' : 'Updated'}`);
+      } catch (e) { 
+        results.sale_items.error++;
+        console.error(`[${requestId}] Error processing sale item ${item.id}:`, e);
+      }
     }
 
     // Upsert returns
+    console.log(`[${requestId}] Processing ${returns.length} returns...`);
     for (const ret of returns) {
       try {
-        const [r, created] = await Return.findOrCreate({ where: { id: ret.id }, defaults: ret });
-        if (!created) await r.update(ret);
+        const allowedFields = ['id','originalSaleId','totalReturnAmount','grandReturnAmount','vat','turnoverTax','levy','date','shopId','createdBy','reason','status'];
+        const fkFields = ['originalSaleId','shopId','createdBy'];
+        const cleanedReturn = cleanRecord(ret, allowedFields, fkFields);
+        if (!cleanedReturn.originalSaleId || !cleanedReturn.shopId) {
+          console.error(`[${requestId}] Skipping return ${ret.id}: missing originalSaleId or shopId`);
+          results.returns.error++;
+          continue;
+        }
+        const [r, created] = await Return.findOrCreate({ where: { id: cleanedReturn.id }, defaults: cleanedReturn });
+        if (!created) await r.update(cleanedReturn);
         results.returns.success++;
-      } catch (e) { results.returns.error++; }
+        console.log(`[${requestId}] Return ${ret.id}: ${created ? 'Created' : 'Updated'}`);
+      } catch (e) { 
+        results.returns.error++;
+        console.error(`[${requestId}] Error processing return ${ret.id}:`, e);
+      }
     }
 
     // Upsert return_items
+    console.log(`[${requestId}] Processing ${return_items.length} return items...`);
     for (const item of return_items) {
       try {
-        const [ri, created] = await ReturnItem.findOrCreate({ where: { id: item.id }, defaults: item });
-        if (!created) await ri.update(item);
+        const allowedFields = ['id','returnId','productId','productName','quantity','originalPrice','reason','shopId'];
+        const fkFields = ['returnId','shopId'];
+        const cleanedItem = cleanRecord(item, allowedFields, fkFields);
+        if (!cleanedItem.returnId || !cleanedItem.shopId) {
+          console.error(`[${requestId}] Skipping return item ${item.id}: missing returnId or shopId`);
+          results.return_items.error++;
+          continue;
+        }
+        const [ri, created] = await ReturnItem.findOrCreate({ where: { id: cleanedItem.id }, defaults: cleanedItem });
+        if (!created) await ri.update(cleanedItem);
         results.return_items.success++;
-      } catch (e) { results.return_items.error++; }
+        console.log(`[${requestId}] Return item ${item.id}: ${created ? 'Created' : 'Updated'}`);
+      } catch (e) { 
+        results.return_items.error++;
+        console.error(`[${requestId}] Error processing return item ${item.id}:`, e);
+      }
     }
 
-    res.json({ message: 'Sync complete', results });
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    
+    const response = { message: 'Sync complete', results };
+    
+    // Log response details
+    console.log(`[${requestId}] ==================== SYNC RESPONSE ====================`);
+    console.log(`[${requestId}] Status Code: 200`);
+    console.log(`[${requestId}] Processing Duration: ${duration}ms`);
+    console.log(`[${requestId}] Response Data:`, JSON.stringify(response, null, 2));
+    
+    // Log summary
+    console.log(`[${requestId}] SYNC SUMMARY:`);
+    console.log(`[${requestId}] - Business: ${results.business ? 'Processed' : 'Not processed'}`);
+    console.log(`[${requestId}] - Users: ${results.users.success} success, ${results.users.error} errors`);
+    console.log(`[${requestId}] - Shops: ${results.shops.success} success, ${results.shops.error} errors`);
+    console.log(`[${requestId}] - Inventories: ${results.inventories.success} success, ${results.inventories.error} errors`);
+    console.log(`[${requestId}] - Expenses: ${results.expenses.success} success, ${results.expenses.error} errors`);
+    console.log(`[${requestId}] - Sales: ${results.sales.success} success, ${results.sales.error} errors`);
+    console.log(`[${requestId}] - Sale Items: ${results.sale_items.success} success, ${results.sale_items.error} errors`);
+    console.log(`[${requestId}] - Returns: ${results.returns.success} success, ${results.returns.error} errors`);
+    console.log(`[${requestId}] - Return Items: ${results.return_items.success} success, ${results.return_items.error} errors`);
+    console.log(`[${requestId}] ==================== SYNC REQUEST END ====================`);
+    
+    res.json(response);
   } catch (err) {
-    console.error('Sync error:', err);
-    res.status(500).json({ message: 'Sync error', error: err });
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    
+    console.error(`[${requestId}] ==================== SYNC ERROR ====================`);
+    console.error(`[${requestId}] Status Code: 500`);
+    console.error(`[${requestId}] Processing Duration: ${duration}ms`);
+    console.error(`[${requestId}] Error:`, err);
+    console.error(`[${requestId}] Error Stack:`, (err as Error).stack);
+    
+    const errorResponse = { message: 'Sync error', error: err };
+    console.error(`[${requestId}] Error Response:`, JSON.stringify(errorResponse, null, 2));
+    console.error(`[${requestId}] ==================== SYNC ERROR END ====================`);
+    
+    res.status(500).json(errorResponse);
   }
 };

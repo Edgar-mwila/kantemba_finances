@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
-import 'package:flutter/foundation.dart'; // Added for kDebug
 import 'package:email_validator/email_validator.dart'; // For email validation
 
 class LoginScreen extends StatefulWidget {

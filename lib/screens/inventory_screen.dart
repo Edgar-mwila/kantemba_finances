@@ -632,8 +632,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     }
                   }
 
-                  final currentUser = usersProvider.currentUser!;
-
                   final inventoryProvider = Provider.of<InventoryProvider>(
                     context,
                     listen: false,
@@ -705,6 +703,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
   void _showDamagedDialog(BuildContext context, InventoryItem item) {
     final _unitsController = TextEditingController();
     final _reasonController = TextEditingController();
+    final businessProvider = Provider.of<BusinessProvider>(
+      context,
+      listen: false,
+    );
 
     showDialog(
       context: context,
@@ -757,6 +759,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       context,
                       listen: false,
                     ).decreaseStockForDamagedGoods(item.id, units, reason);
+                    await Provider.of<ExpensesProvider>(
+                      context,
+                      listen: false,
+                    ).fetchAndSetExpensesHybrid(businessProvider);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Marked ${units} as damaged'),

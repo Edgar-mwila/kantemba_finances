@@ -3,7 +3,6 @@ import 'package:kantemba_finances/providers/business_provider.dart';
 import 'package:provider/provider.dart';
 import '../providers/shop_provider.dart';
 import '../models/shop.dart';
-import '../screens/premium_screen.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
 
 class ShopManagementScreen extends StatefulWidget {
@@ -115,185 +114,172 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
     );
   }
 
-  void _showPremiumRequiredDialog() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const PremiumScreen()),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final shopProvider = Provider.of<ShopProvider>(context);
     if (isWindows(context)) {
       // Desktop layout: Centered, max width, table-like shop list, dialogs for add/edit
       return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Manage Shops',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
         body: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 700),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Manage Shops',
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add),
-                        onPressed: () {
-                          final isPremium =
-                              Provider.of<BusinessProvider>(
-                                context,
-                                listen: false,
-                              ).isPremium;
-                          if (isPremium) {
-                            _showShopDialog();
-                          } else {
-                            _showPremiumRequiredDialog();
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                // Table header
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 12,
-                  ),
-                  color: Colors.grey.shade100,
-                  child: Row(
-                    children: const [
-                      Expanded(
-                        flex: 4,
-                        child: Text(
-                          'Shop Name',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                children: [
+                  // Table header
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    color: Colors.grey.shade100,
+                    child: Row(
+                      children: const [
+                        Expanded(
+                          flex: 4,
+                          child: Text(
+                            'Shop Name',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          'Actions',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            'Actions',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const Divider(height: 0),
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh:
-                        () => shopProvider.fetchShops(
-                          Provider.of<BusinessProvider>(
-                            context,
-                            listen: false,
-                          ).id!,
-                        ),
-                    child:
-                        shopProvider.shops.isEmpty
-                            ? const Center(child: Text('No shops found.'))
-                            : ListView.builder(
-                              itemCount: shopProvider.shops.length,
-                              itemBuilder: (ctx, i) {
-                                final shop = shopProvider.shops[i];
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                    horizontal: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                        color: Colors.grey.shade200,
-                                      ),
+                  const Divider(height: 0),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh:
+                          () => shopProvider.fetchShops(
+                            Provider.of<BusinessProvider>(
+                              context,
+                              listen: false,
+                            ).id!,
+                          ),
+                      child:
+                          shopProvider.shops.isEmpty
+                              ? const Center(child: Text('No shops found.'))
+                              : ListView.builder(
+                                itemCount: shopProvider.shops.length,
+                                itemBuilder: (ctx, i) {
+                                  final shop = shopProvider.shops[i];
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                      horizontal: 12,
                                     ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(flex: 4, child: Text(shop.name)),
-                                      Expanded(
-                                        flex: 2,
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.end,
-                                          children: [
-                                            IconButton(
-                                              icon: const Icon(Icons.edit),
-                                              onPressed:
-                                                  () => _showShopDialog(
-                                                    shop: shop,
-                                                  ),
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.delete),
-                                              onPressed: () async {
-                                                await shopProvider.deleteShop(
-                                                  shop.id,
-                                                  Provider.of<BusinessProvider>(
-                                                    context,
-                                                    listen: false,
-                                                  ).id!,
-                                                );
-                                              },
-                                            ),
-                                          ],
+                                    decoration: BoxDecoration(
+                                      border: Border(
+                                        bottom: BorderSide(
+                                          color: Colors.grey.shade200,
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          flex: 4,
+                                          child: Text(shop.name),
+                                        ),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.end,
+                                            children: [
+                                              IconButton(
+                                                icon: const Icon(Icons.edit),
+                                                onPressed:
+                                                    () => _showShopDialog(
+                                                      shop: shop,
+                                                    ),
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(Icons.delete),
+                                                onPressed: () async {
+                                                  await shopProvider.deleteShop(
+                                                    shop.id,
+                                                    Provider.of<
+                                                      BusinessProvider
+                                                    >(
+                                                      context,
+                                                      listen: false,
+                                                    ).id!,
+                                                  );
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            _showShopDialog();
+          },
+          child: const Icon(Icons.add),
         ),
       );
     }
     // Mobile layout (unchanged)
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Manage Shops',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ),
       body: Column(
         children: [
-          // Title section with add button
-          Padding(
-            padding: const EdgeInsets.all(16.0),
+          Container(
+            padding: const EdgeInsets.all(24),
+            color: Colors.grey.shade100,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Manage Shops',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+              children: const [
+                Expanded(
+                  flex: 4,
+                  child: Text(
+                    'Shop Name',
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.add),
-                  onPressed: () {
-                    final isPremium =
-                        Provider.of<BusinessProvider>(
-                          context,
-                          listen: false,
-                        ).isPremium;
-                    if (isPremium) {
-                      _showShopDialog();
-                    } else {
-                      _showPremiumRequiredDialog();
-                    }
-                  },
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    'Actions',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
           ),
+          const Divider(height: 0),
           // Shop list
           Expanded(
             child: RefreshIndicator(
@@ -335,6 +321,12 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _showShopDialog();
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }

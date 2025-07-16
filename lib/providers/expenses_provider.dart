@@ -49,10 +49,9 @@ class ExpensesProvider with ChangeNotifier {
     String businessId, {
     List<String>? shopIds,
   }) async {
-    // Check if online and if business is premium
     bool isOnline = await ApiService.isOnline();
-    final businessProvider = BusinessProvider();
-    bool isPremium = businessProvider.isPremium;
+    final business = await DBHelper.getDataById('businesses', businessId);
+    final isPremium = business?['isPremium'] == 1;
 
     if (!isOnline || !isPremium) {
       // Offline mode or non-premium business: load from local database
@@ -208,7 +207,10 @@ class ExpensesProvider with ChangeNotifier {
     BusinessProvider businessProvider,
   ) async {
     if (!businessProvider.isPremium) {
-      final localExpenses = await DBHelper.getData('expenses');
+      final localExpenses = await DBHelper.getDataByBusinessId(
+        'expenses',
+        businessProvider.id!,
+      );
       _expenses =
           localExpenses
               .map(
@@ -230,7 +232,10 @@ class ExpensesProvider with ChangeNotifier {
       await fetchAndSetExpenses(businessProvider.id!);
       // Optionally, update local DB with latest online data
     } else {
-      final localExpenses = await DBHelper.getData('expenses');
+      final localExpenses = await DBHelper.getDataByBusinessId(
+        'expenses',
+        businessProvider.id!,
+      );
       _expenses =
           localExpenses
               .map(
@@ -281,26 +286,5 @@ class ExpensesProvider with ChangeNotifier {
       return;
     }
     await addExpense(expense, createdBy, shopId);
-  }
-
-  Future<void> syncExpensesToBackend(
-    BusinessProvider businessProvider, {
-    bool batch = false,
-  }) async {
-    if (batch) return; // Handled by SyncManager
-    if (!businessProvider.isPremium || !(await ApiService.isOnline())) return;
-    final unsynced = await DBHelper.getUnsyncedData('expenses');
-    for (final expense in unsynced) {
-      await ApiService.post('expenses', {
-        'id': expense['id'],
-        'description': expense['description'],
-        'amount': (expense['amount'] as num).toDouble(),
-        'date': expense['date'],
-        'category': expense['category'],
-        'createdBy': expense['createdBy'],
-        'shopId': expense['shopId'],
-      });
-      await DBHelper.markAsSynced('expenses', expense['id']);
-    }
   }
 }

@@ -23,7 +23,8 @@ class HomeScreen extends StatelessWidget {
         final filteredSales = salesData.getSalesForShop(
           shopProvider.currentShop,
         );
-        final recentSales = filteredSales.take(5).toList();
+        final recentSales =
+            filteredSales.reversed.take(5).toList().reversed.toList();
 
         if (isWindows(context)) {
           // Desktop layout: Centered, max width, dialogs for details

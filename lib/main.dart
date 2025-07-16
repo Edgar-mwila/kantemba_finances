@@ -26,6 +26,8 @@ import 'package:kantemba_finances/helpers/platform_helper.dart';
 import 'package:kantemba_finances/widgets/splash_screen.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
@@ -73,6 +75,7 @@ class _KantembaFinancesAppState extends State<KantembaFinancesApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Kantemba Finances',
+      navigatorKey: rootNavigatorKey,
       theme: ThemeData(
         primarySwatch: Colors.green,
         primaryColor: Colors.green,
@@ -145,34 +148,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
       await SyncManager.batchSyncAndMarkSynced();
       return;
     }
-    final usersProvider = Provider.of<UsersProvider>(context, listen: false);
-    final shopProvider = Provider.of<ShopProvider>(context, listen: false);
-    final salesProvider = Provider.of<SalesProvider>(context, listen: false);
-    final expensesProvider = Provider.of<ExpensesProvider>(
-      context,
-      listen: false,
-    );
-    final inventoryProvider = Provider.of<InventoryProvider>(
-      context,
-      listen: false,
-    );
-    final returnsProvider = Provider.of<ReturnsProvider>(
-      context,
-      listen: false,
-    );
     await businessProvider.syncBusinessToBackend(batch: false);
-    await usersProvider.syncUsersToBackend(businessProvider, batch: false);
-    await shopProvider.syncShopsToBackend(businessProvider, batch: false);
-    await salesProvider.syncSalesToBackend(businessProvider, batch: false);
-    await expensesProvider.syncExpensesToBackend(
-      businessProvider,
-      batch: false,
-    );
-    await inventoryProvider.syncInventoryToBackend(
-      businessProvider,
-      batch: false,
-    );
-    await returnsProvider.syncReturnsToBackend(businessProvider, batch: false);
+    await SyncManager.batchSyncAndMarkSynced();
   }
 
   @override
@@ -208,19 +185,6 @@ class _MainAppScreenState extends State<MainAppScreen> {
     final isPremium = businessProvider.isPremium;
 
     final allNavItems = [
-      // Only show Shops for premium businesses
-      if (isPremium)
-        NavItem(
-          title: 'Shops',
-          icon: Icons.shopping_cart,
-          screen: const ShopManagementScreen(),
-          showFor:
-              (u) =>
-                  u != null &&
-                  (u.permissions.contains(UserPermissions.all) ||
-                      u.role == 'admin' ||
-                      u.role == 'manager'),
-        ),
       // Home is always available
       NavItem(
         title: 'Home',
@@ -353,18 +317,14 @@ class _MainAppScreenState extends State<MainAppScreen> {
       // Desktop layout with NavigationRail
       return Scaffold(
         appBar: AppBar(
-          title: Text(navItems[_selectedIndex].title),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings),
-              tooltip: 'Settings',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                );
-              },
+          title: Text(
+            navItems[_selectedIndex].title,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
+          ),
+          actions: [
             if (currentUser != null &&
                 isPremium &&
                 (currentUser.role == 'admin' || currentUser.role == 'manager'))
@@ -380,6 +340,16 @@ class _MainAppScreenState extends State<MainAppScreen> {
                   );
                 },
               ),
+            IconButton(
+              icon: const Icon(Icons.settings),
+              tooltip: 'Settings',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                );
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.logout),
               tooltip: 'Log out',
@@ -410,6 +380,13 @@ class _MainAppScreenState extends State<MainAppScreen> {
               },
             ),
           ],
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.green.shade700, Colors.green.shade600],
+              ),
+            ),
+          ),
         ),
         body: Row(
           children: [
@@ -441,16 +418,6 @@ class _MainAppScreenState extends State<MainAppScreen> {
       appBar: AppBar(
         title: Text(navItems[_selectedIndex].title),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: 'Settings',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
-            },
-          ),
           if (currentUser != null &&
               isPremium &&
               (currentUser.role == 'admin' || currentUser.role == 'manager'))
@@ -466,6 +433,16 @@ class _MainAppScreenState extends State<MainAppScreen> {
                 );
               },
             ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Log out',

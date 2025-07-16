@@ -5,8 +5,10 @@ import 'package:kantemba_finances/models/user.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
 import 'package:kantemba_finances/providers/business_provider.dart';
 import '../providers/shop_provider.dart';
-import '../screens/premium_screen.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
+import 'package:kantemba_finances/providers/sales_provider.dart';
+import 'package:kantemba_finances/providers/expenses_provider.dart';
+import '../screens/employee_detail_screen.dart';
 
 class EmployeeManagementScreen extends StatelessWidget {
   const EmployeeManagementScreen({super.key});
@@ -31,54 +33,6 @@ class EmployeeManagementScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Employee Management',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.headlineMedium!.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            if (isPremium)
-                              ElevatedButton.icon(
-                                onPressed:
-                                    () => _showUserDialog(
-                                      context,
-                                      usersProvider,
-                                      businessProvider,
-                                    ),
-                                icon: const Icon(Icons.add),
-                                label: const Text('Add Employee'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green.shade700,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 16,
-                                  ),
-                                ),
-                              )
-                            else
-                              ElevatedButton.icon(
-                                onPressed: () => _showUpgradeDialog(context),
-                                icon: const Icon(Icons.star),
-                                label: const Text('Upgrade for Employees'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.grey,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 16,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
                         // Search and filter row
                         Row(
                           children: [
@@ -248,39 +202,6 @@ class EmployeeManagementScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Employee Management',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.headlineMedium!.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.people,
-                              color: Colors.green.shade700,
-                              size: 24,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${users.length}',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey.shade600,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
                     // Filter and search bar
                     Row(
                       children: [
@@ -348,13 +269,11 @@ class EmployeeManagementScreen extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed:
-                            isPremium
-                                ? () => _showUserDialog(
-                                  context,
-                                  usersProvider,
-                                  businessProvider,
-                                )
-                                : () => _showUpgradeDialog(context),
+                            () => _showUserDialog(
+                              context,
+                              usersProvider,
+                              businessProvider,
+                            ),
                         icon: const Icon(Icons.add, color: Colors.white),
                         label: const Text(
                           'Add Employee',
@@ -373,6 +292,12 @@ class EmployeeManagementScreen extends StatelessWidget {
                   ],
                 ),
               ),
+      floatingActionButton: FloatingActionButton(
+        onPressed:
+            () => _showUserDialog(context, usersProvider, businessProvider),
+        backgroundColor: Colors.green.shade700,
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
@@ -572,8 +497,8 @@ class EmployeeManagementScreen extends StatelessWidget {
             builder:
                 (context, scrollController) => Container(
                   padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: ListView(
+                    controller: scrollController,
                     children: [
                       Center(
                         child: Container(
@@ -652,56 +577,69 @@ class EmployeeManagementScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildPerformanceCard(
-                              'Sales',
-                              '0',
-                              Icons.trending_up,
-                              Colors.green,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildPerformanceCard(
-                              'Expenses',
-                              '0',
-                              Icons.trending_down,
-                              Colors.red,
-                            ),
-                          ),
-                        ],
+                      Builder(
+                        builder: (context) {
+                          final salesProvider = Provider.of<SalesProvider>(
+                            context,
+                            listen: false,
+                          );
+                          final expensesProvider =
+                              Provider.of<ExpensesProvider>(
+                                context,
+                                listen: false,
+                              );
+                          final userSales =
+                              salesProvider.sales
+                                  .where((sale) => sale.createdBy == user.id)
+                                  .toList();
+                          final userExpenses =
+                              expensesProvider.expenses
+                                  .where((exp) => exp.createdBy == user.id)
+                                  .toList();
+                          final totalSales = userSales.fold<double>(
+                            0.0,
+                            (sum, sale) => sum + (sale.grandTotal),
+                          );
+                          final totalExpenses = userExpenses.fold<double>(
+                            0.0,
+                            (sum, exp) => sum + (exp.amount),
+                          );
+                          return Row(
+                            children: [
+                              Expanded(
+                                child: _buildPerformanceCard(
+                                  'Sales',
+                                  'K${totalSales.toStringAsFixed(2)}',
+                                  Icons.trending_up,
+                                  Colors.green,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildPerformanceCard(
+                                  'Expenses',
+                                  'K${totalExpenses.toStringAsFixed(2)}',
+                                  Icons.trending_down,
+                                  Colors.red,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildPerformanceCard(
-                              'Inventory',
-                              '0',
-                              Icons.inventory,
-                              Colors.blue,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildPerformanceCard(
-                              'Reports',
-                              '0',
-                              Icons.assessment,
-                              Colors.orange,
-                            ),
-                          ),
-                        ],
-                      ),
+                      const SizedBox(height: 24),
                       const Spacer(),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () {
                             Navigator.pop(context);
-                            // TODO: Navigate to detailed performance screen
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => EmployeeDetailScreen(user: user),
+                              ),
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green.shade700,
@@ -1180,13 +1118,6 @@ class EmployeeManagementScreen extends StatelessWidget {
           }
         });
       },
-    );
-  }
-
-  void _showUpgradeDialog(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const PremiumScreen()),
     );
   }
 }

@@ -37,9 +37,14 @@ export const getUserById = async (req: Request, res: Response) => {
 export const createUser = async (req: Request, res: Response) => {
   console.log('[POST] /users', req.body);
   try {
-    const { password, ...rest } = req.body;
+    const { password, contact, ...rest } = req.body;
+    const alreadyUser = await User.findOne({ where: { contact } });
+    if (alreadyUser) {
+      console.log('User already exists');
+      return res.status(409).json({ message: 'User already exists' });
+    }
     const hash = await bcrypt.hash(password, 10);
-    const user = await User.create({ ...rest, password: hash });
+    const user = await User.create({ ...rest, password: hash, contact });
     console.log('User created:', user.toJSON());
     res.status(201).json(user);
   } catch (err) {
@@ -91,8 +96,8 @@ export const deleteUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
   console.log('[POST] /users/login', req.body);
   try {
-    const { contact, password, businessId } = req.body;
-    const user = await User.findOne({ where: { contact, businessId } });
+    const { contact, password } = req.body;
+    const user = await User.findOne({ where: { contact } });
     if (!user) {
       console.log('User not found');
       return res.status(404).json({ message: 'User not found' });
@@ -136,5 +141,27 @@ export const validateToken = async (req: Request, res: Response): Promise<void> 
   } catch (err) {
     console.error('Token validation error:', err);
     res.status(500).json({ message: 'Token validation error', error: err });
+  }
+};
+
+export const createToken = async (req: Request, res: Response) => {
+  console.log('[POST] /users/token', req.body);
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      return res.status(400).json({ message: 'userId is required' });
+    }
+    
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const token = signToken({ id: user.id, businessId: user.businessId, role: user.role, permissions: user.permissions, contact: user.contact });
+    console.log('Token created for user:', user.toJSON());
+    res.json({ token });
+  } catch (err) {
+    console.error('Error creating token:', err);
+    res.status(500).json({ message: 'Error creating token', error: err });
   }
 };

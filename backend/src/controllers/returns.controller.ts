@@ -43,7 +43,6 @@ export const createReturn = async (req: Request, res: Response) => {
       turnoverTax,
       levy,
       shopId,
-      businessId,
       createdBy,
       reason,
       status: 'pending',
@@ -154,8 +153,6 @@ export const approveReturn = async (req: Request, res: Response) => {
     }
 
     returnItem.status = 'approved';
-    returnItem.approvedBy = approvedBy;
-    returnItem.approvedAt = new Date();
 
     await returnItem.save();
 
@@ -188,9 +185,6 @@ export const rejectReturn = async (req: Request, res: Response) => {
     }
 
     returnItem.status = 'rejected';
-    returnItem.rejectedBy = rejectedBy;
-    returnItem.rejectionReason = rejectionReason;
-    returnItem.rejectedAt = new Date();
 
     // Ensure returnItem.items exists and is an array
     const items = (returnItem as any).items || [];
