@@ -11,7 +11,6 @@ import 'package:kantemba_finances/providers/inventory_provider.dart';
 import 'package:kantemba_finances/providers/sales_provider.dart';
 import 'package:kantemba_finances/providers/shop_provider.dart';
 import 'package:kantemba_finances/providers/returns_provider.dart';
-import 'package:kantemba_finances/screens/home_screen.dart';
 import 'package:kantemba_finances/screens/inventory_screen.dart';
 import 'package:kantemba_finances/screens/expenses_screen.dart';
 import 'package:kantemba_finances/screens/reports_screen.dart';
@@ -25,6 +24,8 @@ import 'package:kantemba_finances/helpers/sync_manager.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
 import 'package:kantemba_finances/widgets/splash_screen.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:kantemba_finances/screens/dashboard_screen.dart';
+import 'package:kantemba_finances/screens/pos_screen.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -163,6 +164,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     if (usersProvider.currentUser == null) {
       return const InitialChoiceScreen();
     }
+
     return const MainAppScreen();
   }
 }
@@ -175,7 +177,7 @@ class MainAppScreen extends StatefulWidget {
 }
 
 class _MainAppScreenState extends State<MainAppScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1;
 
   List<NavItem> _navItemsForUser(User? user) {
     final businessProvider = Provider.of<BusinessProvider>(
@@ -185,12 +187,23 @@ class _MainAppScreenState extends State<MainAppScreen> {
     final isPremium = businessProvider.isPremium;
 
     final allNavItems = [
-      // Home is always available
       NavItem(
-        title: 'Home',
-        icon: Icons.home,
-        screen: const HomeScreen(),
-        showFor: (_) => true,
+        title: 'POS',
+        icon: Icons.point_of_sale,
+        screen: const PosScreen(),
+        showFor: (user) => true,
+      ),
+      NavItem(
+        title: 'Dashboard',
+        icon: Icons.dashboard,
+        screen: const DashboardScreen(),
+        showFor:
+            (u) =>
+                u != null &&
+                (u.role == 'admin' ||
+                    u.role == 'manager' ||
+                    (u.permissions.contains(UserPermissions.all) ||
+                        u.permissions.contains(UserPermissions.viewReports))),
       ),
       // Inventory - available for users with inventory permissions
       NavItem(
@@ -255,16 +268,6 @@ class _MainAppScreenState extends State<MainAppScreen> {
       // If we have less than 2 items, ensure we have Home and Premium (for non-premium)
       final essentialItems = <NavItem>[];
 
-      // Always add Home
-      essentialItems.add(
-        NavItem(
-          title: 'Home',
-          icon: Icons.home,
-          screen: const HomeScreen(),
-          showFor: (_) => true,
-        ),
-      );
-
       // Add Premium for non-premium businesses
       if (!isPremium) {
         essentialItems.add(
@@ -321,7 +324,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
             navItems[_selectedIndex].title,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: Colors.green.shade700,
             ),
           ),
           actions: [
@@ -340,53 +343,31 @@ class _MainAppScreenState extends State<MainAppScreen> {
                   );
                 },
               ),
-            IconButton(
-              icon: const Icon(Icons.settings),
-              tooltip: 'Settings',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.logout),
-              tooltip: 'Log out',
-              onPressed: () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder:
-                      (ctx) => AlertDialog(
-                        title: const Text('Log out'),
-                        content: const Text(
-                          'Are you sure you want to log out?',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(true),
-                            child: const Text('Log out'),
-                          ),
-                        ],
-                      ),
-                );
-                if (confirm == true) {
-                  await usersProvider.logout();
-                }
-              },
-            ),
+            if (currentUser != null &&
+                (currentUser.role == 'admin' ||
+                    currentUser.permissions.contains(
+                      UserPermissions.manageSettings,
+                    ) ||
+                    currentUser.permissions.contains(UserPermissions.all)))
+              IconButton(
+                icon: const Icon(Icons.settings),
+                tooltip: 'Settings',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  );
+                },
+              ),
           ],
           flexibleSpace: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.green.shade700, Colors.green.shade600],
+                colors: [Colors.white60, Colors.white70],
               ),
             ),
           ),
+          actionsIconTheme: IconThemeData(color: Colors.green.shade700),
         ),
         body: Row(
           children: [
@@ -433,43 +414,22 @@ class _MainAppScreenState extends State<MainAppScreen> {
                 );
               },
             ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            tooltip: 'Settings',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Log out',
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder:
-                    (ctx) => AlertDialog(
-                      title: const Text('Log out'),
-                      content: const Text('Are you sure you want to log out?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(false),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.of(ctx).pop(true),
-                          child: const Text('Log out'),
-                        ),
-                      ],
-                    ),
-              );
-              if (confirm == true) {
-                await usersProvider.logout();
-              }
-            },
-          ),
+          if (currentUser != null &&
+              (currentUser.role == 'admin' ||
+                  currentUser.permissions.contains(
+                    UserPermissions.manageSettings,
+                  ) ||
+                  currentUser.permissions.contains(UserPermissions.all)))
+            IconButton(
+              icon: const Icon(Icons.settings),
+              tooltip: 'Settings',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                );
+              },
+            ),
         ],
       ),
       body: navItems[_selectedIndex].screen,

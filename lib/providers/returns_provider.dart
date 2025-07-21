@@ -53,7 +53,7 @@ class ReturnsProvider with ChangeNotifier {
         'ReturnsProvider: Loading returns from local database (offline: ${!isOnline}, premium: $isPremium)',
       );
       try {
-        final localReturns = await DBHelper.getDataByBusinessId(
+        final localReturns = await DBHelper.getDataByShopId(
           'returns',
           businessId,
         );
@@ -191,7 +191,7 @@ class ReturnsProvider with ChangeNotifier {
     BusinessProvider businessProvider,
   ) async {
     if (!businessProvider.isPremium) {
-      final localReturns = await DBHelper.getDataByBusinessId(
+      final localReturns = await DBHelper.getDataByShopId(
         'returns',
         businessProvider.id!,
       );
@@ -243,7 +243,7 @@ class ReturnsProvider with ChangeNotifier {
       await fetchReturns(businessProvider.id!);
       // Optionally, update local DB with latest online data
     } else {
-      final localReturns = await DBHelper.getDataByBusinessId(
+      final localReturns = await DBHelper.getDataByShopId(
         'returns',
         businessProvider.id!,
       );

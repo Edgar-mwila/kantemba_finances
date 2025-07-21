@@ -251,37 +251,39 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
           leading: const Icon(Icons.book),
           title: const Text('User Manual'),
           subtitle: const Text('Complete guide to using the app'),
-          onTap: () {
-            // TODO: Open user manual
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('User manual coming soon!')),
-            );
+          onTap: () async {
+            final url = 'https://www.kantemba.com/user_manual.pdf';
+            if (await canLaunchUrl(Uri.parse(url))) {
+              await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+            } else {
+              _showErrorSnackBar('Could not open user manual.');
+            }
           },
         ),
         ListTile(
           leading: const Icon(Icons.video_library),
           title: const Text('Video Tutorials'),
           subtitle: const Text('Learn with step-by-step videos'),
-          onTap: () {
-            // TODO: Open video tutorials
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Video tutorials coming soon!'),
-              ),
-            );
+          onTap: () async {
+            final url = 'https://www.youtube.com/playlist?list=PLKantembaFinancesTutorials';
+            if (await canLaunchUrl(Uri.parse(url))) {
+              await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+            } else {
+              _showErrorSnackBar('Could not open video tutorials.');
+            }
           },
         ),
         ListTile(
           leading: const Icon(Icons.forum),
           title: const Text('Community Forum'),
           subtitle: const Text('Connect with other users'),
-          onTap: () {
-            // TODO: Open community forum
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Community forum coming soon!'),
-              ),
-            );
+          onTap: () async {
+            final url = 'https://forum.kantemba.com';
+            if (await canLaunchUrl(Uri.parse(url))) {
+              await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+            } else {
+              _showErrorSnackBar('Could not open community forum.');
+            }
           },
         ),
       ],

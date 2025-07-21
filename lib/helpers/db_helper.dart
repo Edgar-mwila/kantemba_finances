@@ -19,7 +19,7 @@ class DBHelper {
           'CREATE TABLE shops(id TEXT PRIMARY KEY, name TEXT, businessId TEXT, synced INTEGER DEFAULT 0)',
         );
         await db.execute(
-          'CREATE TABLE inventories(id TEXT PRIMARY KEY, name TEXT, price REAL, quantity INTEGER, lowStockThreshold INTEGER, createdBy TEXT, shopId TEXT, damagedRecords TEXT DEFAULT "[]", synced INTEGER DEFAULT 0)',
+          'CREATE TABLE inventories(id TEXT PRIMARY KEY, name TEXT, price REAL, quantity INTEGER, lowStockThreshold INTEGER, createdBy TEXT, shopId TEXT, barcode TEXT, damagedRecords TEXT DEFAULT "[]", synced INTEGER DEFAULT 0)',
         );
         await db.execute(
           'CREATE TABLE expenses(id TEXT PRIMARY KEY, description TEXT, amount REAL, date TEXT, category TEXT, createdBy TEXT, shopId TEXT, synced INTEGER DEFAULT 0)',
@@ -47,8 +47,12 @@ class DBHelper {
             'ALTER TABLE sale_items ADD COLUMN returnedReason TEXT DEFAULT ""',
           );
         }
+        if (oldVersion < 5) {
+          // Add barcode column to inventories table
+          await db.execute('ALTER TABLE inventories ADD COLUMN barcode TEXT');
+        }
       },
-      version: 4,
+      version: 5, // Increment version for barcode support
     );
   }
 
@@ -139,6 +143,14 @@ class DBHelper {
   ) async {
     final db = await DBHelper.database();
     return db.query(table, where: 'businessId = ?', whereArgs: [businessId]);
+  }
+
+  static Future<List<Map<String, dynamic>>> getDataByShopId(
+    String table,
+    String shopId,
+  ) async {
+    final db = await DBHelper.database();
+    return db.query(table, where: 'shopId = ?', whereArgs: [shopId]);
   }
 
   static Future<void> update(

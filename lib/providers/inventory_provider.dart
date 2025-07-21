@@ -38,6 +38,24 @@ class InventoryProvider with ChangeNotifier {
     return _items.where((item) => item.shopId == currentShop.id).toList();
   }
 
+  // Find item by barcode
+  InventoryItem? findItemByBarcode(String barcode) {
+    try {
+      return _items.firstWhere(
+        (item) => item.barcode != null && item.barcode!.toLowerCase() == barcode.toLowerCase(),
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Check if barcode already exists
+  bool barcodeExists(String barcode) {
+    return _items.any(
+      (item) => item.barcode != null && item.barcode!.toLowerCase() == barcode.toLowerCase(),
+    );
+  }
+
   List<InventoryItem> getItemsForShopAndDateRange(
     Shop? currentShop,
     DateTime? start,
@@ -60,7 +78,7 @@ class InventoryProvider with ChangeNotifier {
       debugPrint(
         'InventoryProvider: Loading items from local database (offline: ${!isOnline}, premium: $isPremium)',
       );
-      final localItems = await DBHelper.getDataByBusinessId(
+      final localItems = await DBHelper.getDataByShopId(
         'inventories',
         businessId,
       );
@@ -83,6 +101,7 @@ class InventoryProvider with ChangeNotifier {
               lowStockThreshold: item['lowStockThreshold'],
               shopId: item['shopId'],
               createdBy: item['createdBy'],
+              barcode: item['barcode'], // Add barcode support
               damagedRecords: damagedRecords,
             );
           }).toList();
@@ -136,6 +155,7 @@ class InventoryProvider with ChangeNotifier {
                 lowStockThreshold: item['lowStockThreshold'],
                 shopId: item['shopId'],
                 createdBy: item['createdBy'],
+                barcode: item['barcode'], // Add barcode support
                 damagedRecords: damagedRecords,
               );
             }),
@@ -185,6 +205,7 @@ class InventoryProvider with ChangeNotifier {
                 lowStockThreshold: item['lowStockThreshold'],
                 shopId: item['shopId'],
                 createdBy: item['createdBy'],
+                barcode: item['barcode'], // Add barcode support
                 damagedRecords: damagedRecords,
               );
             }).toList();
@@ -209,6 +230,7 @@ class InventoryProvider with ChangeNotifier {
         'lowStockThreshold': item.lowStockThreshold,
         'createdBy': createdBy,
         'shopId': shopId,
+        'barcode': item.barcode ?? '', // Handle nullable barcode
         'damagedRecords': jsonEncode(
           item.damagedRecords.map((e) => e.toJson()).toList(),
         ),
@@ -227,6 +249,7 @@ class InventoryProvider with ChangeNotifier {
       'lowStockThreshold': item.lowStockThreshold,
       'createdBy': createdBy,
       'shopId': shopId,
+      'barcode': item.barcode, // Add barcode support
     });
     _items.add(item);
     notifyListeners();
@@ -622,7 +645,7 @@ class InventoryProvider with ChangeNotifier {
     BusinessProvider businessProvider,
   ) async {
     if (!businessProvider.isPremium) {
-      final localItems = await DBHelper.getDataByBusinessId(
+      final localItems = await DBHelper.getDataByShopId(
         'inventories',
         businessProvider.id!,
       );
@@ -654,7 +677,7 @@ class InventoryProvider with ChangeNotifier {
     if (await ApiService.isOnline()) {
       await fetchAndSetItems(businessProvider.id!);
     } else {
-      final localItems = await DBHelper.getDataByBusinessId(
+      final localItems = await DBHelper.getDataByShopId(
         'inventories',
         businessProvider.id!,
       );

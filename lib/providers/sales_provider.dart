@@ -56,13 +56,13 @@ class SalesProvider with ChangeNotifier {
     if (!isOnline || !isPremium) {
       // Offline mode or non-premium business: load from local database
       try {
-        final localSales = await DBHelper.getDataByBusinessId(
+        final localSales = await DBHelper.getDataByShopId(
           'sales',
           businessId,
         );
         final localSaleItems = await DBHelper.getData('sale_items');
         final localReturnItems = await DBHelper.getData('return_items');
-        final localReturns = await DBHelper.getDataByBusinessId(
+        final localReturns = await DBHelper.getDataByShopId(
           'returns',
           businessId,
         );
@@ -566,13 +566,13 @@ class SalesProvider with ChangeNotifier {
   Future<void> fetchAndSetSalesHybrid(BusinessProvider businessProvider) async {
     if (!businessProvider.isPremium) {
       // Local only
-      final localSales = await DBHelper.getDataByBusinessId(
+      final localSales = await DBHelper.getDataByShopId(
         'sales',
         businessProvider.id!,
       );
       final localSaleItems = await DBHelper.getData('sale_items');
       final localReturnItems = await DBHelper.getData('return_items');
-      final localReturns = await DBHelper.getDataByBusinessId(
+      final localReturns = await DBHelper.getDataByShopId(
         'returns',
         businessProvider.id!,
       );
@@ -589,13 +589,13 @@ class SalesProvider with ChangeNotifier {
       await fetchAndSetSales(businessProvider.id!);
     } else {
       // Offline, use local DB
-      final localSales = await DBHelper.getDataByBusinessId(
+      final localSales = await DBHelper.getDataByShopId(
         'sales',
         businessProvider.id!,
       );
       final localSaleItems = await DBHelper.getData('sale_items');
       final localReturnItems = await DBHelper.getData('return_items');
-      final localReturns = await DBHelper.getDataByBusinessId(
+      final localReturns = await DBHelper.getDataByShopId(
         'returns',
         businessProvider.id!,
       );

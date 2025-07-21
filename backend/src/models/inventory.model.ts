@@ -13,6 +13,7 @@ interface InventoryAttributes {
   lowStockThreshold: number;
   createdBy: string;
   shopId?: string | null;
+  barcode?: string | null; // Add barcode field
   damagedRecords?: string | null;
 }
 
@@ -26,6 +27,7 @@ class Inventory extends Model<InventoryAttributes, InventoryCreationAttributes> 
   public lowStockThreshold!: number;
   public createdBy!: string;
   public shopId?: string | null;
+  public barcode?: string | null; // Add barcode field
   public damagedRecords?: string | null;
 }
 
@@ -58,6 +60,11 @@ Inventory.init(
         key: 'id',
       },
       onDelete: 'SET NULL',
+    },
+    barcode: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true, // Ensure unique barcodes
     },
     damagedRecords: {
       type: DataTypes.TEXT,

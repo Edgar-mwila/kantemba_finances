@@ -15,6 +15,23 @@ export const getInventory = async (req: Request, res: Response) => {
   }
 };
 
+export const getInventoryByBarcode = async (req: Request, res: Response) => {
+  console.log('[GET] /inventory/barcode/:barcode', req.params);
+  try {
+    const { barcode } = req.params;
+    const item = await Inventory.findOne({ where: { barcode: barcode } });
+    if (!item) {
+      console.log('Inventory item not found for barcode:', barcode);
+      return res.status(404).json({ message: 'Inventory item not found for this barcode' });
+    }
+    console.log('Inventory item found by barcode:', item.toJSON());
+    res.json(item);
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(500).json({ message: 'Server error', error: err });
+  }
+};
+
 export const getInventoryItemById = async (req: Request, res: Response) => {
   console.log('[GET] /inventory/:id', req.params);
   try {
@@ -35,6 +52,14 @@ export const getInventoryItemById = async (req: Request, res: Response) => {
 export const createInventoryItem = async (req: Request, res: Response) => {
   console.log('[POST] /inventory', req.body);
   try {
+    // Check if barcode already exists
+    if (req.body.barcode) {
+      const existingItem = await Inventory.findOne({ where: { barcode: req.body.barcode } });
+      if (existingItem) {
+        return res.status(400).json({ message: 'Barcode already exists' });
+      }
+    }
+    
     const item = await Inventory.create(req.body);
     console.log('Inventory item created:', item.toJSON());
     res.status(201).json(item);
@@ -48,6 +73,20 @@ export const updateInventoryItem = async (req: Request, res: Response) => {
   console.log('[PUT] /inventory/:id', req.params, req.body);
   try {
     const { id } = req.params;
+    
+    // Check if barcode already exists for different item
+    if (req.body.barcode) {
+      const existingItem = await Inventory.findOne({ 
+        where: { 
+          barcode: req.body.barcode,
+          id: { [require('sequelize').Op.ne]: id } // Exclude current item
+        } 
+      });
+      if (existingItem) {
+        return res.status(400).json({ message: 'Barcode already exists' });
+      }
+    }
+    
     const [updated] = await Inventory.update(req.body, { where: { id } });
     if (!updated) {
       console.log('Inventory item not found');

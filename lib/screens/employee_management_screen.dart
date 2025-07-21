@@ -10,17 +10,32 @@ import 'package:kantemba_finances/providers/sales_provider.dart';
 import 'package:kantemba_finances/providers/expenses_provider.dart';
 import '../screens/employee_detail_screen.dart';
 
-class EmployeeManagementScreen extends StatelessWidget {
+class EmployeeManagementScreen extends StatefulWidget {
   const EmployeeManagementScreen({super.key});
+
+  @override
+  State<EmployeeManagementScreen> createState() => _EmployeeManagementScreenState();
+}
+
+class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
+  String _searchQuery = '';
+  String _roleFilter = 'all';
 
   @override
   Widget build(BuildContext context) {
     final usersProvider = Provider.of<UsersProvider>(context);
     final shopProvider = Provider.of<ShopProvider>(context);
-    final users = usersProvider.users;
-    final currentUser = usersProvider.currentUser;
     final businessProvider = Provider.of<BusinessProvider>(context);
     final isPremium = businessProvider.isPremium;
+    final currentUser = usersProvider.currentUser;
+
+    // Filter users by search and role
+    List<User> filteredUsers = usersProvider.users.where((user) {
+      final matchesSearch = user.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          user.contact.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesRole = _roleFilter == 'all' ? true : user.role == _roleFilter;
+      return matchesSearch && matchesRole;
+    }).toList();
 
     return Scaffold(
       body:
@@ -48,7 +63,9 @@ class EmployeeManagementScreen extends StatelessWidget {
                                   fillColor: Colors.grey.shade50,
                                 ),
                                 onChanged: (value) {
-                                  // TODO: Implement search functionality
+                                  setState(() {
+                                    _searchQuery = value;
+                                  });
                                 },
                               ),
                             ),
@@ -56,7 +73,9 @@ class EmployeeManagementScreen extends StatelessWidget {
                             PopupMenuButton<String>(
                               icon: const Icon(Icons.filter_list),
                               onSelected: (value) {
-                                // TODO: Implement filter functionality
+                                setState(() {
+                                  _roleFilter = value;
+                                });
                               },
                               itemBuilder:
                                   (context) => [
@@ -77,6 +96,7 @@ class EmployeeManagementScreen extends StatelessWidget {
                                       child: Text('Employees Only'),
                                     ),
                                   ],
+                              initialValue: _roleFilter,
                             ),
                           ],
                         ),
@@ -124,14 +144,14 @@ class EmployeeManagementScreen extends StatelessWidget {
                         const Divider(height: 0),
                         Expanded(
                           child:
-                              users.isEmpty
+                              filteredUsers.isEmpty
                                   ? const Center(
                                     child: Text('No employees found.'),
                                   )
                                   : ListView.builder(
-                                    itemCount: users.length,
+                                    itemCount: filteredUsers.length,
                                     itemBuilder: (ctx, i) {
-                                      final user = users[i];
+                                      final user = filteredUsers[i];
                                       final shop = shopProvider.shops
                                           .firstWhere(
                                             (shop) => shop.id == user.shopId,
@@ -217,7 +237,9 @@ class EmployeeManagementScreen extends StatelessWidget {
                               fillColor: Colors.grey.shade50,
                             ),
                             onChanged: (value) {
-                              // TODO: Implement search functionality
+                              setState(() {
+                                _searchQuery = value;
+                              });
                             },
                           ),
                         ),
@@ -225,7 +247,9 @@ class EmployeeManagementScreen extends StatelessWidget {
                         PopupMenuButton<String>(
                           icon: const Icon(Icons.filter_list),
                           onSelected: (value) {
-                            // TODO: Implement filter functionality
+                            setState(() {
+                              _roleFilter = value;
+                            });
                           },
                           itemBuilder:
                               (context) => [
@@ -246,17 +270,18 @@ class EmployeeManagementScreen extends StatelessWidget {
                                   child: Text('Employees Only'),
                                 ),
                               ],
+                          initialValue: _roleFilter,
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
                     Expanded(
                       child: ListView.builder(
-                        itemCount: users.length,
+                        itemCount: filteredUsers.length,
                         itemBuilder:
                             (ctx, i) => _buildEmployeeCard(
                               context,
-                              users[i],
+                              filteredUsers[i],
                               shopProvider,
                               usersProvider,
                               businessProvider,

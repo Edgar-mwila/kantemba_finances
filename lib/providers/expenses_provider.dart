@@ -207,7 +207,7 @@ class ExpensesProvider with ChangeNotifier {
     BusinessProvider businessProvider,
   ) async {
     if (!businessProvider.isPremium) {
-      final localExpenses = await DBHelper.getDataByBusinessId(
+      final localExpenses = await DBHelper.getDataByShopId(
         'expenses',
         businessProvider.id!,
       );
@@ -232,7 +232,7 @@ class ExpensesProvider with ChangeNotifier {
       await fetchAndSetExpenses(businessProvider.id!);
       // Optionally, update local DB with latest online data
     } else {
-      final localExpenses = await DBHelper.getDataByBusinessId(
+      final localExpenses = await DBHelper.getDataByShopId(
         'expenses',
         businessProvider.id!,
       );

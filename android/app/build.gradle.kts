@@ -59,6 +59,11 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    // Exclude duplicate ML Kit barcode model files
+    packagingOptions {
+        exclude("**/mlkit_barcode_models/**")
+    }
 }
 
 dependencies {

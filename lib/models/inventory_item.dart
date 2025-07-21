@@ -6,6 +6,7 @@ class InventoryItem {
   final int lowStockThreshold;
   final String shopId;
   final String createdBy;
+  final String? barcode; // Add barcode field
   List<DamagedRecord> damagedRecords;
 
   InventoryItem({
@@ -16,6 +17,7 @@ class InventoryItem {
     this.lowStockThreshold = 5,
     required this.shopId,
     required this.createdBy,
+    this.barcode, // Add barcode parameter
     this.damagedRecords = const [],
   });
 
@@ -28,6 +30,7 @@ class InventoryItem {
       lowStockThreshold: json['lowStockThreshold'] as int? ?? 5,
       shopId: json['shopId'] as String,
       createdBy: json['createdBy'] as String,
+      barcode: json['barcode'] as String?, // Parse barcode from JSON
       damagedRecords: (json['damagedRecords'] as List<dynamic>? ?? [])
         .map((e) => DamagedRecord.fromJson(e as Map<String, dynamic>)).toList(),
     );
@@ -42,6 +45,7 @@ class InventoryItem {
       'lowStockThreshold': lowStockThreshold,
       'shopId': shopId,
       'createdBy': createdBy,
+      'barcode': barcode, // Include barcode in JSON
       'damagedRecords': damagedRecords.map((e) => e.toJson()).toList(),
     };
   }

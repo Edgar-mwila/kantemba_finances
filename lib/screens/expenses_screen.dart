@@ -73,16 +73,16 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         color: Colors.grey.shade50,
         border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
       ),
-      child: Column(
+      child: Row(
         children: [
-          // Search bar
-          TextField(
+          // Expanded search bar
+          Expanded(
+            child: TextField(
             controller: _searchController,
             decoration: InputDecoration(
               hintText: 'Search by description or amount...',
               prefixIcon: const Icon(Icons.search),
-              suffixIcon:
-                  _searchQuery.isNotEmpty
+                suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
                         icon: const Icon(Icons.clear),
                         onPressed: () {
@@ -103,25 +103,15 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
               });
             },
           ),
-          const SizedBox(height: 12),
-
-          // Sort controls
-          Row(
-            children: [
-              const Text(
-                'Sort by: ',
-                style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(width: 8),
+          // Sort by dropdown
               DropdownButton<String>(
                 value: _sortBy,
                 items: const [
                   DropdownMenuItem(value: 'date', child: Text('Date')),
                   DropdownMenuItem(value: 'amount', child: Text('Amount')),
-                  DropdownMenuItem(
-                    value: 'description',
-                    child: Text('Description'),
-                  ),
+              DropdownMenuItem(value: 'description', child: Text('Description')),
                 ],
                 onChanged: (value) {
                   if (value != null) {
@@ -130,20 +120,17 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     });
                   }
                 },
+            underline: Container(),
+            style: Theme.of(context).textTheme.bodyMedium,
               ),
-              const SizedBox(width: 16),
               IconButton(
+            icon: Icon(_sortAscending ? Icons.arrow_upward : Icons.arrow_downward),
+            tooltip: _sortAscending ? 'Ascending' : 'Descending',
                 onPressed: () {
                   setState(() {
                     _sortAscending = !_sortAscending;
                   });
                 },
-                icon: Icon(
-                  _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
-                ),
-                tooltip: _sortAscending ? 'Sort Descending' : 'Sort Ascending',
-              ),
-            ],
           ),
         ],
       ),

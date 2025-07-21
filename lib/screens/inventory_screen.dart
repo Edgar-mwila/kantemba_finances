@@ -14,6 +14,14 @@ import 'package:kantemba_finances/models/inventory_item.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
+import 'dart:async';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:usb_serial/usb_serial.dart';
+
+// Import POS device manager from POS screen
+import 'pos_screen.dart';
 
 class CheckboxController {
   bool _value = false;
@@ -32,15 +40,339 @@ class InventoryScreen extends StatefulWidget {
 
 class _InventoryScreenState extends State<InventoryScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _barcodeController = TextEditingController();
   String _searchQuery = '';
-  String _sortBy = 'name'; // 'name', 'quantity', 'price', 'shop'
+  String _sortBy = 'name'; // 'name', 'quantity', 'price', 'shop', 'barcode'
   bool _sortAscending = true;
   bool _showLowStockOnly = false;
+  bool _showBarcodeOnly = false;
+
+  // POS Device Manager for barcode scanning
+  final PosDeviceManager _deviceManager = PosDeviceManager();
+  String _lastScannedBarcode = '';
+  bool _isDeviceInitialized = false;
+
+  UsbPort? _usbPort;
+  UsbDevice? _connectedUsbDevice;
+  bool _isUsbConnecting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeDevices();
+    _setupBarcodeListener();
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _barcodeController.dispose();
+    _deviceManager.dispose();
     super.dispose();
+  }
+
+  /// Initialize POS devices
+  Future<void> _initializeDevices() async {
+    await _deviceManager.initializeDevices();
+    setState(() {
+      _isDeviceInitialized = true;
+    });
+  }
+
+  /// Setup barcode scanner listener
+  void _setupBarcodeListener() {
+    _deviceManager.barcodeStream.listen((barcode) {
+      setState(() {
+        _lastScannedBarcode = barcode;
+      });
+      _handleBarcodeScanned(barcode);
+    });
+  }
+
+  /// Handle scanned barcode
+  void _handleBarcodeScanned(String barcode) {
+    // Focus on barcode field for manual entry
+    _barcodeController.text = barcode;
+
+    // Look up product by barcode
+    _lookupProductByBarcode(barcode);
+  }
+
+  /// Look up product by barcode
+  void _lookupProductByBarcode(String barcode) {
+    final inventoryProvider = Provider.of<InventoryProvider>(
+      context,
+      listen: false,
+    );
+    final product = inventoryProvider.findItemByBarcode(barcode);
+
+    if (product != null) {
+      _showProductFoundDialog(product);
+    } else {
+      _showProductNotFoundDialog(barcode);
+    }
+  }
+
+  /// Show dialog when product is found
+  void _showProductFoundDialog(InventoryItem product) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Product Found'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Name: ${product.name}'),
+                Text('Price: K${product.price.toStringAsFixed(2)}'),
+                Text('Stock: ${product.quantity}'),
+                Text('Barcode: ${product.barcode ?? 'N/A'}'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _showRestockDialog(context, product);
+                },
+                child: const Text('Restock'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  /// Show dialog when product is not found
+  void _showProductNotFoundDialog(String barcode) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Product Not Found'),
+            content: Text('No product found with barcode: $barcode'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _showAddProductDialog(barcode);
+                },
+                child: const Text('Add New Product'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  /// Show dialog to add new product
+  void _showAddProductDialog(String barcode) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Add New Product'),
+            content: const Text(
+              'Would you like to add a new product with this barcode?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _showAddInventoryModal(barcode);
+                },
+                child: const Text('Add Product'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  /// Scan for new devices
+  Future<void> _scanForDevices() async {
+    try {
+      await _deviceManager.initializeDevices();
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Scanning for devices...')));
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error scanning for devices: $e')));
+    }
+  }
+
+  /// Show add inventory modal with pre-filled barcode
+  void _showAddInventoryModal(String barcode) {
+    if (isWindows(context)) {
+      showDialog(
+        context: context,
+        builder:
+            (ctx) => Dialog(
+              child: SizedBox(
+                width: 600,
+                child: NewInventoryModal(
+                  prefilledBarcode: barcode,
+                  barcodeDeviceConnected:
+                      _deviceManager.barcodeScannerConnected,
+                  onConnectBarcodeDevice: _scanForDevices,
+                ),
+              ),
+            ),
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder:
+            (ctx) => NewInventoryModal(
+              prefilledBarcode: barcode,
+              barcodeDeviceConnected: _deviceManager.barcodeScannerConnected,
+              onConnectBarcodeDevice: _scanForDevices,
+            ),
+      );
+    }
+  }
+
+  /// Camera-based barcode scan
+  Future<void> _scanBarcodeWithCamera() async {
+    try {
+      // Navigate to scanner screen
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (context) => MobileScanner(
+                onDetect: (capture) {
+                  final List<Barcode> barcodes = capture.barcodes;
+                  if (barcodes.isNotEmpty) {
+                    final barcode = barcodes.first.rawValue;
+                    if (barcode != null && barcode.isNotEmpty) {
+                      setState(() {
+                        _barcodeController.text = barcode;
+                      });
+                      _handleBarcodeScanned(barcode);
+                      Navigator.pop(context, barcode);
+                    }
+                  }
+                },
+              ),
+        ),
+      );
+
+      if (result != null && result is String) {
+        setState(() {
+          _barcodeController.text = result;
+        });
+        _handleBarcodeScanned(result);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Camera scan failed: $e')));
+    }
+  }
+
+  Future<void> _connectUsbScanner() async {
+    setState(() {
+      _isUsbConnecting = true;
+    });
+    List<UsbDevice> devices = await UsbSerial.listDevices();
+    setState(() {
+      _isUsbConnecting = false;
+    });
+    // Show device selection dialog
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Select USB Scanner'),
+            content:
+                devices.isEmpty
+                    ? const Text('No USB devices found.')
+                    : SizedBox(
+                      width: 300,
+                      height: 300,
+                      child: ListView.builder(
+                        itemCount: devices.length,
+                        itemBuilder:
+                            (ctx, i) => ListTile(
+                              title: Text(
+                                devices[i].productName ?? 'Unknown USB Device',
+                              ),
+                              subtitle: Text(
+                                'VID:  {devices[i].vid}, PID: ${devices[i].pid}',
+                              ),
+                              onTap: () async {
+                                Navigator.of(context).pop();
+                                await _connectToUsbDevice(devices[i]);
+                              },
+                            ),
+                      ),
+                    ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Future<void> _connectToUsbDevice(UsbDevice device) async {
+    try {
+      _usbPort = await device.create();
+      if (_usbPort == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to open USB device.')));
+        return;
+      }
+      await _usbPort!.open();
+      await _usbPort!.setDTR(true);
+      await _usbPort!.setRTS(true);
+      await _usbPort!.setPortParameters(
+        9600,
+        UsbPort.DATABITS_8,
+        UsbPort.STOPBITS_1,
+        UsbPort.PARITY_NONE,
+      );
+      _usbPort!.inputStream?.listen((data) {
+        final barcode = String.fromCharCodes(data).trim();
+        if (barcode.isNotEmpty) {
+          setState(() {
+            _barcodeController.text = barcode;
+          });
+          _handleBarcodeScanned(barcode);
+        }
+      });
+      setState(() {
+        _connectedUsbDevice = device;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Connected to USB device: ${device.productName ?? device.deviceId}',
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to connect USB: $e')));
+    }
   }
 
   List<InventoryItem> _getFilteredAndSortedItems(List<InventoryItem> items) {
@@ -48,7 +380,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
     List<InventoryItem> filtered =
         items.where((item) {
           if (_searchQuery.isEmpty) return true;
-          return item.name.toLowerCase().contains(_searchQuery.toLowerCase());
+          return item.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              (item.barcode?.toLowerCase().contains(
+                    _searchQuery.toLowerCase(),
+                  ) ??
+                  false);
         }).toList();
 
     // Filter by low stock if enabled
@@ -56,6 +392,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
       filtered =
           filtered
               .where((item) => item.quantity <= item.lowStockThreshold)
+              .toList();
+    }
+
+    // Filter by barcode if enabled
+    if (_showBarcodeOnly) {
+      filtered =
+          filtered
+              .where((item) => item.barcode != null && item.barcode!.isNotEmpty)
               .toList();
     }
 
@@ -73,8 +417,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
           comparison = a.price.compareTo(b.price);
           break;
         case 'shop':
-          // This would need shop name comparison, simplified for now
           comparison = a.shopId.compareTo(b.shopId);
+          break;
+        case 'barcode':
+          comparison = (a.barcode ?? '').compareTo(b.barcode ?? '');
           break;
       }
       return _sortAscending ? comparison : -comparison;
@@ -84,6 +430,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Widget _buildSearchAndSortBar() {
+    final isDesktop =
+        Platform.isWindows || Platform.isLinux || Platform.isMacOS;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -92,51 +440,102 @@ class _InventoryScreenState extends State<InventoryScreen> {
       ),
       child: Column(
         children: [
-          // Search bar
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Search by item name...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon:
-                  _searchQuery.isNotEmpty
-                      ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            _searchQuery = '';
-                          });
-                        },
-                      )
-                      : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value;
-              });
-            },
-          ),
-          const SizedBox(height: 12),
-
-          // Sort controls
+          // Device status indicator for barcode scanner
           Row(
             children: [
-              const Text(
-                'Sort by: ',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              Icon(
+                Icons.qr_code_scanner,
+                color:
+                    _deviceManager.barcodeScannerConnected
+                        ? Colors.green.shade700
+                        : Colors.red.shade700,
               ),
               const SizedBox(width: 8),
+              Text(
+                _deviceManager.barcodeScannerConnected
+                    ? 'Connected'
+                    : 'Disconnected',
+                style: TextStyle(
+                  color:
+                      _deviceManager.barcodeScannerConnected
+                          ? Colors.green.shade700
+                          : Colors.red.shade700,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              if (!_deviceManager.barcodeScannerConnected) ...[
+                IconButton(
+                  onPressed:
+                      () => _deviceManager.showDeviceSelectionDialog(context, 'scanner'),
+                  icon: const Icon(Icons.refresh),
+                  tooltip: 'Refresh Devices',
+                  color: Colors.green.shade700,
+                ),
+                IconButton(
+                  onPressed: _scanBarcodeWithCamera,
+                  icon: const Icon(Icons.camera_alt),
+                  tooltip: 'Scan with Camera',
+                  color: Colors.green.shade700,
+                ),
+                IconButton(
+                  onPressed: _connectBluetoothScanner,
+                  icon: const Icon(Icons.bluetooth_searching),
+                  tooltip: 'Connect Bluetooth Scanner',
+                  color: Colors.blue.shade700,
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Search bar and sort options in the same row
+          Row(
+            children: [
+              // Expanded search bar
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search by item name or barcode...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon:
+                        _searchQuery.isNotEmpty
+                            ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() {
+                                  _searchQuery = '';
+                                });
+                              },
+                            )
+                            : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                  onSubmitted: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Sort by dropdown
               DropdownButton<String>(
                 value: _sortBy,
                 items: const [
                   DropdownMenuItem(value: 'name', child: Text('Name')),
-                  DropdownMenuItem(value: 'quantity', child: Text('Quantity')),
+                  DropdownMenuItem(value: 'quantity', child: Text('Qty')),
                   DropdownMenuItem(value: 'price', child: Text('Price')),
                   DropdownMenuItem(value: 'shop', child: Text('Shop')),
+                  DropdownMenuItem(value: 'barcode', child: Text('Barcode')),
                 ],
                 onChanged: (value) {
                   if (value != null) {
@@ -145,21 +544,24 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     });
                   }
                 },
+                underline: Container(),
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
-              const SizedBox(width: 16),
               IconButton(
+                icon: Icon(
+                  _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                ),
+                tooltip: _sortAscending ? 'Ascending' : 'Descending',
                 onPressed: () {
                   setState(() {
                     _sortAscending = !_sortAscending;
                   });
                 },
-                icon: Icon(
-                  _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
-                ),
-                tooltip: _sortAscending ? 'Sort Descending' : 'Sort Ascending',
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          // Remove barcode scan input and section, as search is now integrated
         ],
       ),
     );
@@ -182,6 +584,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
         if (isWindows(context)) {
           // Desktop layout: Centered, max width, header add button, table-like list
           return Scaffold(
+            appBar: AppBar(
+              title: const Text('Inventory'),
+              actions: [
+                IconButton(
+                  icon: Icon(_deviceManager.barcodeScannerConnected ? Icons.qr_code_scanner : Icons.qr_code),
+                  tooltip: _deviceManager.barcodeScannerConnected ? 'Scanner Connected' : 'Connect Scanner',
+                  onPressed: () => _deviceManager.showDeviceSelectionDialog(context, 'scanner'),
+                ),
+              ],
+            ),
             body: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 900),
@@ -212,6 +624,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
                             ),
                             Expanded(
                               flex: 2,
+                              child: Text(
+                                'Barcode',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 1,
                               child: Text(
                                 'Quantity',
                                 style: TextStyle(fontWeight: FontWeight.bold),
@@ -289,6 +708,20 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                           ),
                                           Expanded(
                                             flex: 2,
+                                            child: Text(
+                                              item.barcode ?? 'N/A',
+                                              style: TextStyle(
+                                                color:
+                                                    item.barcode != null
+                                                        ? Colors.green.shade700
+                                                        : Colors.grey.shade500,
+                                                fontSize: 12,
+                                                fontFamily: 'monospace',
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
                                             child: Text(
                                               item.quantity.toString(),
                                               style: TextStyle(
@@ -402,6 +835,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
         // Mobile layout
         return Scaffold(
+          appBar: AppBar(
+            title: const Text('Inventory'),
+            actions: [
+              IconButton(
+                icon: Icon(_deviceManager.barcodeScannerConnected ? Icons.qr_code_scanner : Icons.qr_code),
+                tooltip: _deviceManager.barcodeScannerConnected ? 'Scanner Connected' : 'Connect Scanner',
+                onPressed: () => _deviceManager.showDeviceSelectionDialog(context, 'scanner'),
+              ),
+            ],
+          ),
           body: Column(
             children: [
               // Search and sort bar for mobile
@@ -456,6 +899,16 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                       fontSize: 12,
                                     ),
                                   ),
+                                  if (item.barcode != null) ...[
+                                    Text(
+                                      'Barcode: ${item.barcode}',
+                                      style: TextStyle(
+                                        color: Colors.green.shade700,
+                                        fontSize: 12,
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                               trailing: Row(
@@ -500,7 +953,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     showModalBottomSheet(
                       context: context,
                       isScrollControlled: true,
-                      builder: (ctx) => const NewInventoryModal(),
+                      builder: (ctx) => NewInventoryModal(),
                     );
                   },
                   backgroundColor: Colors.green.shade700,
@@ -1363,5 +1816,106 @@ class _InventoryScreenState extends State<InventoryScreen> {
       final item = data['item'] as InventoryItem;
       return sum + (item.quantity * item.price);
     });
+  }
+
+  Future<void> _connectBluetoothScanner() async {
+    setState(() {
+      _isUsbConnecting = true;
+    });
+    List<BluetoothDevice> devices = [];
+    try {
+      devices = await FlutterBluePlus.connectedDevices;
+      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
+      await Future.delayed(const Duration(seconds: 4));
+      await FlutterBluePlus.stopScan();
+      final scanResults = FlutterBluePlus.scanResults;
+      await for (var results in scanResults) {
+        for (var result in results) {
+          if (!devices.contains(result.device)) {
+            devices.add(result.device);
+          }
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _isUsbConnecting = false;
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Bluetooth scan failed: $e')));
+      return;
+    }
+    setState(() {
+      _isUsbConnecting = false;
+    });
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Select Bluetooth Scanner'),
+            content:
+                devices.isEmpty
+                    ? const Text('No Bluetooth devices found.')
+                    : SizedBox(
+                      width: 300,
+                      height: 300,
+                      child: ListView.builder(
+                        itemCount: devices.length,
+                        itemBuilder:
+                            (ctx, i) => ListTile(
+                              title: Text(
+                                devices[i].name.isNotEmpty
+                                    ? devices[i].name
+                                    : devices[i].id.toString(),
+                              ),
+                              subtitle: Text(devices[i].id.toString()),
+                              onTap: () async {
+                                Navigator.of(context).pop();
+                                await _connectToBluetoothDevice(devices[i]);
+                              },
+                            ),
+                      ),
+                    ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Future<void> _connectToBluetoothDevice(BluetoothDevice device) async {
+    try {
+      await device.connect();
+      setState(() {
+        // Optionally store the connected device
+      });
+      List<BluetoothService> services = await device.discoverServices();
+      for (var service in services) {
+        for (var characteristic in service.characteristics) {
+          if (characteristic.properties.notify) {
+            await characteristic.setNotifyValue(true);
+            characteristic.value.listen((value) {
+              final barcode = String.fromCharCodes(value);
+              if (barcode.isNotEmpty) {
+                setState(() {
+                  _barcodeController.text = barcode;
+                });
+                _handleBarcodeScanned(barcode);
+              }
+            });
+          }
+        }
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Connected to ${device.name}')));
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to connect: $e')));
+    }
   }
 }

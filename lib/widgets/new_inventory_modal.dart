@@ -10,7 +10,11 @@ import 'package:kantemba_finances/providers/users_provider.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
 
 class NewInventoryModal extends StatefulWidget {
-  const NewInventoryModal({super.key});
+  final String? prefilledBarcode; // Add barcode parameter
+  final bool barcodeDeviceConnected;
+  final VoidCallback? onConnectBarcodeDevice;
+  
+  const NewInventoryModal({super.key, this.prefilledBarcode, this.barcodeDeviceConnected = false, this.onConnectBarcodeDevice});
 
   @override
   State<NewInventoryModal> createState() => _NewInventoryModalState();
@@ -19,6 +23,7 @@ class NewInventoryModal extends StatefulWidget {
 class _NewInventoryModalState extends State<NewInventoryModal> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _itemNameController = TextEditingController();
+  final TextEditingController _barcodeController = TextEditingController(); // Add barcode controller
   String _itemName = '';
   double _bulkPrice = 0.0;
   int _units = 0;
@@ -30,8 +35,18 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
   String? _selectedItemId;
 
   @override
+  void initState() {
+    super.initState();
+    // Pre-fill barcode if provided
+    if (widget.prefilledBarcode != null) {
+      _barcodeController.text = widget.prefilledBarcode!;
+    }
+  }
+
+  @override
   void dispose() {
     _itemNameController.dispose();
+    _barcodeController.dispose(); // Dispose barcode controller
     super.dispose();
   }
 
@@ -46,6 +61,20 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
     if (itemNames.where((name) => name.toLowerCase() == lower).isNotEmpty &&
         !_isExistingItem) {
       return 'Item name already exists';
+    }
+    return null;
+  }
+
+  String? _validateBarcode(String? value, InventoryProvider inventoryProvider) {
+    if (value == null || value.trim().isEmpty) {
+      return null; // Barcode is optional
+    }
+    if (value.trim().length < 3) {
+      return 'Barcode must be at least 3 characters';
+    }
+    // Check if barcode already exists (case insensitive)
+    if (inventoryProvider.barcodeExists(value.trim())) {
+      return 'Barcode already exists';
     }
     return null;
   }
@@ -94,22 +123,35 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Barcode device status indicator
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      Icon(
+                        Icons.qr_code_scanner,
+                        color: widget.barcodeDeviceConnected ? Colors.green.shade700 : Colors.red.shade700,
+                      ),
+                      const SizedBox(width: 8),
                       Text(
-                        'Add Inventory Purchase',
-                        style: Theme.of(context).textTheme.headlineSmall,
+                        widget.barcodeDeviceConnected ? 'Scanner: Connected' : 'Scanner: Disconnected',
+                        style: TextStyle(
+                          color: widget.barcodeDeviceConnected ? Colors.green.shade700 : Colors.red.shade700,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.of(context).pop(),
-                        tooltip: 'Close',
-                      ),
+                      if (!widget.barcodeDeviceConnected && widget.onConnectBarcodeDevice != null)
+                        ElevatedButton.icon(
+                          onPressed: widget.onConnectBarcodeDevice,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Connect/Refresh'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green.shade700,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
                     ],
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
@@ -138,6 +180,10 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                                   );
                                   _selectedItemId = item.id;
                                   _lowStockThreshold = item.lowStockThreshold;
+                                  // Pre-fill barcode if item has one
+                                  if (item.barcode != null) {
+                                    _barcodeController.text = item.barcode!;
+                                  }
                                 });
                               },
                               fieldViewBuilder: (
@@ -173,6 +219,10 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                                         _selectedItemId = item.id;
                                         _lowStockThreshold =
                                             item.lowStockThreshold;
+                                        // Pre-fill barcode if item has one
+                                        if (item.barcode != null) {
+                                          _barcodeController.text = item.barcode!;
+                                        }
                                       } else {
                                         _selectedItemId = null;
                                       }
@@ -182,6 +232,17 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                                 );
                               },
                             ),
+                            const SizedBox(height: 16),
+                            if (widget.barcodeDeviceConnected)
+                              TextFormField(
+                                controller: _barcodeController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Barcode (optional)',
+                                  hintText: 'Enter or scan barcode',
+                                ),
+                                validator: (value) => _validateBarcode(value, inventoryProvider),
+                                onSaved: (value) => _barcode = value?.trim(),
+                              ),
                             const SizedBox(height: 16),
                             TextFormField(
                               decoration: const InputDecoration(
@@ -278,7 +339,7 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
       );
     }
 
-    // Mobile layout (unchanged)
+    // Mobile layout
     return SingleChildScrollView(
       child: Padding(
         padding: EdgeInsets.only(
@@ -291,10 +352,32 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  'Add Inventory Purchase',
-                  style: Theme.of(context).textTheme.headlineSmall,
+                // Barcode device status indicator
+                Row(
+                  children: [
+                    Icon(
+                      Icons.qr_code_scanner,
+                      color: widget.barcodeDeviceConnected ? Colors.green.shade700 : Colors.red.shade700,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      widget.barcodeDeviceConnected ? 'Scanner: Connected' : 'Scanner: Disconnected',
+                      style: TextStyle(
+                        color: widget.barcodeDeviceConnected ? Colors.green.shade700 : Colors.red.shade700,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (!widget.barcodeDeviceConnected && widget.onConnectBarcodeDevice != null)
+                      IconButton(
+                        onPressed: widget.onConnectBarcodeDevice,
+                        icon: const Icon(Icons.refresh),
+                        tooltip: 'Refresh Devices',
+                        color: Colors.green.shade700,
+                      ),
+                  ],
                 ),
+                const SizedBox(height: 16),
                 Autocomplete<String>(
                   optionsBuilder: (TextEditingValue textEditingValue) {
                     if (textEditingValue.text == '') {
@@ -316,6 +399,10 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                       );
                       _selectedItemId = item.id;
                       _lowStockThreshold = item.lowStockThreshold;
+                      // Pre-fill barcode if item has one
+                      if (item.barcode != null) {
+                        _barcodeController.text = item.barcode!;
+                      }
                     });
                   },
                   fieldViewBuilder: (
@@ -343,6 +430,10 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                             );
                             _selectedItemId = item.id;
                             _lowStockThreshold = item.lowStockThreshold;
+                            // Pre-fill barcode if item has one
+                            if (item.barcode != null) {
+                              _barcodeController.text = item.barcode!;
+                            }
                           } else {
                             _selectedItemId = null;
                           }
@@ -352,6 +443,16 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                     );
                   },
                 ),
+                if (widget.barcodeDeviceConnected)
+                  TextFormField(
+                    controller: _barcodeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Barcode (optional)',
+                      hintText: 'Enter or scan barcode',
+                    ),
+                    validator: (value) => _validateBarcode(value, inventoryProvider),
+                    onSaved: (value) => _barcode = value?.trim(),
+                  ),
                 TextFormField(
                   decoration: const InputDecoration(
                     labelText: 'Bulk Price (total purchase)',
@@ -418,6 +519,9 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
     );
   }
 
+  // Add barcode field
+  String? _barcode;
+
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
@@ -481,6 +585,7 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
           lowStockThreshold: _lowStockThreshold,
           shopId: currentShop.id,
           createdBy: currentUser.id,
+          barcode: _barcode, // Add barcode support
         );
         await inventoryProvider.addInventoryItem(
           newItem,
