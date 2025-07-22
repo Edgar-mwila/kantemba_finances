@@ -269,12 +269,20 @@ class _NewExpenseModalState extends State<NewExpenseModal> {
                   trailing: null,
                 ),
                 const SizedBox(height: 16),
-                _isLoading
-                    ? const CircularProgressIndicator()
-                    : ElevatedButton(
-                      onPressed: _submit,
-                      child: const Text('Add Expense'),
-                    ),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _submit,
+                    child:
+                        _isLoading
+                            ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Text('Add Expense'),
+                  ),
+                ),
               ],
             ),
           ),

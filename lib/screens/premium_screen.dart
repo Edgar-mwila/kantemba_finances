@@ -348,7 +348,7 @@ class PremiumScreen extends StatelessWidget {
                 children: [
                   Text(
                     'Premium Features',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),

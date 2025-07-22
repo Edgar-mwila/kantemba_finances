@@ -41,7 +41,11 @@ class Loan {
     interestValue: (json['interestValue'] as num).toDouble(),
     dueDate: DateTime.parse(json['dueDate']),
     paymentPlan: json['paymentPlan'],
-    paymentHistory: (json['paymentHistory'] as List<dynamic>?)?.map((e) => LoanPayment.fromJson(e)).toList() ?? [],
+    paymentHistory:
+        (json['paymentHistory'] as List<dynamic>?)
+            ?.map((e) => LoanPayment.fromJson(e))
+            .toList() ??
+        [],
     status: json['status'],
     createdAt: DateTime.parse(json['createdAt']),
     updatedAt: DateTime.parse(json['updatedAt']),
@@ -81,4 +85,4 @@ class LoanPayment {
     'date': date.toIso8601String(),
     'method': method,
   };
-} 
+}

@@ -103,7 +103,7 @@ export const loginUser = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    const valid = await bcrypt.compare(password, user.toJSON().password);
+    const valid = password == user.toJSON().password;
     if (!valid) {
       console.log('Invalid password');
       return res.status(401).json({ message: 'Invalid password' });
@@ -147,12 +147,12 @@ export const validateToken = async (req: Request, res: Response): Promise<void> 
 export const createToken = async (req: Request, res: Response) => {
   console.log('[POST] /users/token', req.body);
   try {
-    const { userId } = req.body;
-    if (!userId) {
+    const { id } = req.body;
+    if (!id) {
       return res.status(400).json({ message: 'userId is required' });
     }
     
-    const user = await User.findByPk(userId);
+    const user = await User.findByPk(id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }

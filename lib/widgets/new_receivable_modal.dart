@@ -22,17 +22,23 @@ class _NewReceivableModalState extends State<NewReceivableModal> {
   String _interestType = 'fixed';
   double _interestValue = 0.0;
   String _paymentPlan = 'lump_sum';
-  
+  bool _isProcessing = false;
+
   @override
   void initState() {
     super.initState();
-    _dueDate = widget.receivable?.dueDate ?? DateTime.now().add(const Duration(days: 30));
+    _dueDate =
+        widget.receivable?.dueDate ??
+        DateTime.now().add(const Duration(days: 30));
     _interestType = widget.receivable?.interestType ?? 'fixed';
     _interestValue = widget.receivable?.interestValue ?? 0.0;
     _paymentPlan = widget.receivable?.paymentPlan ?? 'lump_sum';
   }
 
   void _submit() {
+    setState(() {
+      _isProcessing = true;
+    });
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       final newReceivable = Receivable(
@@ -51,9 +57,15 @@ class _NewReceivableModalState extends State<NewReceivableModal> {
       );
 
       if (widget.receivable == null) {
-        Provider.of<ReceivablesProvider>(context, listen: false).addReceivable(newReceivable);
+        Provider.of<ReceivablesProvider>(
+          context,
+          listen: false,
+        ).addReceivable(newReceivable);
       } else {
-        Provider.of<ReceivablesProvider>(context, listen: false).updateReceivable(newReceivable.id, newReceivable);
+        Provider.of<ReceivablesProvider>(
+          context,
+          listen: false,
+        ).updateReceivable(newReceivable.id, newReceivable);
       }
       Navigator.of(context).pop();
     }
@@ -62,7 +74,9 @@ class _NewReceivableModalState extends State<NewReceivableModal> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -73,31 +87,39 @@ class _NewReceivableModalState extends State<NewReceivableModal> {
               TextFormField(
                 initialValue: widget.receivable?.name,
                 decoration: const InputDecoration(labelText: 'Name'),
-                validator: (value) => value!.isEmpty ? 'Please enter a name.' : null,
+                validator:
+                    (value) => value!.isEmpty ? 'Please enter a name.' : null,
                 onSaved: (value) => _name = value!,
               ),
               TextFormField(
                 initialValue: widget.receivable?.contact,
                 decoration: const InputDecoration(labelText: 'Contact'),
-                validator: (value) => value!.isEmpty ? 'Please enter a contact.' : null,
+                validator:
+                    (value) =>
+                        value!.isEmpty ? 'Please enter a contact.' : null,
                 onSaved: (value) => _contact = value!,
               ),
               TextFormField(
                 initialValue: widget.receivable?.principal.toString(),
-                decoration: const InputDecoration(labelText: 'Principal Amount'),
+                decoration: const InputDecoration(
+                  labelText: 'Principal Amount',
+                ),
                 keyboardType: TextInputType.number,
-                validator: (value) => value!.isEmpty ? 'Please enter an amount.' : null,
+                validator:
+                    (value) =>
+                        value!.isEmpty ? 'Please enter an amount.' : null,
                 onSaved: (value) => _principal = double.parse(value!),
               ),
               DropdownButtonFormField<String>(
                 value: _interestType,
                 decoration: const InputDecoration(labelText: 'Interest Type'),
-                items: ['fixed', 'percentage'].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
+                items:
+                    ['fixed', 'percentage'].map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
                 onChanged: (newValue) {
                   setState(() {
                     _interestType = newValue!;
@@ -108,7 +130,8 @@ class _NewReceivableModalState extends State<NewReceivableModal> {
                 initialValue: widget.receivable?.interestValue.toString(),
                 decoration: const InputDecoration(labelText: 'Interest Value'),
                 keyboardType: TextInputType.number,
-                onSaved: (value) => _interestValue = double.tryParse(value!) ?? 0.0,
+                onSaved:
+                    (value) => _interestValue = double.tryParse(value!) ?? 0.0,
               ),
               ListTile(
                 title: Text("Due Date: ${DateFormat.yMd().format(_dueDate)}"),
@@ -130,26 +153,41 @@ class _NewReceivableModalState extends State<NewReceivableModal> {
               DropdownButtonFormField<String>(
                 value: _paymentPlan,
                 decoration: const InputDecoration(labelText: 'Payment Plan'),
-                items: ['lump_sum', 'installment'].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
+                items:
+                    ['lump_sum', 'installment'].map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
                 onChanged: (newValue) {
                   setState(() {
                     _paymentPlan = newValue!;
                   });
                 },
               ),
-              ElevatedButton(
-                onPressed: _submit,
-                child: Text(widget.receivable == null ? 'Add Receivable' : 'Update Receivable'),
-              )
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isProcessing ? null : _submit,
+                  child:
+                      _isProcessing
+                          ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : Text(
+                            widget.receivable == null
+                                ? 'Add Receivable'
+                                : 'Update Receivable',
+                          ),
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
   }
-} 
+}

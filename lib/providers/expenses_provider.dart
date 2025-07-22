@@ -182,6 +182,7 @@ class ExpensesProvider with ChangeNotifier {
         'amount': expense.amount,
         'category': expense.category,
         'date': expense.date.toIso8601String(),
+        'createdBy': expense.createdBy,
         'shopId': shopId,
         'synced': 0,
       });

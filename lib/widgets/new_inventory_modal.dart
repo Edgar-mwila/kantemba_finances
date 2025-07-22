@@ -15,8 +15,13 @@ class NewInventoryModal extends StatefulWidget {
   final String? prefilledBarcode; // Add barcode parameter
   final bool barcodeDeviceConnected;
   final VoidCallback? onConnectBarcodeDevice;
-  
-  const NewInventoryModal({super.key, this.prefilledBarcode, this.barcodeDeviceConnected = false, this.onConnectBarcodeDevice});
+
+  const NewInventoryModal({
+    super.key,
+    this.prefilledBarcode,
+    this.barcodeDeviceConnected = false,
+    this.onConnectBarcodeDevice,
+  });
 
   @override
   State<NewInventoryModal> createState() => _NewInventoryModalState();
@@ -25,7 +30,8 @@ class NewInventoryModal extends StatefulWidget {
 class _NewInventoryModalState extends State<NewInventoryModal> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _itemNameController = TextEditingController();
-  final TextEditingController _barcodeController = TextEditingController(); // Add barcode controller
+  final TextEditingController _barcodeController =
+      TextEditingController(); // Add barcode controller
   String _itemName = '';
   double _bulkPrice = 0.0;
   int _units = 0;
@@ -37,7 +43,8 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
   String? _selectedItemId;
   String _purchaseType = 'Paid'; // 'Paid' or 'On Credit'
   final TextEditingController _creditorNameController = TextEditingController();
-  final TextEditingController _creditorContactController = TextEditingController();
+  final TextEditingController _creditorContactController =
+      TextEditingController();
 
   @override
   void initState() {
@@ -133,18 +140,27 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                     children: [
                       Icon(
                         Icons.qr_code_scanner,
-                        color: widget.barcodeDeviceConnected ? Colors.green.shade700 : Colors.red.shade700,
+                        color:
+                            widget.barcodeDeviceConnected
+                                ? Colors.green.shade700
+                                : Colors.red.shade700,
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        widget.barcodeDeviceConnected ? 'Scanner: Connected' : 'Scanner: Disconnected',
+                        widget.barcodeDeviceConnected
+                            ? 'Scanner: Connected'
+                            : 'Scanner: Disconnected',
                         style: TextStyle(
-                          color: widget.barcodeDeviceConnected ? Colors.green.shade700 : Colors.red.shade700,
+                          color:
+                              widget.barcodeDeviceConnected
+                                  ? Colors.green.shade700
+                                  : Colors.red.shade700,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const Spacer(),
-                      if (!widget.barcodeDeviceConnected && widget.onConnectBarcodeDevice != null)
+                      if (!widget.barcodeDeviceConnected &&
+                          widget.onConnectBarcodeDevice != null)
                         ElevatedButton.icon(
                           onPressed: widget.onConnectBarcodeDevice,
                           icon: const Icon(Icons.refresh),
@@ -226,7 +242,8 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                                             item.lowStockThreshold;
                                         // Pre-fill barcode if item has one
                                         if (item.barcode != null) {
-                                          _barcodeController.text = item.barcode!;
+                                          _barcodeController.text =
+                                              item.barcode!;
                                         }
                                       } else {
                                         _selectedItemId = null;
@@ -245,7 +262,11 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                                   labelText: 'Barcode (optional)',
                                   hintText: 'Enter or scan barcode',
                                 ),
-                                validator: (value) => _validateBarcode(value, inventoryProvider),
+                                validator:
+                                    (value) => _validateBarcode(
+                                      value,
+                                      inventoryProvider,
+                                    ),
                                 onSaved: (value) => _barcode = value?.trim(),
                               ),
                             const SizedBox(height: 16),
@@ -362,18 +383,27 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                   children: [
                     Icon(
                       Icons.qr_code_scanner,
-                      color: widget.barcodeDeviceConnected ? Colors.green.shade700 : Colors.red.shade700,
+                      color:
+                          widget.barcodeDeviceConnected
+                              ? Colors.green.shade700
+                              : Colors.red.shade700,
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      widget.barcodeDeviceConnected ? 'Scanner: Connected' : 'Scanner: Disconnected',
+                      widget.barcodeDeviceConnected
+                          ? 'Scanner: Connected'
+                          : 'Scanner: Disconnected',
                       style: TextStyle(
-                        color: widget.barcodeDeviceConnected ? Colors.green.shade700 : Colors.red.shade700,
+                        color:
+                            widget.barcodeDeviceConnected
+                                ? Colors.green.shade700
+                                : Colors.red.shade700,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const Spacer(),
-                    if (!widget.barcodeDeviceConnected && widget.onConnectBarcodeDevice != null)
+                    if (!widget.barcodeDeviceConnected &&
+                        widget.onConnectBarcodeDevice != null)
                       IconButton(
                         onPressed: widget.onConnectBarcodeDevice,
                         icon: const Icon(Icons.refresh),
@@ -455,7 +485,8 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                       labelText: 'Barcode (optional)',
                       hintText: 'Enter or scan barcode',
                     ),
-                    validator: (value) => _validateBarcode(value, inventoryProvider),
+                    validator:
+                        (value) => _validateBarcode(value, inventoryProvider),
                     onSaved: (value) => _barcode = value?.trim(),
                   ),
                 TextFormField(
@@ -510,12 +541,20 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
                   onSaved: (value) => _description = value?.trim() ?? '',
                 ),
                 const SizedBox(height: 16),
-                _isLoading
-                    ? const CircularProgressIndicator()
-                    : ElevatedButton(
-                      onPressed: _submit,
-                      child: const Text('Add Item'),
-                    ),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _submit,
+                    child:
+                        _isLoading
+                            ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Text('Add Item'),
+                  ),
+                ),
               ],
             ),
           ),
@@ -566,7 +605,10 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
         context,
         listen: false,
       );
-      final payablesProvider = Provider.of<PayablesProvider>(context, listen: false);
+      final payablesProvider = Provider.of<PayablesProvider>(
+        context,
+        listen: false,
+      );
 
       final currentShop = shopProvider.currentShop;
       if (currentShop == null) {

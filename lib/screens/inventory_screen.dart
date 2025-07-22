@@ -469,7 +469,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
               if (!_deviceManager.barcodeScannerConnected) ...[
                 IconButton(
                   onPressed:
-                      () => _deviceManager.showDeviceSelectionDialog(context, 'scanner'),
+                      () => _deviceManager.showDeviceSelectionDialog(
+                        context,
+                        'scanner',
+                      ),
                   icon: const Icon(Icons.refresh),
                   tooltip: 'Refresh Devices',
                   color: Colors.green.shade700,
@@ -587,12 +590,26 @@ class _InventoryScreenState extends State<InventoryScreen> {
           // Desktop layout: Centered, max width, header add button, table-like list
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Inventory'),
+              title: const Text(
+                'Inventory',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               actions: [
                 IconButton(
-                  icon: Icon(_deviceManager.barcodeScannerConnected ? Icons.qr_code_scanner : Icons.qr_code),
-                  tooltip: _deviceManager.barcodeScannerConnected ? 'Scanner Connected' : 'Connect Scanner',
-                  onPressed: () => _deviceManager.showDeviceSelectionDialog(context, 'scanner'),
+                  icon: Icon(
+                    _deviceManager.barcodeScannerConnected
+                        ? Icons.qr_code_scanner
+                        : Icons.qr_code,
+                  ),
+                  tooltip:
+                      _deviceManager.barcodeScannerConnected
+                          ? 'Scanner Connected'
+                          : 'Connect Scanner',
+                  onPressed:
+                      () => _deviceManager.showDeviceSelectionDialog(
+                        context,
+                        'scanner',
+                      ),
                 ),
               ],
             ),
@@ -838,12 +855,26 @@ class _InventoryScreenState extends State<InventoryScreen> {
         // Mobile layout
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Inventory'),
+            title: const Text(
+              'Inventory',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             actions: [
               IconButton(
-                icon: Icon(_deviceManager.barcodeScannerConnected ? Icons.qr_code_scanner : Icons.qr_code),
-                tooltip: _deviceManager.barcodeScannerConnected ? 'Scanner Connected' : 'Connect Scanner',
-                onPressed: () => _deviceManager.showDeviceSelectionDialog(context, 'scanner'),
+                icon: Icon(
+                  _deviceManager.barcodeScannerConnected
+                      ? Icons.qr_code_scanner
+                      : Icons.qr_code,
+                ),
+                tooltip:
+                    _deviceManager.barcodeScannerConnected
+                        ? 'Scanner Connected'
+                        : 'Connect Scanner',
+                onPressed:
+                    () => _deviceManager.showDeviceSelectionDialog(
+                      context,
+                      'scanner',
+                    ),
               ),
             ],
           ),
@@ -959,7 +990,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     );
                   },
                   backgroundColor: Colors.green.shade700,
-                  child: const Icon(Icons.add),
+                  child: const Icon(Icons.add, color: Colors.white),
                 ),
               const SizedBox(width: 8),
               FloatingActionButton(
@@ -1922,14 +1953,23 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   void _onInventoryAdded(InventoryItem item) {
-    AnalyticsService.logEvent('inventory_added', data: {'item': item.name, 'quantity': item.quantity});
+    AnalyticsService.logEvent(
+      'inventory_added',
+      data: {'item': item.name, 'quantity': item.quantity},
+    );
   }
+
   void _onInventoryUpdated(InventoryItem item) {
-    AnalyticsService.logEvent('inventory_updated', data: {'item': item.name, 'quantity': item.quantity});
+    AnalyticsService.logEvent(
+      'inventory_updated',
+      data: {'item': item.name, 'quantity': item.quantity},
+    );
   }
+
   void _onInventoryDeleted(String itemId) {
     AnalyticsService.logEvent('inventory_deleted', data: {'itemId': itemId});
   }
+
   void _openNewInventoryModal() {
     AnalyticsService.logEvent('open_new_inventory_modal');
   }

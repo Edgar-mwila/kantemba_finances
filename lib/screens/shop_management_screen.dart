@@ -17,23 +17,32 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
   @override
   void initState() {
     super.initState();
-    AnalyticsService.logEvent('screen_open', data: {'screen': 'ShopManagement'});
+    AnalyticsService.logEvent(
+      'screen_open',
+      data: {'screen': 'ShopManagement'},
+    );
   }
+
   void _onShopAdded(String name) {
     AnalyticsService.logEvent('shop_added', data: {'name': name});
   }
+
   void _onShopEdited(String name) {
     AnalyticsService.logEvent('shop_edited', data: {'name': name});
   }
+
   void _onShopDeleted(String name) {
     AnalyticsService.logEvent('shop_deleted', data: {'name': name});
   }
+
   void _onShopDetailViewed(String name) {
     AnalyticsService.logEvent('shop_detail_viewed', data: {'name': name});
   }
+
   void _openShopModal({String? action}) {
     AnalyticsService.logEvent('open_shop_modal', data: {'action': action});
   }
+
   final _formKey = GlobalKey<FormState>();
   String? _name;
   // String? _location;
@@ -147,10 +156,7 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
         appBar: AppBar(
           title: Text(
             'Manage Shops',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
         ),
         body: Center(
@@ -265,7 +271,7 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
           onPressed: () {
             _showShopDialog();
           },
-          child: const Icon(Icons.add),
+          child: const Icon(Icons.add, color: Colors.white),
         ),
       );
     }
@@ -274,10 +280,7 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
       appBar: AppBar(
         title: Text(
           'Manage Shops',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
       body: Column(
@@ -352,7 +355,7 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
         onPressed: () {
           _showShopDialog();
         },
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

@@ -85,59 +85,65 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
           // Expanded search bar
           Expanded(
             child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Search by description or amount...',
-              prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            _searchQuery = '';
-                          });
-                        },
-                      )
-                      : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search by description or amount...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon:
+                    _searchQuery.isNotEmpty
+                        ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                            });
+                          },
+                        )
+                        : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
             ),
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value;
-              });
-            },
           ),
-              ),
-              const SizedBox(width: 8),
+          const SizedBox(width: 8),
           // Sort by dropdown
-              DropdownButton<String>(
-                value: _sortBy,
-                items: const [
-                  DropdownMenuItem(value: 'date', child: Text('Date')),
-                  DropdownMenuItem(value: 'amount', child: Text('Amount')),
-              DropdownMenuItem(value: 'description', child: Text('Description')),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _sortBy = value;
-                    });
-                  }
-                },
+          DropdownButton<String>(
+            value: _sortBy,
+            items: const [
+              DropdownMenuItem(value: 'date', child: Text('Date')),
+              DropdownMenuItem(value: 'amount', child: Text('Amount')),
+              DropdownMenuItem(
+                value: 'description',
+                child: Text('Description'),
+              ),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                setState(() {
+                  _sortBy = value;
+                });
+              }
+            },
             underline: Container(),
             style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              IconButton(
-            icon: Icon(_sortAscending ? Icons.arrow_upward : Icons.arrow_downward),
+          ),
+          IconButton(
+            icon: Icon(
+              _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+            ),
             tooltip: _sortAscending ? 'Ascending' : 'Descending',
-                onPressed: () {
-                  setState(() {
-                    _sortAscending = !_sortAscending;
-                  });
-                },
+            onPressed: () {
+              setState(() {
+                _sortAscending = !_sortAscending;
+              });
+            },
           ),
         ],
       ),
@@ -162,6 +168,15 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         if (isWindows(context)) {
           // Desktop layout: Centered, max width, header add button, table-like list
           return Scaffold(
+            appBar: AppBar(
+              title: Text(
+                'Expenses',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
             body: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1000),
@@ -330,7 +345,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                         );
                       },
                       backgroundColor: Colors.green.shade700,
-                      child: const Icon(Icons.add),
+                      child: const Icon(Icons.add, color: Colors.white),
                     )
                     : null,
           );
@@ -338,6 +353,15 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
 
         // Mobile layout
         return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              "Expenses",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
           body: Column(
             children: [
               // Search and sort bar for mobile
@@ -430,7 +454,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                         builder: (ctx) => const NewExpenseModal(),
                       );
                     },
-                    child: const Icon(Icons.add),
+                    child: const Icon(Icons.add, color: Colors.white),
                     backgroundColor: Colors.green.shade700,
                   )
                   : null,

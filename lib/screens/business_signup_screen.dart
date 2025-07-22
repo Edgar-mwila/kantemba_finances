@@ -215,11 +215,6 @@ class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          'Setup Your Business',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 40),
                         Row(
                           children: [
                             Expanded(
@@ -323,11 +318,6 @@ class _BusinessSignUpScreenState extends State<BusinessSignUpScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  'Setup Your Business',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 30),
                 TextFormField(
                   controller: _businessNameController,
                   decoration: const InputDecoration(labelText: 'Business Name'),

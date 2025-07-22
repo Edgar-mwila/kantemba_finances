@@ -59,6 +59,12 @@ class ReportsScreen extends StatelessWidget {
         if (isWindows(context)) {
           // Desktop layout: Centered, max width, grid for summary cards
           return Scaffold(
+            appBar: AppBar(
+              title: const Text(
+                'Reports',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
             body: SingleChildScrollView(
               child: Center(
                 child: ConstrainedBox(
@@ -349,6 +355,12 @@ class ReportsScreen extends StatelessWidget {
         } else {
           // Mobile layout
           return Scaffold(
+            appBar: AppBar(
+              title: const Text(
+                'Reports',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -433,9 +445,7 @@ class ReportsScreen extends StatelessWidget {
 
                   Text(
                     'Detailed Reports',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
                   ),
                   const SizedBox(height: 16),
 

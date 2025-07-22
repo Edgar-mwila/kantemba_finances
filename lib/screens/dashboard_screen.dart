@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:kantemba_finances/models/user.dart';
+import 'package:kantemba_finances/screens/settings_screen.dart';
+import 'package:kantemba_finances/screens/shop_management_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/providers/sales_provider.dart';
 import 'package:kantemba_finances/providers/expenses_provider.dart';
@@ -19,9 +22,11 @@ class DashboardScreen extends StatelessWidget {
     final inventoryProvider = Provider.of<InventoryProvider>(context);
     final shopProvider = Provider.of<ShopProvider>(context);
     final businessProvider = Provider.of<BusinessProvider>(context);
+    final usersProvider = Provider.of<UsersProvider>(context);
     final isPremium = businessProvider.isPremium;
 
     // Data for overviews
+    final currentUser = usersProvider.currentUser;
     final sales = salesProvider.getSalesForShop(shopProvider.currentShop);
     final expenses = expensesProvider.getExpensesForShop(
       shopProvider.currentShop,
@@ -312,6 +317,53 @@ class DashboardScreen extends StatelessWidget {
     if (isWindows(context)) {
       // Desktop layout
       return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Dashboard',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          actions: [
+            if (currentUser != null &&
+                isPremium &&
+                (currentUser.role == 'admin' || currentUser.role == 'manager'))
+              IconButton(
+                icon: const Icon(Icons.store),
+                tooltip: 'Manage Shops',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ShopManagementScreen(),
+                    ),
+                  );
+                },
+              ),
+            if (currentUser != null &&
+                (currentUser.role == 'admin' ||
+                    currentUser.permissions.contains(
+                      UserPermissions.manageSettings,
+                    ) ||
+                    currentUser.permissions.contains(UserPermissions.all)))
+              IconButton(
+                icon: const Icon(Icons.settings),
+                tooltip: 'Settings',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  );
+                },
+              ),
+          ],
+          flexibleSpace: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.white60, Colors.white70],
+              ),
+            ),
+          ),
+          actionsIconTheme: IconThemeData(color: Colors.green.shade700),
+        ),
         body: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1100),
@@ -382,6 +434,45 @@ class DashboardScreen extends StatelessWidget {
     } else {
       // Mobile layout
       return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Dashboard',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          actions: [
+            if (currentUser != null &&
+                isPremium &&
+                (currentUser.role == 'admin' || currentUser.role == 'manager'))
+              IconButton(
+                icon: const Icon(Icons.store),
+                tooltip: 'Manage Shops',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ShopManagementScreen(),
+                    ),
+                  );
+                },
+              ),
+            if (currentUser != null &&
+                (currentUser.role == 'admin' ||
+                    currentUser.permissions.contains(
+                      UserPermissions.manageSettings,
+                    ) ||
+                    currentUser.permissions.contains(UserPermissions.all)))
+              IconButton(
+                icon: const Icon(Icons.settings),
+                tooltip: 'Settings',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  );
+                },
+              ),
+          ],
+        ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(

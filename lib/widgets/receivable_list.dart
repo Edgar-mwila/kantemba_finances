@@ -15,24 +15,34 @@ class ReceivableList extends StatelessWidget {
     final receivables = receivablesProvider.receivables;
 
     return Scaffold(
-      body: receivables.isEmpty
-          ? const Center(child: Text('No receivables found.'))
-          : ListView.builder(
-              itemCount: receivables.length,
-              itemBuilder: (ctx, i) {
-                final receivable = receivables[i];
-                return ListTile(
-                  title: Text(receivable.name),
-                  subtitle: Text('Amount: \$${receivable.principal.toStringAsFixed(2)}'),
-                  trailing: Text('Due: ${receivable.dueDate.toLocal().toString().split(' ')[0]}'),
-                  onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => ReceivableDetailScreen(receivable: receivable),
-                    ));
-                  },
-                );
-              },
-            ),
+      body:
+          receivables.isEmpty
+              ? const Center(child: Text('No receivables found.'))
+              : ListView.builder(
+                itemCount: receivables.length,
+                itemBuilder: (ctx, i) {
+                  final receivable = receivables[i];
+                  return ListTile(
+                    title: Text(receivable.name),
+                    subtitle: Text(
+                      'Amount: \$${receivable.principal.toStringAsFixed(2)}',
+                    ),
+                    trailing: Text(
+                      'Due: ${receivable.dueDate.toLocal().toString().split(' ')[0]}',
+                    ),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder:
+                              (context) => ReceivableDetailScreen(
+                                receivable: receivable,
+                              ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showModalBottomSheet(
@@ -41,8 +51,9 @@ class ReceivableList extends StatelessWidget {
             builder: (_) => const NewReceivableModal(),
           );
         },
-        child: const Icon(Icons.add),
+        backgroundColor: Colors.green.shade700,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
-} 
+}

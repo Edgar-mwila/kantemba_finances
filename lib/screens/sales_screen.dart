@@ -418,7 +418,7 @@ class _SalesScreenState extends State<SalesScreen> {
                         builder: (_) => const NewSaleModal(),
                       );
                     },
-                    child: const Icon(Icons.add),
+                    child: const Icon(Icons.add, color: Colors.white),
                     backgroundColor: Colors.green.shade700,
                   ),
                 const SizedBox(width: 16),
@@ -602,7 +602,7 @@ class _SalesScreenState extends State<SalesScreen> {
                       builder: (_) => const NewSaleModal(),
                     );
                   },
-                  child: const Icon(Icons.add),
+                  child: const Icon(Icons.add, color: Colors.white),
                   backgroundColor: Colors.green.shade700,
                 ),
               const SizedBox(width: 16),
@@ -1108,32 +1108,59 @@ class _SalesScreenState extends State<SalesScreen> {
                                   builder:
                                       (_) => Dialog(
                                         child: Container(
-                                          width: MediaQuery.of(context).size.width * 0.9,
+                                          width:
+                                              MediaQuery.of(
+                                                context,
+                                              ).size.width *
+                                              0.9,
                                           constraints: BoxConstraints(
                                             maxWidth: 800,
-                                            maxHeight: MediaQuery.of(context).size.height * 0.8,
+                                            maxHeight:
+                                                MediaQuery.of(
+                                                  context,
+                                                ).size.height *
+                                                0.8,
                                           ),
                                           child: SingleChildScrollView(
                                             child: Padding(
-                                              padding: const EdgeInsets.all(16.0),
+                                              padding: const EdgeInsets.all(
+                                                16.0,
+                                              ),
                                               child: Column(
                                                 mainAxisSize: MainAxisSize.min,
-                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
                                                   // Header
                                                   Row(
-                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
                                                     children: [
                                                       Expanded(
                                                         child: Text(
                                                           'Print Receipt',
-                                                          style: Theme.of(context).textTheme.titleLarge
-                                                              ?.copyWith(fontWeight: FontWeight.bold),
+                                                          style: Theme.of(
+                                                                context,
+                                                              )
+                                                              .textTheme
+                                                              .titleLarge
+                                                              ?.copyWith(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
                                                         ),
                                                       ),
                                                       IconButton(
-                                                        onPressed: () => Navigator.of(ctx).pop(),
-                                                        icon: const Icon(Icons.close),
+                                                        onPressed:
+                                                            () =>
+                                                                Navigator.of(
+                                                                  ctx,
+                                                                ).pop(),
+                                                        icon: const Icon(
+                                                          Icons.close,
+                                                        ),
                                                       ),
                                                     ],
                                                   ),
@@ -1141,120 +1168,196 @@ class _SalesScreenState extends State<SalesScreen> {
 
                                                   // Sale Info
                                                   Container(
-                                                    padding: const EdgeInsets.all(16),
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                          16,
+                                                        ),
                                                     decoration: BoxDecoration(
-                                                      color: Colors.grey.shade50,
-                                                      borderRadius: BorderRadius.circular(8),
+                                                      color:
+                                                          Colors.grey.shade50,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
                                                     ),
                                                     child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
                                                       children: [
                                                         Row(
                                                           children: [
                                                             Icon(
                                                               Icons.receipt,
-                                                              color: Colors.blue.shade700,
+                                                              color:
+                                                                  Colors
+                                                                      .blue
+                                                                      .shade700,
                                                               size: 20,
                                                             ),
-                                                            const SizedBox(width: 8),
+                                                            const SizedBox(
+                                                              width: 8,
+                                                            ),
                                                             Expanded(
                                                               child: Text(
                                                                 'Sale ID: ${sale.id}',
                                                                 style: TextStyle(
-                                                                  color: Colors.grey.shade600,
+                                                                  color:
+                                                                      Colors
+                                                                          .grey
+                                                                          .shade600,
                                                                   fontSize: 14,
                                                                 ),
-                                                                overflow: TextOverflow.ellipsis,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
                                                               ),
                                                             ),
                                                           ],
                                                         ),
-                                                        const SizedBox(height: 8),
+                                                        const SizedBox(
+                                                          height: 8,
+                                                        ),
                                                         Row(
                                                           children: [
                                                             Icon(
                                                               Icons.store,
-                                                              color: Colors.green.shade700,
+                                                              color:
+                                                                  Colors
+                                                                      .green
+                                                                      .shade700,
                                                               size: 20,
                                                             ),
-                                                            const SizedBox(width: 8),
+                                                            const SizedBox(
+                                                              width: 8,
+                                                            ),
                                                             Expanded(
                                                               child: Text(
                                                                 'Shop: ${shop.name}',
                                                                 style: TextStyle(
-                                                                  color: Colors.grey.shade600,
+                                                                  color:
+                                                                      Colors
+                                                                          .grey
+                                                                          .shade600,
                                                                   fontSize: 14,
                                                                 ),
-                                                                overflow: TextOverflow.ellipsis,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
                                                               ),
                                                             ),
                                                           ],
                                                         ),
-                                                        if (sale.customerName != null &&
-                                                            sale.customerName!.isNotEmpty) ...[
-                                                          const SizedBox(height: 8),
+                                                        if (sale.customerName !=
+                                                                null &&
+                                                            sale
+                                                                .customerName!
+                                                                .isNotEmpty) ...[
+                                                          const SizedBox(
+                                                            height: 8,
+                                                          ),
                                                           Row(
                                                             children: [
                                                               Icon(
                                                                 Icons.person,
-                                                                color: Colors.orange.shade700,
+                                                                color:
+                                                                    Colors
+                                                                        .orange
+                                                                        .shade700,
                                                                 size: 20,
                                                               ),
-                                                              const SizedBox(width: 8),
+                                                              const SizedBox(
+                                                                width: 8,
+                                                              ),
                                                               Expanded(
                                                                 child: Text(
                                                                   'Customer: ${sale.customerName}',
                                                                   style: TextStyle(
-                                                                    color: Colors.grey.shade600,
-                                                                    fontSize: 14,
+                                                                    color:
+                                                                        Colors
+                                                                            .grey
+                                                                            .shade600,
+                                                                    fontSize:
+                                                                        14,
                                                                   ),
-                                                                  overflow: TextOverflow.ellipsis,
+                                                                  overflow:
+                                                                      TextOverflow
+                                                                          .ellipsis,
                                                                 ),
                                                               ),
                                                             ],
                                                           ),
                                                         ],
-                                                        if (sale.customerPhone != null &&
-                                                            sale.customerPhone!.isNotEmpty) ...[
-                                                          const SizedBox(height: 8),
+                                                        if (sale.customerPhone !=
+                                                                null &&
+                                                            sale
+                                                                .customerPhone!
+                                                                .isNotEmpty) ...[
+                                                          const SizedBox(
+                                                            height: 8,
+                                                          ),
                                                           Row(
                                                             children: [
                                                               Icon(
                                                                 Icons.phone,
-                                                                color: Colors.orange.shade700,
+                                                                color:
+                                                                    Colors
+                                                                        .orange
+                                                                        .shade700,
                                                                 size: 20,
                                                               ),
-                                                              const SizedBox(width: 8),
+                                                              const SizedBox(
+                                                                width: 8,
+                                                              ),
                                                               Expanded(
                                                                 child: Text(
                                                                   'Phone: ${sale.customerPhone}',
                                                                   style: TextStyle(
-                                                                    color: Colors.grey.shade600,
-                                                                    fontSize: 14,
+                                                                    color:
+                                                                        Colors
+                                                                            .grey
+                                                                            .shade600,
+                                                                    fontSize:
+                                                                        14,
                                                                   ),
-                                                                  overflow: TextOverflow.ellipsis,
+                                                                  overflow:
+                                                                      TextOverflow
+                                                                          .ellipsis,
                                                                 ),
                                                               ),
                                                             ],
                                                           ),
                                                         ],
-                                                        const SizedBox(height: 8),
+                                                        const SizedBox(
+                                                          height: 8,
+                                                        ),
                                                         Row(
                                                           children: [
                                                             Icon(
-                                                              Icons.calendar_today,
-                                                              color: Colors.purple.shade700,
+                                                              Icons
+                                                                  .calendar_today,
+                                                              color:
+                                                                  Colors
+                                                                      .purple
+                                                                      .shade700,
                                                               size: 20,
                                                             ),
-                                                            const SizedBox(width: 8),
+                                                            const SizedBox(
+                                                              width: 8,
+                                                            ),
                                                             Expanded(
                                                               child: Text(
                                                                 'Date: ${DateFormat('MMM dd, yyyy HH:mm').format(sale.date)}',
                                                                 style: TextStyle(
-                                                                  color: Colors.grey.shade600,
+                                                                  color:
+                                                                      Colors
+                                                                          .grey
+                                                                          .shade600,
                                                                   fontSize: 14,
                                                                 ),
-                                                                overflow: TextOverflow.ellipsis,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
                                                               ),
                                                             ),
                                                           ],
@@ -1267,96 +1370,152 @@ class _SalesScreenState extends State<SalesScreen> {
                                                   // Items List
                                                   Text(
                                                     'Items Sold:',
-                                                    style: Theme.of(context).textTheme.titleMedium
-                                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .titleMedium
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
                                                   ),
                                                   const SizedBox(height: 8),
                                                   Container(
-                                                    constraints: const BoxConstraints(maxHeight: 300),
+                                                    constraints:
+                                                        const BoxConstraints(
+                                                          maxHeight: 300,
+                                                        ),
                                                     child: ListView.builder(
                                                       shrinkWrap: true,
-                                                      physics: const AlwaysScrollableScrollPhysics(),
-                                                      itemCount: sale.items.length,
-                                                      itemBuilder: (context, index) {
-                                                        final item = sale.items[index];
-                                                        final hasReturns = item.returnedQuantity > 0;
+                                                      physics:
+                                                          const AlwaysScrollableScrollPhysics(),
+                                                      itemCount:
+                                                          sale.items.length,
+                                                      itemBuilder: (
+                                                        context,
+                                                        index,
+                                                      ) {
+                                                        final item =
+                                                            sale.items[index];
+                                                        final hasReturns =
+                                                            item.returnedQuantity >
+                                                            0;
 
                                                         return Card(
-                                                          margin: const EdgeInsets.symmetric(vertical: 4),
+                                                          margin:
+                                                              const EdgeInsets.symmetric(
+                                                                vertical: 4,
+                                                              ),
                                                           child: Padding(
-                                                            padding: const EdgeInsets.all(12),
+                                                            padding:
+                                                                const EdgeInsets.all(
+                                                                  12,
+                                                                ),
                                                             child: Column(
-                                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
                                                               children: [
                                                                 Row(
                                                                   mainAxisAlignment:
-                                                                      MainAxisAlignment.spaceBetween,
+                                                                      MainAxisAlignment
+                                                                          .spaceBetween,
                                                                   children: [
                                                                     Expanded(
                                                                       child: Text(
-                                                                        item.product.name,
+                                                                        item
+                                                                            .product
+                                                                            .name,
                                                                         style: const TextStyle(
-                                                                          fontWeight: FontWeight.bold,
-                                                                          fontSize: 16,
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                          fontSize:
+                                                                              16,
                                                                         ),
-                                                                        overflow: TextOverflow.ellipsis,
+                                                                        overflow:
+                                                                            TextOverflow.ellipsis,
                                                                       ),
                                                                     ),
                                                                     Text(
                                                                       'K${item.product.price.toStringAsFixed(2)}',
                                                                       style: TextStyle(
-                                                                        color: Colors.grey.shade600,
-                                                                        fontWeight: FontWeight.bold,
+                                                                        color:
+                                                                            Colors.grey.shade600,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
                                                                       ),
                                                                     ),
                                                                   ],
                                                                 ),
-                                                                const SizedBox(height: 8),
+                                                                const SizedBox(
+                                                                  height: 8,
+                                                                ),
                                                                 Row(
                                                                   mainAxisAlignment:
-                                                                      MainAxisAlignment.spaceBetween,
+                                                                      MainAxisAlignment
+                                                                          .spaceBetween,
                                                                   children: [
                                                                     Text(
                                                                       'Quantity: ${item.quantity}',
                                                                       style: TextStyle(
-                                                                        color: Colors.grey.shade600,
-                                                                        fontSize: 14,
+                                                                        color:
+                                                                            Colors.grey.shade600,
+                                                                        fontSize:
+                                                                            14,
                                                                       ),
                                                                     ),
                                                                     Text(
                                                                       'Subtotal: K${(item.quantity * item.product.price).toStringAsFixed(2)}',
                                                                       style: const TextStyle(
-                                                                        fontWeight: FontWeight.bold,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
                                                                       ),
                                                                     ),
                                                                   ],
                                                                 ),
                                                                 if (hasReturns) ...[
-                                                                  const SizedBox(height: 8),
+                                                                  const SizedBox(
+                                                                    height: 8,
+                                                                  ),
                                                                   Container(
-                                                                    padding: const EdgeInsets.all(8),
+                                                                    padding:
+                                                                        const EdgeInsets.all(
+                                                                          8,
+                                                                        ),
                                                                     decoration: BoxDecoration(
-                                                                      color: Colors.orange.shade50,
-                                                                      borderRadius: BorderRadius.circular(
-                                                                        4,
-                                                                      ),
+                                                                      color:
+                                                                          Colors
+                                                                              .orange
+                                                                              .shade50,
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                            4,
+                                                                          ),
                                                                     ),
                                                                     child: Row(
                                                                       children: [
                                                                         Icon(
-                                                                          Icons.assignment_return,
-                                                                          color: Colors.orange.shade700,
-                                                                          size: 16,
+                                                                          Icons
+                                                                              .assignment_return,
+                                                                          color:
+                                                                              Colors.orange.shade700,
+                                                                          size:
+                                                                              16,
                                                                         ),
-                                                                        const SizedBox(width: 8),
+                                                                        const SizedBox(
+                                                                          width:
+                                                                              8,
+                                                                        ),
                                                                         Expanded(
                                                                           child: Text(
                                                                             'Returned: ${item.returnedQuantity} units - ${item.returnedReason}',
                                                                             style: TextStyle(
-                                                                              color: Colors.orange.shade700,
-                                                                              fontSize: 12,
+                                                                              color:
+                                                                                  Colors.orange.shade700,
+                                                                              fontSize:
+                                                                                  12,
                                                                             ),
-                                                                            overflow: TextOverflow.ellipsis,
+                                                                            overflow:
+                                                                                TextOverflow.ellipsis,
                                                                           ),
                                                                         ),
                                                                       ],
@@ -1374,105 +1533,159 @@ class _SalesScreenState extends State<SalesScreen> {
 
                                                   // Summary
                                                   Container(
-                                                    padding: const EdgeInsets.all(16),
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                          16,
+                                                        ),
                                                     decoration: BoxDecoration(
-                                                      color: Colors.blue.shade50,
-                                                      borderRadius: BorderRadius.circular(8),
+                                                      color:
+                                                          Colors.blue.shade50,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
                                                     ),
                                                     child: Column(
                                                       children: [
                                                         Row(
-                                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
                                                           children: [
                                                             const Text(
                                                               'Subtotal:',
-                                                              style: TextStyle(fontSize: 16),
+                                                              style: TextStyle(
+                                                                fontSize: 16,
+                                                              ),
                                                             ),
                                                             Text(
                                                               'K${sale.totalAmount.toStringAsFixed(2)}',
                                                               style: const TextStyle(
                                                                 fontSize: 16,
-                                                                fontWeight: FontWeight.bold,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
                                                               ),
                                                             ),
                                                           ],
                                                         ),
-                                                        if (sale.discount > 0) ...[
-                                                          const SizedBox(height: 8),
+                                                        if (sale.discount >
+                                                            0) ...[
+                                                          const SizedBox(
+                                                            height: 8,
+                                                          ),
                                                           Row(
                                                             mainAxisAlignment:
-                                                                MainAxisAlignment.spaceBetween,
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
                                                             children: [
                                                               const Text(
                                                                 'Discount:',
-                                                                style: TextStyle(fontSize: 16),
+                                                                style:
+                                                                    TextStyle(
+                                                                      fontSize:
+                                                                          16,
+                                                                    ),
                                                               ),
                                                               Text(
                                                                 '-K${sale.discount.toStringAsFixed(2)}',
                                                                 style: TextStyle(
                                                                   fontSize: 16,
-                                                                  fontWeight: FontWeight.bold,
-                                                                  color: Colors.orange.shade700,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  color:
+                                                                      Colors
+                                                                          .orange
+                                                                          .shade700,
                                                                 ),
                                                               ),
                                                             ],
                                                           ),
                                                         ],
                                                         if (sale.vat > 0) ...[
-                                                          const SizedBox(height: 8),
+                                                          const SizedBox(
+                                                            height: 8,
+                                                          ),
                                                           Row(
                                                             mainAxisAlignment:
-                                                                MainAxisAlignment.spaceBetween,
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
                                                             children: [
                                                               const Text(
                                                                 'VAT:',
-                                                                style: TextStyle(fontSize: 16),
+                                                                style:
+                                                                    TextStyle(
+                                                                      fontSize:
+                                                                          16,
+                                                                    ),
                                                               ),
                                                               Text(
                                                                 'K${sale.vat.toStringAsFixed(2)}',
                                                                 style: const TextStyle(
                                                                   fontSize: 16,
-                                                                  fontWeight: FontWeight.bold,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
                                                                 ),
                                                               ),
                                                             ],
                                                           ),
                                                         ],
-                                                        if (sale.turnoverTax > 0) ...[
-                                                          const SizedBox(height: 8),
+                                                        if (sale.turnoverTax >
+                                                            0) ...[
+                                                          const SizedBox(
+                                                            height: 8,
+                                                          ),
                                                           Row(
                                                             mainAxisAlignment:
-                                                                MainAxisAlignment.spaceBetween,
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
                                                             children: [
                                                               const Text(
                                                                 'Turnover Tax:',
-                                                                style: TextStyle(fontSize: 16),
+                                                                style:
+                                                                    TextStyle(
+                                                                      fontSize:
+                                                                          16,
+                                                                    ),
                                                               ),
                                                               Text(
                                                                 'K${sale.turnoverTax.toStringAsFixed(2)}',
                                                                 style: const TextStyle(
                                                                   fontSize: 16,
-                                                                  fontWeight: FontWeight.bold,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
                                                                 ),
                                                               ),
                                                             ],
                                                           ),
                                                         ],
                                                         if (sale.levy > 0) ...[
-                                                          const SizedBox(height: 8),
+                                                          const SizedBox(
+                                                            height: 8,
+                                                          ),
                                                           Row(
                                                             mainAxisAlignment:
-                                                                MainAxisAlignment.spaceBetween,
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
                                                             children: [
                                                               const Text(
                                                                 'Levy:',
-                                                                style: TextStyle(fontSize: 16),
+                                                                style:
+                                                                    TextStyle(
+                                                                      fontSize:
+                                                                          16,
+                                                                    ),
                                                               ),
                                                               Text(
                                                                 'K${sale.levy.toStringAsFixed(2)}',
                                                                 style: const TextStyle(
                                                                   fontSize: 16,
-                                                                  fontWeight: FontWeight.bold,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
                                                                 ),
                                                               ),
                                                             ],
@@ -1480,21 +1693,39 @@ class _SalesScreenState extends State<SalesScreen> {
                                                         ],
                                                         const Divider(),
                                                         Row(
-                                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
                                                           children: [
                                                             Text(
                                                               'Total:',
-                                                              style: Theme.of(context).textTheme.titleMedium
-                                                                  ?.copyWith(fontWeight: FontWeight.bold),
+                                                              style: Theme.of(
+                                                                    context,
+                                                                  )
+                                                                  .textTheme
+                                                                  .titleMedium
+                                                                  ?.copyWith(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
                                                             ),
                                                             Text(
                                                               'K${sale.grandTotal.toStringAsFixed(2)}',
                                                               style: Theme.of(
-                                                                context,
-                                                              ).textTheme.titleMedium?.copyWith(
-                                                                fontWeight: FontWeight.bold,
-                                                                color: Colors.green.shade700,
-                                                              ),
+                                                                    context,
+                                                                  )
+                                                                  .textTheme
+                                                                  .titleMedium
+                                                                  ?.copyWith(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    color:
+                                                                        Colors
+                                                                            .green
+                                                                            .shade700,
+                                                                  ),
                                                             ),
                                                           ],
                                                         ),
@@ -1505,46 +1736,76 @@ class _SalesScreenState extends State<SalesScreen> {
 
                                                   // Returns Info
                                                   Consumer<ReturnsProvider>(
-                                                    builder: (context, returnsProvider, child) {
-                                                      final hasReturns = returnsProvider.hasReturns(
-                                                        sale.id,
-                                                      );
-                                                      final totalReturnAmount = returnsProvider
-                                                          .getTotalReturnAmountForSale(sale.id);
+                                                    builder: (
+                                                      context,
+                                                      returnsProvider,
+                                                      child,
+                                                    ) {
+                                                      final hasReturns =
+                                                          returnsProvider
+                                                              .hasReturns(
+                                                                sale.id,
+                                                              );
+                                                      final totalReturnAmount =
+                                                          returnsProvider
+                                                              .getTotalReturnAmountForSale(
+                                                                sale.id,
+                                                              );
 
                                                       if (hasReturns) {
                                                         return Container(
-                                                          padding: const EdgeInsets.all(16),
+                                                          padding:
+                                                              const EdgeInsets.all(
+                                                                16,
+                                                              ),
                                                           decoration: BoxDecoration(
-                                                            color: Colors.orange.shade50,
-                                                            borderRadius: BorderRadius.circular(8),
+                                                            color:
+                                                                Colors
+                                                                    .orange
+                                                                    .shade50,
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  8,
+                                                                ),
                                                           ),
                                                           child: Row(
                                                             children: [
                                                               Icon(
-                                                                Icons.assignment_return,
-                                                                color: Colors.orange.shade700,
+                                                                Icons
+                                                                    .assignment_return,
+                                                                color:
+                                                                    Colors
+                                                                        .orange
+                                                                        .shade700,
                                                                 size: 24,
                                                               ),
-                                                              const SizedBox(width: 12),
+                                                              const SizedBox(
+                                                                width: 12,
+                                                              ),
                                                               Expanded(
                                                                 child: Column(
                                                                   crossAxisAlignment:
-                                                                      CrossAxisAlignment.start,
+                                                                      CrossAxisAlignment
+                                                                          .start,
                                                                   children: [
                                                                     Text(
                                                                       'Returns: K${totalReturnAmount.toStringAsFixed(2)}',
                                                                       style: TextStyle(
-                                                                        color: Colors.orange.shade700,
-                                                                        fontWeight: FontWeight.bold,
-                                                                        fontSize: 16,
+                                                                        color:
+                                                                            Colors.orange.shade700,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                        fontSize:
+                                                                            16,
                                                                       ),
                                                                     ),
                                                                     Text(
                                                                       'This sale has returned items',
                                                                       style: TextStyle(
-                                                                        color: Colors.orange.shade600,
-                                                                        fontSize: 12,
+                                                                        color:
+                                                                            Colors.orange.shade600,
+                                                                        fontSize:
+                                                                            12,
                                                                       ),
                                                                     ),
                                                                   ],
@@ -1565,7 +1826,9 @@ class _SalesScreenState extends State<SalesScreen> {
                                                       Expanded(
                                                         child: ElevatedButton.icon(
                                                           onPressed: () {
-                                                            Navigator.of(ctx).pop();
+                                                            Navigator.of(
+                                                              ctx,
+                                                            ).pop();
                                                             // Call the POS receipt print function here
                                                             // This function should be available in the NewSaleModal or POS screen
                                                             // For now, we'll just pop the dialog
@@ -1581,22 +1844,42 @@ class _SalesScreenState extends State<SalesScreen> {
                                                             //   ),
                                                             // );
                                                           },
-                                                          icon: const Icon(Icons.print),
-                                                          label: const Text('Print Receipt'),
-                                                          style: ElevatedButton.styleFrom(
-                                                            backgroundColor: Colors.blue.shade700,
-                                                            foregroundColor: Colors.white,
+                                                          icon: const Icon(
+                                                            Icons.print,
                                                           ),
+                                                          label: const Text(
+                                                            'Print Receipt',
+                                                          ),
+                                                          style:
+                                                              ElevatedButton.styleFrom(
+                                                                backgroundColor:
+                                                                    Colors
+                                                                        .blue
+                                                                        .shade700,
+                                                                foregroundColor:
+                                                                    Colors
+                                                                        .white,
+                                                              ),
                                                         ),
                                                       ),
                                                       const SizedBox(width: 12),
                                                       Expanded(
                                                         child: ElevatedButton(
-                                                          onPressed: () => Navigator.of(ctx).pop(),
-                                                          child: const Text('Close'),
+                                                          onPressed:
+                                                              () =>
+                                                                  Navigator.of(
+                                                                    ctx,
+                                                                  ).pop(),
+                                                          child: const Text(
+                                                            'Close',
+                                                          ),
                                                           style: ElevatedButton.styleFrom(
-                                                            backgroundColor: Colors.grey.shade300,
-                                                            foregroundColor: Colors.black87,
+                                                            backgroundColor:
+                                                                Colors
+                                                                    .grey
+                                                                    .shade300,
+                                                            foregroundColor:
+                                                                Colors.black87,
                                                           ),
                                                         ),
                                                       ),

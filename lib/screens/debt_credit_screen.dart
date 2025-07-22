@@ -16,7 +16,8 @@ class DebtAndCreditScreen extends StatefulWidget {
   _DebtAndCreditScreenState createState() => _DebtAndCreditScreenState();
 }
 
-class _DebtAndCreditScreenState extends State<DebtAndCreditScreen> with SingleTickerProviderStateMixin {
+class _DebtAndCreditScreenState extends State<DebtAndCreditScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -25,7 +26,10 @@ class _DebtAndCreditScreenState extends State<DebtAndCreditScreen> with SingleTi
     _tabController = TabController(length: 3, vsync: this);
     // Fetch initial data
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ReceivablesProvider>(context, listen: false).fetchReceivables();
+      Provider.of<ReceivablesProvider>(
+        context,
+        listen: false,
+      ).fetchReceivables();
       Provider.of<PayablesProvider>(context, listen: false).fetchPayables();
       Provider.of<LoansProvider>(context, listen: false).fetchLoans();
     });
@@ -53,12 +57,8 @@ class _DebtAndCreditScreenState extends State<DebtAndCreditScreen> with SingleTi
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          ReceivableList(),
-          PayableList(),
-          LoanList(),
-        ],
+        children: const [ReceivableList(), PayableList(), LoanList()],
       ),
     );
   }
-} 
+}

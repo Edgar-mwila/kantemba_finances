@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart'; // Added for debugPrint
 class ApiService {
   static String get baseUrl {
     if (Platform.isAndroid) {
-      return 'http://10.0.2.2:4000/api';
+      return 'http://192.168.43.129:4000/api';
     } else {
       return 'http://localhost:4000/api';
     }

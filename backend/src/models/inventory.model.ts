@@ -1,7 +1,6 @@
 import { DataTypes, Model } from 'sequelize';
 import type { Optional } from 'sequelize';
 import { sequelize } from '../utils/db';
-import { Business } from './business.model';
 import { User } from './user.model';
 import { Shop } from './shop.model';
 

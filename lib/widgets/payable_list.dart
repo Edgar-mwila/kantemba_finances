@@ -14,24 +14,33 @@ class PayableList extends StatelessWidget {
     final payables = payablesProvider.payables;
 
     return Scaffold(
-      body: payables.isEmpty
-          ? const Center(child: Text('No payables found.'))
-          : ListView.builder(
-              itemCount: payables.length,
-              itemBuilder: (ctx, i) {
-                final payable = payables[i];
-                return ListTile(
-                  title: Text(payable.name),
-                  subtitle: Text('Amount: \$${payable.principal.toStringAsFixed(2)}'),
-                  trailing: Text('Due: ${payable.dueDate.toLocal().toString().split(' ')[0]}'),
-                  onTap: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => PayableDetailScreen(payable: payable),
-                    ));
-                  },
-                );
-              },
-            ),
+      body:
+          payables.isEmpty
+              ? const Center(child: Text('No payables found.'))
+              : ListView.builder(
+                itemCount: payables.length,
+                itemBuilder: (ctx, i) {
+                  final payable = payables[i];
+                  return ListTile(
+                    title: Text(payable.name),
+                    subtitle: Text(
+                      'Amount: \$${payable.principal.toStringAsFixed(2)}',
+                    ),
+                    trailing: Text(
+                      'Due: ${payable.dueDate.toLocal().toString().split(' ')[0]}',
+                    ),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder:
+                              (context) =>
+                                  PayableDetailScreen(payable: payable),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showModalBottomSheet(
@@ -40,8 +49,9 @@ class PayableList extends StatelessWidget {
             builder: (_) => const NewPayableModal(),
           );
         },
-        child: const Icon(Icons.add),
+        backgroundColor: Colors.green.shade700,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
-} 
+}

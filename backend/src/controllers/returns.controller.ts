@@ -14,13 +14,12 @@ export const createReturn = async (req: Request, res: Response) => {
       turnoverTax,
       levy,
       shopId,
-      businessId,
       createdBy,
       reason,
     } = req.body;
 
     // Validate required fields
-    if (!originalSaleId || !items || !shopId || !businessId || !createdBy || !reason) {
+    if (!originalSaleId || !items || !shopId || !createdBy || !reason) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
@@ -74,15 +73,11 @@ export const getReturns = async (req: Request, res: Response) => {
   try {
     const { businessId, shopId } = req.query;
 
-    if (!businessId) {
-      return res.status(400).json({ message: 'Business ID is required' });
+    if (!shopId) {
+      return res.status(400).json({ message: 'shopId is required' });
     }
 
-    let query: any = { businessId };
-
-    if (shopId) {
-      query.shopId = shopId;
-    }
+    let query: any = { shopId };
 
     const returns = await Return.findAll({
       where: query,

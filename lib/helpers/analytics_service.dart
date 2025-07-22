@@ -1,27 +1,45 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class AnalyticsService {
-  static const String _apiBase = 'https://your-backend-url.com/api/analytics'; // TODO: Set your backend URL
+  static String get baseUrl {
+    if (Platform.isAndroid) {
+      return 'http://192.168.43.129:4000/api/analytics';
+    } else {
+      return 'http://localhost:4000/api/analytics';
+    }
+  }
 
-  static Future<void> logEvent(String event, {Map<String, dynamic>? data}) async {
+  static Future<void> logEvent(
+    String event, {
+    Map<String, dynamic>? data,
+  }) async {
     await _send('event', {'event': event, 'data': data});
   }
 
-  static Future<void> logError(String error, {String? stack, Map<String, dynamic>? context}) async {
+  static Future<void> logError(
+    String error, {
+    String? stack,
+    Map<String, dynamic>? context,
+  }) async {
     await _send('error', {'error': error, 'stack': stack, 'context': context});
   }
 
-  static Future<void> logReview(String review, {int? rating, Map<String, dynamic>? user}) async {
+  static Future<void> logReview(
+    String review, {
+    int? rating,
+    Map<String, dynamic>? user,
+  }) async {
     await _send('review', {'review': review, 'rating': rating, 'user': user});
   }
 
   static Future<void> _send(String type, Map<String, dynamic> payload) async {
     try {
       await http.post(
-        Uri.parse(_apiBase),
+        Uri.parse(baseUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'type': type,
@@ -46,4 +64,4 @@ class AnalyticsService {
       return true;
     };
   }
-} 
+}

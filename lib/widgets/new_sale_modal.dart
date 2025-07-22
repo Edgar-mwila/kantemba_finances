@@ -19,6 +19,7 @@ import 'package:blue_thermal_printer/blue_thermal_printer.dart' as btp;
 import '../providers/receivables_provider.dart';
 import '../models/receivable.dart';
 import '../helpers/analytics_service.dart';
+import 'package:flutterwave_standard/flutterwave.dart';
 
 // Import POS device manager from POS screen
 import '../screens/pos_screen.dart';
@@ -51,9 +52,10 @@ class _NewSaleModalState extends State<NewSaleModal> {
   String _searchQuery = '';
   String _barcodeQuery = '';
   bool _isProcessing = false;
-  String _paymentType = 'Paid'; // 'Paid' or 'On Credit'
+  String _paymentType = 'Paid'; // 'Paid', 'On Credit', 'Mobile Money'
   final TextEditingController _debtorNameController = TextEditingController();
-  final TextEditingController _debtorContactController = TextEditingController();
+  final TextEditingController _debtorContactController =
+      TextEditingController();
 
   // POS Device Manager for barcode scanning
   late final PosDeviceManager _deviceManager;
@@ -86,6 +88,8 @@ class _NewSaleModalState extends State<NewSaleModal> {
   bool _isUsbPrinterConnecting = false;
   bool _isUsbPrinting = false;
 
+  bool _isProcessingPayment = false;
+
   @override
   void initState() {
     super.initState();
@@ -106,20 +110,32 @@ class _NewSaleModalState extends State<NewSaleModal> {
   }
 
   void _onSaleAdded(Sale sale, String paymentType) {
-    AnalyticsService.logEvent('sale_added', data: {
-      'amount': sale.grandTotal,
-      'paymentType': paymentType,
-      'items': sale.items.length,
-    });
+    AnalyticsService.logEvent(
+      'sale_added',
+      data: {
+        'amount': sale.grandTotal,
+        'paymentType': paymentType,
+        'items': sale.items.length,
+      },
+    );
   }
+
   void _onPaymentTypeSelected(String paymentType) {
-    AnalyticsService.logEvent('payment_type_selected', data: {'paymentType': paymentType});
+    AnalyticsService.logEvent(
+      'payment_type_selected',
+      data: {'paymentType': paymentType},
+    );
   }
+
   void _onReceiptPrinted() {
     AnalyticsService.logEvent('receipt_printed');
   }
+
   void _onPOSDeviceUsed(String action, {String? deviceType}) {
-    AnalyticsService.logEvent('pos_device_used', data: {'action': action, 'deviceType': deviceType});
+    AnalyticsService.logEvent(
+      'pos_device_used',
+      data: {'action': action, 'deviceType': deviceType},
+    );
   }
 
   @override
@@ -314,7 +330,7 @@ class _NewSaleModalState extends State<NewSaleModal> {
     });
   }
 
-  Future<void> _addSale() async {
+  Future<void> _addSale({bool skipPayment = false}) async {
     if (_cartItems.isEmpty) return;
 
     final currentUser =
@@ -386,12 +402,17 @@ class _NewSaleModalState extends State<NewSaleModal> {
             await _deviceManager.printReceipt({
               'saleId': newSale.id,
               'date': newSale.date.toIso8601String(),
-              'items': newSale.items.map((item) => {
-                'name': item.product.name,
-                'quantity': item.quantity,
-                'price': item.product.price,
-                'total': item.quantity * item.product.price,
-              }).toList(),
+              'items':
+                  newSale.items
+                      .map(
+                        (item) => {
+                          'name': item.product.name,
+                          'quantity': item.quantity,
+                          'price': item.product.price,
+                          'total': item.quantity * item.product.price,
+                        },
+                      )
+                      .toList(),
               'total': newSale.grandTotal,
               'businessName': 'Kantemba Finances',
             });
@@ -411,9 +432,9 @@ class _NewSaleModalState extends State<NewSaleModal> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Sale added! Total: K${_grandTotal.toStringAsFixed(2)}'
-              + (printed ? '\nReceipt printed.' : '')
-              + (drawerOpened ? '\nDrawer opened.' : ''),
+              'Sale added! Total: K${_grandTotal.toStringAsFixed(2)}' +
+                  (printed ? '\nReceipt printed.' : '') +
+                  (drawerOpened ? '\nDrawer opened.' : ''),
             ),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
@@ -429,7 +450,9 @@ class _NewSaleModalState extends State<NewSaleModal> {
           name: _debtorNameController.text,
           contact: _debtorContactController.text,
           principal: newSale.grandTotal,
-          dueDate: DateTime.now().add(const Duration(days: 30)), // Default due date
+          dueDate: DateTime.now().add(
+            const Duration(days: 30),
+          ), // Default due date
           interestType: 'fixed',
           interestValue: 0.0,
           paymentPlan: 'lump_sum',
@@ -438,7 +461,10 @@ class _NewSaleModalState extends State<NewSaleModal> {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-        Provider.of<ReceivablesProvider>(context, listen: false).addReceivable(newReceivable);
+        Provider.of<ReceivablesProvider>(
+          context,
+          listen: false,
+        ).addReceivable(newReceivable);
       }
     } catch (e) {
       if (mounted) {
@@ -455,6 +481,148 @@ class _NewSaleModalState extends State<NewSaleModal> {
           _isProcessing = false;
         });
       }
+    }
+  }
+
+  Future<void> _handleMobileMoneyPayment(double amount) async {
+    setState(() {
+      _isProcessingPayment = true;
+    });
+    AnalyticsService.logEvent(
+      'mobile_money_payment_attempt',
+      data: {'amount': amount},
+    );
+    try {
+      final Customer customer = Customer(
+        name:
+            _debtorNameController.text.isNotEmpty
+                ? _debtorNameController.text
+                : 'Customer',
+        phoneNumber: _debtorContactController.text,
+        email: '',
+      );
+      final Flutterwave flutterwave = Flutterwave(
+        publicKey:
+            "FLWPUBK_TEST-xxxxxxxxxxxxxxxxxxxxx-X", // TODO: Replace with your Flutterwave public key
+        currency: 'ZMW',
+        redirectUrl: "https://www.kantemba.com/payment-success",
+        txRef: 'Kantemba_${DateTime.now().millisecondsSinceEpoch}',
+        amount: amount.toStringAsFixed(2),
+        customer: customer,
+        paymentOptions: "mobilemoneyzambia, card, ussd",
+        customization: Customization(title: "Kantemba Sale Payment"),
+        isTestMode: true, // Set to false in production
+      );
+      final ChargeResponse response = await flutterwave.charge(context);
+      if (response.status == "success") {
+        AnalyticsService.logEvent(
+          'mobile_money_payment_success',
+          data: {'amount': amount, 'txRef': flutterwave.txRef},
+        );
+        await _addSaleAfterPayment();
+      } else {
+        AnalyticsService.logEvent(
+          'mobile_money_payment_failed',
+          data: {'amount': amount, 'status': response.status},
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Payment failed: ${response.status ?? 'Unknown error'}',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      AnalyticsService.logEvent(
+        'mobile_money_payment_error',
+        data: {'amount': amount, 'error': e.toString()},
+      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Payment error: $e')));
+    } finally {
+      setState(() {
+        _isProcessingPayment = false;
+      });
+    }
+  }
+
+  Future<void> _addSaleAfterPayment() async {
+    // Call the existing _addSale logic, but skip payment UI
+    await _addSale(skipPayment: true);
+    // Print receipt if needed
+    // Print receipt and open cash drawer if printer is connected
+    bool printed = false;
+    bool drawerOpened = false;
+    if (_deviceManager != null) {
+      try {
+        // Print receipt (implement your own formatting as needed)
+        // Example: just print total
+        if (_deviceManager.receiptPrinterConnected) {
+          await _deviceManager.printReceipt({
+            'saleId': _lastCompletedSale!.id,
+            'date': _lastCompletedSale!.date.toIso8601String(),
+            'items':
+                _lastCompletedSale!.items
+                    .map(
+                      (item) => {
+                        'name': item.product.name,
+                        'quantity': item.quantity,
+                        'price': item.product.price,
+                        'total': item.quantity * item.product.price,
+                      },
+                    )
+                    .toList(),
+            'total': _lastCompletedSale!.grandTotal,
+            'businessName': 'Kantemba Finances',
+          });
+          printed = true;
+        }
+        // Open cash drawer
+        drawerOpened = await _deviceManager.openCashDrawer();
+      } catch (e) {
+        // Ignore print/drawer errors, show below
+      }
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Sale added! Total: K${_grandTotal.toStringAsFixed(2)}' +
+                (printed ? '\nReceipt printed.' : '') +
+                (drawerOpened ? '\nDrawer opened.' : ''),
+          ),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      await Future.delayed(const Duration(milliseconds: 500));
+      Navigator.of(context).pop();
+    }
+
+    if (_paymentType == 'On Credit') {
+      final newReceivable = Receivable(
+        id: 'receivable_${_lastCompletedSale!.id}',
+        name: _debtorNameController.text,
+        contact: _debtorContactController.text,
+        principal: _lastCompletedSale!.grandTotal,
+        dueDate: DateTime.now().add(
+          const Duration(days: 30),
+        ), // Default due date
+        interestType: 'fixed',
+        interestValue: 0.0,
+        paymentPlan: 'lump_sum',
+        paymentHistory: [],
+        status: 'active',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      Provider.of<ReceivablesProvider>(
+        context,
+        listen: false,
+      ).addReceivable(newReceivable);
     }
   }
 
@@ -741,25 +909,31 @@ class _NewSaleModalState extends State<NewSaleModal> {
     final receiptData = {
       'id': sale.id,
       'date': sale.date.toString(),
-      'items': sale.items.map((item) => {
-        'name': item.product.name,
-        'quantity': item.quantity,
-        'price': item.product.price.toStringAsFixed(2),
-      }).toList(),
+      'items':
+          sale.items
+              .map(
+                (item) => {
+                  'name': item.product.name,
+                  'quantity': item.quantity,
+                  'price': item.product.price.toStringAsFixed(2),
+                },
+              )
+              .toList(),
       'grandTotal': sale.grandTotal.toStringAsFixed(2),
     };
     final success = await _deviceManager.printReceipt(receiptData);
     if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to print receipt.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Failed to print receipt.')));
     }
   }
 
   // 1. Add Bluetooth printer scan/connect dialog and test print
   Future<void> _scanAndConnectBluetoothPrinter() async {
     setState(() => _isBluetoothPrinterConnecting = true);
-    final List<btp.BluetoothDevice> devices = await _bluetooth.getBondedDevices();
+    final List<btp.BluetoothDevice> devices =
+        await _bluetooth.getBondedDevices();
     setState(() => _isBluetoothPrinterConnecting = false);
     if (devices.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -769,27 +943,29 @@ class _NewSaleModalState extends State<NewSaleModal> {
     }
     btp.BluetoothDevice? selected = await showDialog<btp.BluetoothDevice>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Bluetooth Printer'),
-        content: SizedBox(
-          width: 300,
-          height: 300,
-          child: ListView.builder(
-            itemCount: devices.length,
-            itemBuilder: (ctx, i) => ListTile(
-              title: Text(devices[i].name ?? 'Unknown'),
-              subtitle: Text(devices[i].address ?? ''),
-              onTap: () => Navigator.of(context).pop(devices[i]),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Select Bluetooth Printer'),
+            content: SizedBox(
+              width: 300,
+              height: 300,
+              child: ListView.builder(
+                itemCount: devices.length,
+                itemBuilder:
+                    (ctx, i) => ListTile(
+                      title: Text(devices[i].name ?? 'Unknown'),
+                      subtitle: Text(devices[i].address ?? ''),
+                      onTap: () => Navigator.of(context).pop(devices[i]),
+                    ),
+              ),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
     );
     if (selected != null) {
       setState(() => _selectedBluetoothPrinter = selected);
@@ -799,9 +975,9 @@ class _NewSaleModalState extends State<NewSaleModal> {
           SnackBar(content: Text('Connected to ${selected.name}')),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to connect: $res')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to connect: $res')));
       }
     }
   }
@@ -838,34 +1014,38 @@ class _NewSaleModalState extends State<NewSaleModal> {
     final devices = await UsbSerial.listDevices();
     setState(() => _isUsbPrinterConnecting = false);
     if (devices.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No USB printers found.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No USB printers found.')));
       return;
     }
     UsbDevice? selected = await showDialog<UsbDevice>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select USB Printer'),
-        content: SizedBox(
-          width: 300,
-          height: 300,
-          child: ListView.builder(
-            itemCount: devices.length,
-            itemBuilder: (ctx, i) => ListTile(
-              title: Text(devices[i].productName ?? 'Unknown'),
-              subtitle: Text('VID: ${devices[i].vid}, PID: ${devices[i].pid}'),
-              onTap: () => Navigator.of(context).pop(devices[i]),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Select USB Printer'),
+            content: SizedBox(
+              width: 300,
+              height: 300,
+              child: ListView.builder(
+                itemCount: devices.length,
+                itemBuilder:
+                    (ctx, i) => ListTile(
+                      title: Text(devices[i].productName ?? 'Unknown'),
+                      subtitle: Text(
+                        'VID: ${devices[i].vid}, PID: ${devices[i].pid}',
+                      ),
+                      onTap: () => Navigator.of(context).pop(devices[i]),
+                    ),
+              ),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+            ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-        ],
-      ),
     );
     if (selected != null) {
       setState(() => _selectedUsbPrinter = selected);
@@ -884,9 +1064,9 @@ class _NewSaleModalState extends State<NewSaleModal> {
           SnackBar(content: Text('Connected to ${selected.productName}')),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to open USB printer.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to open USB printer.')));
       }
     }
   }
@@ -1409,27 +1589,58 @@ class _NewSaleModalState extends State<NewSaleModal> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.print),
-                    tooltip: _selectedBluetoothPrinter == null ? 'Connect Bluetooth Printer' : 'Bluetooth Printer Connected',
-                    color: _selectedBluetoothPrinter == null ? Colors.grey : Colors.blue,
+                    tooltip:
+                        _selectedBluetoothPrinter == null
+                            ? 'Connect Bluetooth Printer'
+                            : 'Bluetooth Printer Connected',
+                    color:
+                        _selectedBluetoothPrinter == null
+                            ? Colors.grey
+                            : Colors.blue,
                     onPressed: _scanAndConnectBluetoothPrinter,
                   ),
                   if (_selectedBluetoothPrinter != null)
                     IconButton(
-                      icon: _isBluetoothPrinting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.receipt_long),
+                      icon:
+                          _isBluetoothPrinting
+                              ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Icon(Icons.receipt_long),
                       tooltip: 'Test Print (Bluetooth)',
                       color: Colors.blue,
-                      onPressed: _isBluetoothPrinting ? null : _testBluetoothPrint,
+                      onPressed:
+                          _isBluetoothPrinting ? null : _testBluetoothPrint,
                     ),
                   const SizedBox(width: 8),
                   IconButton(
                     icon: const Icon(Icons.usb),
-                    tooltip: _selectedUsbPrinter == null ? 'Connect USB Printer' : 'USB Printer Connected',
-                    color: _selectedUsbPrinter == null ? Colors.grey : Colors.deepOrange,
+                    tooltip:
+                        _selectedUsbPrinter == null
+                            ? 'Connect USB Printer'
+                            : 'USB Printer Connected',
+                    color:
+                        _selectedUsbPrinter == null
+                            ? Colors.grey
+                            : Colors.deepOrange,
                     onPressed: _scanAndConnectUsbPrinter,
                   ),
                   if (_selectedUsbPrinter != null)
                     IconButton(
-                      icon: _isUsbPrinting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.receipt_long),
+                      icon:
+                          _isUsbPrinting
+                              ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Icon(Icons.receipt_long),
                       tooltip: 'Test Print (USB)',
                       color: Colors.deepOrange,
                       onPressed: _isUsbPrinting ? null : _testUsbPrint,
@@ -1781,18 +1992,40 @@ class _NewSaleModalState extends State<NewSaleModal> {
         DropdownButtonFormField<String>(
           value: _paymentType,
           decoration: const InputDecoration(labelText: 'Payment Type'),
-          items: ['Paid', 'On Credit'].map((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
+          items:
+              ['Paid', 'On Credit', 'Mobile Money'].map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
           onChanged: (newValue) {
             setState(() {
               _paymentType = newValue!;
             });
+            AnalyticsService.logEvent(
+              'payment_type_selected',
+              data: {'paymentType': newValue},
+            );
           },
         ),
+        if (_paymentType == 'Mobile Money') ...[
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.phone_android),
+            label:
+                _isProcessingPayment
+                    ? const Text('Processing...')
+                    : const Text('Pay with Mobile Money'),
+            onPressed:
+                _isProcessingPayment
+                    ? null
+                    : () => _handleMobileMoneyPayment(_grandTotal),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade700,
+            ),
+          ),
+        ],
         if (_paymentType == 'On Credit') ...[
           TextFormField(
             controller: _debtorNameController,

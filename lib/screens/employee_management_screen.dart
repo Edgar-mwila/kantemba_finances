@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kantemba_finances/models/shop.dart';
+import 'package:kantemba_finances/screens/settings_screen.dart';
+import 'package:kantemba_finances/screens/shop_management_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/models/user.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
@@ -15,7 +17,8 @@ class EmployeeManagementScreen extends StatefulWidget {
   const EmployeeManagementScreen({super.key});
 
   @override
-  State<EmployeeManagementScreen> createState() => _EmployeeManagementScreenState();
+  State<EmployeeManagementScreen> createState() =>
+      _EmployeeManagementScreenState();
 }
 
 class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
@@ -25,20 +28,40 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
   @override
   void initState() {
     super.initState();
-    AnalyticsService.logEvent('screen_open', data: {'screen': 'EmployeeManagement'});
+    AnalyticsService.logEvent(
+      'screen_open',
+      data: {'screen': 'EmployeeManagement'},
+    );
   }
+
   void _onEmployeeAdded(String name, String role) {
-    AnalyticsService.logEvent('employee_added', data: {'name': name, 'role': role});
+    AnalyticsService.logEvent(
+      'employee_added',
+      data: {'name': name, 'role': role},
+    );
   }
+
   void _onEmployeeEdited(String name, String role) {
-    AnalyticsService.logEvent('employee_edited', data: {'name': name, 'role': role});
+    AnalyticsService.logEvent(
+      'employee_edited',
+      data: {'name': name, 'role': role},
+    );
   }
+
   void _onEmployeeDeleted(String name, String role) {
-    AnalyticsService.logEvent('employee_deleted', data: {'name': name, 'role': role});
+    AnalyticsService.logEvent(
+      'employee_deleted',
+      data: {'name': name, 'role': role},
+    );
   }
+
   void _onEmployeeDetailViewed(String name, String role) {
-    AnalyticsService.logEvent('employee_detail_viewed', data: {'name': name, 'role': role});
+    AnalyticsService.logEvent(
+      'employee_detail_viewed',
+      data: {'name': name, 'role': role},
+    );
   }
+
   void _openEmployeeModal({String? action}) {
     AnalyticsService.logEvent('open_employee_modal', data: {'action': action});
   }
@@ -52,14 +75,56 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
     final currentUser = usersProvider.currentUser;
 
     // Filter users by search and role
-    List<User> filteredUsers = usersProvider.users.where((user) {
-      final matchesSearch = user.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          user.contact.toLowerCase().contains(_searchQuery.toLowerCase());
-      final matchesRole = _roleFilter == 'all' ? true : user.role == _roleFilter;
-      return matchesSearch && matchesRole;
-    }).toList();
+    List<User> filteredUsers =
+        usersProvider.users.where((user) {
+          final matchesSearch =
+              user.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              user.contact.toLowerCase().contains(_searchQuery.toLowerCase());
+          final matchesRole =
+              _roleFilter == 'all' ? true : user.role == _roleFilter;
+          return matchesSearch && matchesRole;
+        }).toList();
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          "Users",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        actions: [
+          if (currentUser != null &&
+              isPremium &&
+              (currentUser.role == 'admin' || currentUser.role == 'manager'))
+            IconButton(
+              icon: const Icon(Icons.store),
+              tooltip: 'Manage Shops',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ShopManagementScreen(),
+                  ),
+                );
+              },
+            ),
+          if (currentUser != null &&
+              (currentUser.role == 'admin' ||
+                  currentUser.permissions.contains(
+                    UserPermissions.manageSettings,
+                  ) ||
+                  currentUser.permissions.contains(UserPermissions.all)))
+            IconButton(
+              icon: const Icon(Icons.settings),
+              tooltip: 'Settings',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                );
+              },
+            ),
+        ],
+      ),
       body:
           isWindows(context)
               ? Center(
@@ -312,30 +377,6 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed:
-                            () => _showUserDialog(
-                              context,
-                              usersProvider,
-                              businessProvider,
-                            ),
-                        icon: const Icon(Icons.add, color: Colors.white),
-                        label: const Text(
-                          'Add Employee',
-                          style: TextStyle(fontSize: 18, color: Colors.white),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              isPremium ? Colors.green.shade700 : Colors.grey,
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -343,7 +384,7 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
         onPressed:
             () => _showUserDialog(context, usersProvider, businessProvider),
         backgroundColor: Colors.green.shade700,
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

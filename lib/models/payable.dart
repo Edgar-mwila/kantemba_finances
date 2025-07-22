@@ -41,7 +41,11 @@ class Payable {
     interestValue: (json['interestValue'] as num).toDouble(),
     dueDate: DateTime.parse(json['dueDate']),
     paymentPlan: json['paymentPlan'],
-    paymentHistory: (json['paymentHistory'] as List<dynamic>?)?.map((e) => PayablePayment.fromJson(e)).toList() ?? [],
+    paymentHistory:
+        (json['paymentHistory'] as List<dynamic>?)
+            ?.map((e) => PayablePayment.fromJson(e))
+            .toList() ??
+        [],
     status: json['status'],
     createdAt: DateTime.parse(json['createdAt']),
     updatedAt: DateTime.parse(json['updatedAt']),
@@ -68,7 +72,11 @@ class PayablePayment {
   final double amount;
   final DateTime date;
   final String method;
-  PayablePayment({required this.amount, required this.date, required this.method});
+  PayablePayment({
+    required this.amount,
+    required this.date,
+    required this.method,
+  });
 
   factory PayablePayment.fromJson(Map<String, dynamic> json) => PayablePayment(
     amount: (json['amount'] as num).toDouble(),
@@ -81,4 +89,4 @@ class PayablePayment {
     'date': date.toIso8601String(),
     'method': method,
   };
-} 
+}

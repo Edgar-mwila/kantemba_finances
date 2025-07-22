@@ -169,10 +169,9 @@ class PosDeviceManager {
   /// Connect to receipt printer (Bluetooth only for Android)
   Future<bool> connectReceiptPrinter(String deviceId) async {
     try {
-      final btPrinter = await btp.BlueThermalPrinter.instance.getBondedDevices();
-      final selected = btPrinter.firstWhereOrNull(
-        (d) => d.address == deviceId,
-      );
+      final btPrinter =
+          await btp.BlueThermalPrinter.instance.getBondedDevices();
+      final selected = btPrinter.firstWhereOrNull((d) => d.address == deviceId);
       if (selected != null) {
         _bluetoothPrinter = btp.BlueThermalPrinter.instance;
         _selectedBluetoothPrinter = selected;
@@ -191,7 +190,9 @@ class PosDeviceManager {
 
   /// Print receipt using Bluetooth printer
   Future<bool> printReceipt(Map<String, dynamic> receiptData) async {
-    if (!_receiptPrinterConnected || _bluetoothPrinter == null || _selectedBluetoothPrinter == null) {
+    if (!_receiptPrinterConnected ||
+        _bluetoothPrinter == null ||
+        _selectedBluetoothPrinter == null) {
       print('Receipt printer not connected');
       return false;
     }
@@ -199,11 +200,17 @@ class PosDeviceManager {
       await _bluetoothPrinter!.connect(_selectedBluetoothPrinter!);
       await _bluetoothPrinter!.write("Kantemba Finances\n");
       await _bluetoothPrinter!.write("-----------------------------\n");
-      await _bluetoothPrinter!.write("Sale ID: "+(receiptData['id'] ?? '')+"\n");
-      await _bluetoothPrinter!.write("Date: "+(receiptData['date'] ?? '')+"\n");
+      await _bluetoothPrinter!.write(
+        "Sale ID: " + (receiptData['id'] ?? '') + "\n",
+      );
+      await _bluetoothPrinter!.write(
+        "Date: " + (receiptData['date'] ?? '') + "\n",
+      );
       await _bluetoothPrinter!.write("-----------------------------\n");
       for (final item in (receiptData['items'] ?? [])) {
-        await _bluetoothPrinter!.write("${item['name']} x${item['quantity']}  K${item['price']}\n");
+        await _bluetoothPrinter!.write(
+          "${item['name']} x${item['quantity']}  K${item['price']}\n",
+        );
       }
       await _bluetoothPrinter!.write("-----------------------------\n");
       await _bluetoothPrinter!.write("Total: K${receiptData['grandTotal']}\n");
@@ -223,12 +230,16 @@ class PosDeviceManager {
       if (_bluetoothPrinter != null && _selectedBluetoothPrinter != null) {
         await _bluetoothPrinter!.connect(_selectedBluetoothPrinter!);
         // ESC/POS open drawer command
-        await _bluetoothPrinter!.writeBytes(Uint8List.fromList([ESC, PULSE, 0, 25, 250]));
+        await _bluetoothPrinter!.writeBytes(
+          Uint8List.fromList([ESC, PULSE, 0, 25, 250]),
+        );
         return true;
       }
       // Try USB printer
       if (_usbPrinterPort != null) {
-        await _usbPrinterPort!.write(Uint8List.fromList([ESC, PULSE, 0, 25, 250]));
+        await _usbPrinterPort!.write(
+          Uint8List.fromList([ESC, PULSE, 0, 25, 250]),
+        );
         return true;
       }
       return false;
@@ -270,33 +281,51 @@ class PosDeviceManager {
   }
 
   /// Device selection dialog (updated for real devices)
-  Future<void> showDeviceSelectionDialog(BuildContext context, String type) async {
+  Future<void> showDeviceSelectionDialog(
+    BuildContext context,
+    String type,
+  ) async {
     await _scanForDevices();
-    List devices = type == 'printer'
-        ? await btp.BlueThermalPrinter.instance.getBondedDevices()
-        : [...usbDevices, ...bluetoothDevices];
+    List devices =
+        type == 'printer'
+            ? await btp.BlueThermalPrinter.instance.getBondedDevices()
+            : [...usbDevices, ...bluetoothDevices];
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Select  ${type == 'printer' ? 'Printer' : 'Barcode Device'}'),
+          title: Text(
+            'Select  ${type == 'printer' ? 'Printer' : 'Barcode Device'}',
+          ),
           content: SizedBox(
             width: 300,
             height: 400,
             child: ListView(
               children: [
-                ...devices.map((d) => ListTile(
-                  title: Text(type == 'printer' ? (d.name ?? 'Unknown Printer') : (d.productName ?? d.name ?? 'Unknown Device')),
-                  subtitle: Text(type == 'printer' ? d.address : (d.deviceId?.toString() ?? d.id?.toString() ?? '')),
-                  onTap: () async {
-                    Navigator.of(context).pop();
-                    if (type == 'printer') {
-                      await connectReceiptPrinter(d.address);
-                    } else {
-                      await connectBarcodeScanner(d.deviceId?.toString() ?? d.id?.toString() ?? '');
-                    }
-                  },
-                )),
+                ...devices.map(
+                  (d) => ListTile(
+                    title: Text(
+                      type == 'printer'
+                          ? (d.name ?? 'Unknown Printer')
+                          : (d.productName ?? d.name ?? 'Unknown Device'),
+                    ),
+                    subtitle: Text(
+                      type == 'printer'
+                          ? d.address
+                          : (d.deviceId?.toString() ?? d.id?.toString() ?? ''),
+                    ),
+                    onTap: () async {
+                      Navigator.of(context).pop();
+                      if (type == 'printer') {
+                        await connectReceiptPrinter(d.address);
+                      } else {
+                        await connectBarcodeScanner(
+                          d.deviceId?.toString() ?? d.id?.toString() ?? '',
+                        );
+                      }
+                    },
+                  ),
+                ),
               ],
             ),
           ),
@@ -336,13 +365,24 @@ class _PosScreenState extends State<PosScreen> {
   }
 
   void _onDeviceScanned(String deviceType) {
-    AnalyticsService.logEvent('pos_device_scanned', data: {'deviceType': deviceType});
+    AnalyticsService.logEvent(
+      'pos_device_scanned',
+      data: {'deviceType': deviceType},
+    );
   }
+
   void _onDeviceConnected(String deviceType) {
-    AnalyticsService.logEvent('pos_device_connected', data: {'deviceType': deviceType});
+    AnalyticsService.logEvent(
+      'pos_device_connected',
+      data: {'deviceType': deviceType},
+    );
   }
+
   void _onPOSAction(String action, {String? deviceType}) {
-    AnalyticsService.logEvent('pos_action', data: {'action': action, 'deviceType': deviceType});
+    AnalyticsService.logEvent(
+      'pos_action',
+      data: {'action': action, 'deviceType': deviceType},
+    );
   }
 
   @override
@@ -520,6 +560,30 @@ class _PosScreenState extends State<PosScreen> {
         if (isWindows(context)) {
           // Desktop layout: Centered, max width, dialogs for details
           return Scaffold(
+            appBar: AppBar(
+              title: const Text(
+                'POS',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    _deviceManager.barcodeScannerConnected
+                        ? Icons.qr_code_scanner
+                        : Icons.qr_code,
+                  ),
+                  tooltip:
+                      _deviceManager.barcodeScannerConnected
+                          ? 'Scanner Connected'
+                          : 'Connect Scanner',
+                  onPressed:
+                      () => _deviceManager.showDeviceSelectionDialog(
+                        context,
+                        'scanner',
+                      ),
+                ),
+              ],
+            ),
             body: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 900),
@@ -714,11 +778,11 @@ class _PosScreenState extends State<PosScreen> {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Text(
-                                          'K ${recentSales[recentSales.length - i - 1].grandTotal.toStringAsFixed(2)}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
+                                              'K ${recentSales[recentSales.length - i - 1].grandTotal.toStringAsFixed(2)}',
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
                                             ),
                                             const SizedBox(width: 8),
                                             IconButton(
@@ -759,6 +823,30 @@ class _PosScreenState extends State<PosScreen> {
 
         // Mobile layout
         return Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              'POS',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  _deviceManager.barcodeScannerConnected
+                      ? Icons.qr_code_scanner
+                      : Icons.qr_code,
+                ),
+                tooltip:
+                    _deviceManager.barcodeScannerConnected
+                        ? 'Scanner Connected'
+                        : 'Connect Scanner',
+                onPressed:
+                    () => _deviceManager.showDeviceSelectionDialog(
+                      context,
+                      'scanner',
+                    ),
+              ),
+            ],
+          ),
           body: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -867,10 +955,11 @@ class _PosScreenState extends State<PosScreen> {
                               const SizedBox(height: 8),
                               ElevatedButton.icon(
                                 onPressed:
-                                    () => _deviceManager.showDeviceSelectionDialog(
-                                      context,
-                                      'scanner',
-                                    ),
+                                    () => _deviceManager
+                                        .showDeviceSelectionDialog(
+                                          context,
+                                          'scanner',
+                                        ),
                                 icon: const Icon(Icons.devices),
                                 label: const Text('Select Device'),
                                 style: ElevatedButton.styleFrom(
@@ -942,11 +1031,11 @@ class _PosScreenState extends State<PosScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                'K${recentSales[recentSales.length - i - 1].grandTotal.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                                    'K${recentSales[recentSales.length - i - 1].grandTotal.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.print),
