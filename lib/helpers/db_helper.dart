@@ -36,6 +36,57 @@ class DBHelper {
         await db.execute(
           'CREATE TABLE return_items(id INTEGER PRIMARY KEY AUTOINCREMENT, returnId TEXT, productId TEXT, productName TEXT, quantity INTEGER, originalPrice REAL, reason TEXT, shopId TEXT, synced INTEGER DEFAULT 0)',
         );
+        await db.execute('''
+      CREATE TABLE receivables (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        contact TEXT,
+        address TEXT,
+        principal REAL,
+        interestType TEXT,
+        interestValue REAL,
+        dueDate TEXT,
+        paymentPlan TEXT,
+        paymentHistory TEXT,
+        status TEXT,
+        createdAt TEXT,
+        updatedAt TEXT
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE payables (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        contact TEXT,
+        address TEXT,
+        principal REAL,
+        interestType TEXT,
+        interestValue REAL,
+        dueDate TEXT,
+        paymentPlan TEXT,
+        paymentHistory TEXT,
+        status TEXT,
+        createdAt TEXT,
+        updatedAt TEXT
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE loans (
+        id TEXT PRIMARY KEY,
+        lenderName TEXT,
+        lenderContact TEXT,
+        lenderAddress TEXT,
+        principal REAL,
+        interestType TEXT,
+        interestValue REAL,
+        dueDate TEXT,
+        paymentPlan TEXT,
+        paymentHistory TEXT,
+        status TEXT,
+        createdAt TEXT,
+        updatedAt TEXT
+      )
+    ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 4) {
@@ -220,5 +271,140 @@ class DBHelper {
       return result.first;
     }
     return null;
+  }
+
+  static Future<void> createTables(Database db) async {
+    await db.execute(
+      'CREATE TABLE businesses(id TEXT PRIMARY KEY, name TEXT, country TEXT, businessContact TEXT, adminName TEXT, adminContact TEXT, isPremium INTEGER DEFAULT 0, subscriptionType TEXT, subscriptionStartDate TEXT, subscriptionExpiryDate TEXT, trialUsed INTEGER, lastPaymentTxRef TEXT, synced INTEGER DEFAULT 0)',
+    );
+    await db.execute(
+      'CREATE TABLE users(id TEXT PRIMARY KEY, name TEXT, contact TEXT, password TEXT, role TEXT, permissions TEXT, businessId TEXT, shopId TEXT, synced INTEGER DEFAULT 0)',
+    );
+    await db.execute(
+      'CREATE TABLE shops(id TEXT PRIMARY KEY, name TEXT, businessId TEXT, synced INTEGER DEFAULT 0)',
+    );
+    await db.execute(
+      'CREATE TABLE inventories(id TEXT PRIMARY KEY, name TEXT, price REAL, quantity INTEGER, lowStockThreshold INTEGER, createdBy TEXT, shopId TEXT, barcode TEXT, damagedRecords TEXT DEFAULT "[]", synced INTEGER DEFAULT 0)',
+    );
+    await db.execute(
+      'CREATE TABLE expenses(id TEXT PRIMARY KEY, description TEXT, amount REAL, date TEXT, category TEXT, createdBy TEXT, shopId TEXT, synced INTEGER DEFAULT 0)',
+    );
+    await db.execute(
+      'CREATE TABLE sales(id TEXT PRIMARY KEY, totalAmount REAL, grandTotal REAL, vat REAL, turnoverTax REAL, levy REAL, date TEXT, createdBy TEXT, shopId TEXT, customerName TEXT, customerPhone TEXT, discount REAL DEFAULT 0, synced INTEGER DEFAULT 0)',
+    );
+    await db.execute(
+      'CREATE TABLE sale_items(id INTEGER PRIMARY KEY AUTOINCREMENT, saleId TEXT, productId TEXT, productName TEXT, price REAL, quantity INTEGER, returnedQuantity INTEGER DEFAULT 0, returnedReason TEXT DEFAULT "", shopId TEXT, synced INTEGER DEFAULT 0)',
+    );
+    await db.execute(
+      'CREATE TABLE returns(id TEXT PRIMARY KEY, originalSaleId TEXT, totalReturnAmount REAL, grandReturnAmount REAL, vat REAL, turnoverTax REAL, levy REAL, date TEXT, shopId TEXT, businessId TEXT, createdBy TEXT, reason TEXT, status TEXT, approvedBy TEXT, rejectedBy TEXT, rejectionReason TEXT, approvedAt TEXT, rejectedAt TEXT, synced INTEGER DEFAULT 0)',
+    );
+    await db.execute(
+      'CREATE TABLE return_items(id INTEGER PRIMARY KEY AUTOINCREMENT, returnId TEXT, productId TEXT, productName TEXT, quantity INTEGER, originalPrice REAL, reason TEXT, shopId TEXT, synced INTEGER DEFAULT 0)',
+    );
+    await db.execute('''
+      CREATE TABLE receivables (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        contact TEXT,
+        address TEXT,
+        principal REAL,
+        interestType TEXT,
+        interestValue REAL,
+        dueDate TEXT,
+        paymentPlan TEXT,
+        paymentHistory TEXT,
+        status TEXT,
+        createdAt TEXT,
+        updatedAt TEXT
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE payables (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        contact TEXT,
+        address TEXT,
+        principal REAL,
+        interestType TEXT,
+        interestValue REAL,
+        dueDate TEXT,
+        paymentPlan TEXT,
+        paymentHistory TEXT,
+        status TEXT,
+        createdAt TEXT,
+        updatedAt TEXT
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE loans (
+        id TEXT PRIMARY KEY,
+        lenderName TEXT,
+        lenderContact TEXT,
+        lenderAddress TEXT,
+        principal REAL,
+        interestType TEXT,
+        interestValue REAL,
+        dueDate TEXT,
+        paymentPlan TEXT,
+        paymentHistory TEXT,
+        status TEXT,
+        createdAt TEXT,
+        updatedAt TEXT
+      )
+    ''');
+  }
+
+  // Receivable CRUD
+  static Future<void> insertReceivable(Map<String, dynamic> data) async {
+    final db = await database();
+    await db.insert('receivables', data, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+  static Future<List<Map<String, dynamic>>> getReceivables() async {
+    final db = await database();
+    return db.query('receivables');
+  }
+  static Future<void> updateReceivable(String id, Map<String, dynamic> data) async {
+    final db = await database();
+    await db.update('receivables', data, where: 'id = ?', whereArgs: [id]);
+  }
+  static Future<void> deleteReceivable(String id) async {
+    final db = await database();
+    await db.delete('receivables', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // Payable CRUD
+  static Future<void> insertPayable(Map<String, dynamic> data) async {
+    final db = await database();
+    await db.insert('payables', data, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+  static Future<List<Map<String, dynamic>>> getPayables() async {
+    final db = await database();
+    return db.query('payables');
+  }
+  static Future<void> updatePayable(String id, Map<String, dynamic> data) async {
+    final db = await database();
+    await db.update('payables', data, where: 'id = ?', whereArgs: [id]);
+  }
+  static Future<void> deletePayable(String id) async {
+    final db = await database();
+    await db.delete('payables', where: 'id = ?', whereArgs: [id]);
+  }
+
+  // Loan CRUD
+  static Future<void> insertLoan(Map<String, dynamic> data) async {
+    final db = await database();
+    await db.insert('loans', data, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+  static Future<List<Map<String, dynamic>>> getLoans() async {
+    final db = await database();
+    return db.query('loans');
+  }
+  static Future<void> updateLoan(String id, Map<String, dynamic> data) async {
+    final db = await database();
+    await db.update('loans', data, where: 'id = ?', whereArgs: [id]);
+  }
+  static Future<void> deleteLoan(String id) async {
+    final db = await database();
+    await db.delete('loans', where: 'id = ?', whereArgs: [id]);
   }
 }

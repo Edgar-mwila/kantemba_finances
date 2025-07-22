@@ -9,6 +9,7 @@ import 'package:kantemba_finances/helpers/platform_helper.dart';
 import 'package:kantemba_finances/providers/sales_provider.dart';
 import 'package:kantemba_finances/providers/expenses_provider.dart';
 import '../screens/employee_detail_screen.dart';
+import '../helpers/analytics_service.dart';
 
 class EmployeeManagementScreen extends StatefulWidget {
   const EmployeeManagementScreen({super.key});
@@ -20,6 +21,27 @@ class EmployeeManagementScreen extends StatefulWidget {
 class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
   String _searchQuery = '';
   String _roleFilter = 'all';
+
+  @override
+  void initState() {
+    super.initState();
+    AnalyticsService.logEvent('screen_open', data: {'screen': 'EmployeeManagement'});
+  }
+  void _onEmployeeAdded(String name, String role) {
+    AnalyticsService.logEvent('employee_added', data: {'name': name, 'role': role});
+  }
+  void _onEmployeeEdited(String name, String role) {
+    AnalyticsService.logEvent('employee_edited', data: {'name': name, 'role': role});
+  }
+  void _onEmployeeDeleted(String name, String role) {
+    AnalyticsService.logEvent('employee_deleted', data: {'name': name, 'role': role});
+  }
+  void _onEmployeeDetailViewed(String name, String role) {
+    AnalyticsService.logEvent('employee_detail_viewed', data: {'name': name, 'role': role});
+  }
+  void _openEmployeeModal({String? action}) {
+    AnalyticsService.logEvent('open_employee_modal', data: {'action': action});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -507,6 +529,7 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
   }
 
   void _showEmployeeDetails(BuildContext context, User user, Shop shop) {
+    _onEmployeeDetailViewed(user.name, user.role);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -764,6 +787,7 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
     User user,
     UsersProvider usersProvider,
   ) {
+    _onEmployeeDeleted(user.name, user.role);
     showDialog(
       context: context,
       builder:
@@ -825,6 +849,7 @@ class _EmployeeManagementScreenState extends State<EmployeeManagementScreen> {
     BusinessProvider businessProvider, {
     User? user,
   }) {
+    _openEmployeeModal(action: user == null ? 'add' : 'edit');
     final shopProvider = Provider.of<ShopProvider>(context, listen: false);
     final nameController = TextEditingController(text: user?.name ?? '');
     final passwordController = TextEditingController();

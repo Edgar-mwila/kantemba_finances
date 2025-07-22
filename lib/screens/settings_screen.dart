@@ -10,9 +10,22 @@ import 'package:provider/provider.dart';
 import '../providers/business_provider.dart';
 import 'package:kantemba_finances/helpers/sync_manager.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
+import '../helpers/analytics_service.dart';
+import '../widgets/review_dialog.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    AnalyticsService.logEvent('screen_open', data: {'screen': 'Settings'});
+  }
 
   @override
   Widget build(BuildContext context) {

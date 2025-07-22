@@ -7,6 +7,7 @@ import '../providers/shop_provider.dart';
 import '../providers/users_provider.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
 import '../models/expense.dart';
+import '../helpers/analytics_service.dart';
 
 class ExpensesScreen extends StatefulWidget {
   const ExpensesScreen({super.key});
@@ -20,6 +21,12 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   String _searchQuery = '';
   String _sortBy = 'date'; // 'date', 'amount', 'description'
   bool _sortAscending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    AnalyticsService.logEvent('screen_open', data: {'screen': 'Expenses'});
+  }
 
   @override
   void dispose() {

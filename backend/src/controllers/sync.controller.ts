@@ -6,6 +6,9 @@ import { Inventory } from '../models/inventory.model';
 import { Expense } from '../models/expense.model';
 import { Sale, SaleItem } from '../models/sale.model';
 import { Return, ReturnItem } from '../models/return.model';
+import Loan from '../models/loan.model';
+import Payable from '../models/payable.model';
+import Receivable from '../models/receivable.model';
 
 // Utility: Clean foreign keys and remove unknown attributes
 function cleanRecord(record: any, allowedFields: string[], fkFields: string[] = []) {
@@ -45,6 +48,9 @@ export const syncData = async (req: Request, res: Response) => {
       sale_items = [],
       returns = [],
       return_items = [],
+      receivables = [],
+      payables = [],
+      loans = [],
     } = req.body;
 
     // Log request data summary
@@ -58,6 +64,9 @@ export const syncData = async (req: Request, res: Response) => {
     console.log(`[${requestId}] - Sale Items: ${sale_items.length} items`);
     console.log(`[${requestId}] - Returns: ${returns.length} items`);
     console.log(`[${requestId}] - Return Items: ${return_items.length} items`);
+    console.log(`[${requestId}] - Receivables: ${receivables.length} items`);
+    console.log(`[${requestId}] - Payables: ${payables.length} items`);
+    console.log(`[${requestId}] - Loans: ${loans.length} items`);
     
     // Log detailed request data (be careful with sensitive data)
     console.log(`[${requestId}] DETAILED REQUEST DATA:`);
@@ -72,6 +81,9 @@ export const syncData = async (req: Request, res: Response) => {
     console.log(`[${requestId}] Sale Items Data:`, JSON.stringify(sale_items, null, 2));
     console.log(`[${requestId}] Returns Data:`, JSON.stringify(returns, null, 2));
     console.log(`[${requestId}] Return Items Data:`, JSON.stringify(return_items, null, 2));
+    console.log(`[${requestId}] Receivables Data:`, JSON.stringify(receivables, null, 2));
+    console.log(`[${requestId}] Payables Data:`, JSON.stringify(payables, null, 2));
+    console.log(`[${requestId}] Loans Data:`, JSON.stringify(loans, null, 2));
 
     const results: any = {
       business: null,
@@ -83,6 +95,9 @@ export const syncData = async (req: Request, res: Response) => {
       sale_items: { success: 0, error: 0 },
       returns: { success: 0, error: 0 },
       return_items: { success: 0, error: 0 },
+      receivables: { success: 0, error: 0 },
+      payables: { success: 0, error: 0 },
+      loans: { success: 0, error: 0 },
     };
 
     // Upsert business
@@ -276,31 +291,25 @@ export const syncData = async (req: Request, res: Response) => {
       }
     }
 
-    const endTime = Date.now();
-    const duration = endTime - startTime;
-    
-    const response = { message: 'Sync complete', results };
-    
-    // Log response details
-    console.log(`[${requestId}] ==================== SYNC RESPONSE ====================`);
-    console.log(`[${requestId}] Status Code: 200`);
-    console.log(`[${requestId}] Processing Duration: ${duration}ms`);
-    console.log(`[${requestId}] Response Data:`, JSON.stringify(response, null, 2));
-    
-    // Log summary
-    console.log(`[${requestId}] SYNC SUMMARY:`);
-    console.log(`[${requestId}] - Business: ${results.business ? 'Processed' : 'Not processed'}`);
-    console.log(`[${requestId}] - Users: ${results.users.success} success, ${results.users.error} errors`);
-    console.log(`[${requestId}] - Shops: ${results.shops.success} success, ${results.shops.error} errors`);
-    console.log(`[${requestId}] - Inventories: ${results.inventories.success} success, ${results.inventories.error} errors`);
-    console.log(`[${requestId}] - Expenses: ${results.expenses.success} success, ${results.expenses.error} errors`);
-    console.log(`[${requestId}] - Sales: ${results.sales.success} success, ${results.sales.error} errors`);
-    console.log(`[${requestId}] - Sale Items: ${results.sale_items.success} success, ${results.sale_items.error} errors`);
-    console.log(`[${requestId}] - Returns: ${results.returns.success} success, ${results.returns.error} errors`);
-    console.log(`[${requestId}] - Return Items: ${results.return_items.success} success, ${results.return_items.error} errors`);
-    console.log(`[${requestId}] ==================== SYNC REQUEST END ====================`);
-    
-    res.json(response);
+    // Sync Receivables, Payables, Loans
+    const syncOperations = [];
+    if (receivables && receivables.length > 0) {
+        syncOperations.push(...receivables.map((r: any) => Receivable.updateOne({ _id: r._id }, r, { upsert: true })));
+    }
+    if (payables && payables.length > 0) {
+        syncOperations.push(...payables.map((p: any) => Payable.updateOne({ _id: p._id }, p, { upsert: true })));
+    }
+    if (loans && loans.length > 0) {
+        syncOperations.push(...loans.map((l: any) => Loan.updateOne({ _id: l._id }, l, { upsert: true })));
+    }
+
+    try {
+        await Promise.all(syncOperations);
+        res.status(200).send({ message: 'Sync successful' });
+    } catch (error) {
+        console.error('Sync error:', error);
+        res.status(500).send({ message: 'Sync failed', error });
+    }
   } catch (err) {
     const endTime = Date.now();
     const duration = endTime - startTime;

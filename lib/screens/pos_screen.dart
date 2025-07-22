@@ -16,6 +16,7 @@ import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:usb_serial/usb_serial.dart';
 import 'package:blue_thermal_printer/blue_thermal_printer.dart' as btp;
+import '../helpers/analytics_service.dart';
 
 const int ESC = 27;
 const int PULSE = 112;
@@ -330,7 +331,18 @@ class _PosScreenState extends State<PosScreen> {
   @override
   void initState() {
     super.initState();
+    AnalyticsService.logEvent('screen_open', data: {'screen': 'POS'});
     _initializeDevices();
+  }
+
+  void _onDeviceScanned(String deviceType) {
+    AnalyticsService.logEvent('pos_device_scanned', data: {'deviceType': deviceType});
+  }
+  void _onDeviceConnected(String deviceType) {
+    AnalyticsService.logEvent('pos_device_connected', data: {'deviceType': deviceType});
+  }
+  void _onPOSAction(String action, {String? deviceType}) {
+    AnalyticsService.logEvent('pos_action', data: {'action': action, 'deviceType': deviceType});
   }
 
   @override
@@ -350,6 +362,7 @@ class _PosScreenState extends State<PosScreen> {
 
   /// Print current sale receipt
   Future<void> _printReceipt(Sale sale) async {
+    _onPOSAction('print_receipt', deviceType: 'receipt_printer');
     final receiptData = {
       'saleId': sale.id,
       'date': sale.date.toIso8601String(),
@@ -383,6 +396,7 @@ class _PosScreenState extends State<PosScreen> {
 
   /// Open cash drawer
   Future<void> _openCashDrawer() async {
+    _onPOSAction('open_cash_drawer', deviceType: 'cash_drawer');
     final success = await _deviceManager.openCashDrawer();
 
     if (success) {

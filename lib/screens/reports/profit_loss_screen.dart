@@ -9,6 +9,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:kantemba_finances/helpers/platform_helper.dart';
 import 'package:intl/intl.dart';
+import '../../providers/receivables_provider.dart';
+import '../../providers/payables_provider.dart';
+import '../../providers/loans_provider.dart';
 
 class ProfitLossScreen extends StatefulWidget {
   const ProfitLossScreen({super.key});
@@ -81,17 +84,16 @@ class _ProfitLossScreenState extends State<ProfitLossScreen> {
     final salesData = Provider.of<SalesProvider>(context);
     final expensesData = Provider.of<ExpensesProvider>(context);
     final returnsData = Provider.of<ReturnsProvider>(context);
+    final receivablesProvider = Provider.of<ReceivablesProvider>(context);
+    final payablesProvider = Provider.of<PayablesProvider>(context);
+    final loansProvider = Provider.of<LoansProvider>(context);
 
     return Consumer<ShopProvider>(
       builder: (context, shopProvider, child) {
         // Use filtered data based on current shop
         final allSales = salesData.getSalesForShop(shopProvider.currentShop);
-        final allExpenses = expensesData.getExpensesForShop(
-          shopProvider.currentShop,
-        );
-        final allReturns = returnsData.getReturnsForShop(
-          shopProvider.currentShop,
-        );
+        final allExpenses = expensesData.getExpensesForShop(shopProvider.currentShop);
+        final allReturns = returnsData.getReturnsForShop(shopProvider.currentShop);
 
         // Filter data by date range
         final sales = _filterDataByDateRange(allSales);
@@ -152,6 +154,23 @@ class _ProfitLossScreenState extends State<ProfitLossScreen> {
         final netProfitMargin =
             netSales > 0 ? (netProfit / netSales) * 100 : 0.0;
 
+        // Use interestReceived and totalInterestPaid in the breakdown
+        final interestReceived = receivablesProvider.receivables
+            .expand((r) => r.paymentHistory)
+            .where((p) => p.method.toLowerCase().contains('interest'))
+            .fold<double>(0.0, (sum, p) => sum + p.amount);
+        // Interest paid on payables and loans
+        final interestPaidPayables = payablesProvider.payables
+            .expand((p) => p.paymentHistory)
+            .where((p) => p.method.toLowerCase().contains('interest'))
+            .fold<double>(0.0, (sum, p) => sum + p.amount);
+        final interestPaidLoans = loansProvider.loans
+            .expand((l) => l.paymentHistory)
+            .where((p) => p.method.toLowerCase().contains('interest'))
+            .fold<double>(0.0, (sum, p) => sum + p.amount);
+        final totalInterestPaid = interestPaidPayables + interestPaidLoans;
+
+        // Now define reportContent here, using the calculated variables
         Widget reportContent = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

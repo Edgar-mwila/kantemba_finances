@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Kantemba Analytics Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; background: #f8f8f8; }
+    h1 { color: #2e7d32; }
+    h2 { margin-top: 2em; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 2em; background: #fff; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #e0f2f1; }
+    tr:nth-child(even) { background: #f1f8e9; }
+    .error { color: #c62828; }
+    .review { color: #1565c0; }
+  </style>
+</head>
+<body>
+  <h1>Kantemba Analytics Dashboard</h1>
+  <h2>Feature Usage</h2>
+  <table id="usage-table">
+    <thead><tr><th>Feature/Event</th><th>Count</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <h2>Recent Events</h2>
+  <table id="events-table">
+    <thead><tr><th>Type</th><th>Event</th><th>Data</th><th>Timestamp</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <h2>Recent Errors</h2>
+  <table id="errors-table">
+    <thead><tr><th>Error</th><th>Stack</th><th>Timestamp</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <h2>User Reviews</h2>
+  <table id="reviews-table">
+    <thead><tr><th>Review</th><th>Rating</th><th>Timestamp</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <script>
+    async function fetchAndRender(url, tableId, rowFn) {
+      const res = await fetch(url);
+      const data = await res.json();
+      const tbody = document.getElementById(tableId).querySelector('tbody');
+      tbody.innerHTML = '';
+      data.forEach(row => tbody.innerHTML += rowFn(row));
+    }
+    fetchAndRender('/api/analytics/usage', 'usage-table', r => `<tr><td>${r._id}</td><td>${r.count}</td></tr>`);
+    fetchAndRender('/api/analytics/events', 'events-table', r => `<tr><td>${r.type}</td><td>${r.event||''}</td><td>${JSON.stringify(r.data||'')}</td><td>${new Date(r.timestamp).toLocaleString()}</td></tr>`);
+    fetchAndRender('/api/analytics/errors', 'errors-table', r => `<tr><td class='error'>${r.error||''}</td><td>${r.stack||''}</td><td>${new Date(r.timestamp).toLocaleString()}</td></tr>`);
+    fetchAndRender('/api/analytics/reviews', 'reviews-table', r => `<tr><td class='review'>${r.review||''}</td><td>${r.rating||''}</td><td>${new Date(r.timestamp).toLocaleString()}</td></tr>`);
+  </script>
+</body>
+</html> 

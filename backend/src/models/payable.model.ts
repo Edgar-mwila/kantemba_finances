@@ -1,0 +1,45 @@
+import { Schema, model, Document } from 'mongoose';
+
+export interface IPayablePayment {
+  amount: number;
+  date: Date;
+  method: string;
+}
+
+export interface IPayable extends Document {
+  name: string;
+  contact: string;
+  address?: string;
+  principal: number;
+  interestType: 'fixed' | 'percentage';
+  interestValue: number;
+  dueDate: Date;
+  paymentPlan: string;
+  paymentHistory: IPayablePayment[];
+  status: 'active' | 'paid' | 'overdue';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const PayablePaymentSchema = new Schema<IPayablePayment>({
+  amount: { type: Number, required: true },
+  date: { type: Date, required: true },
+  method: { type: String, required: true },
+});
+
+const PayableSchema = new Schema<IPayable>({
+  name: { type: String, required: true },
+  contact: { type: String, required: true },
+  address: { type: String },
+  principal: { type: Number, required: true },
+  interestType: { type: String, enum: ['fixed', 'percentage'], required: true },
+  interestValue: { type: Number, required: true },
+  dueDate: { type: Date, required: true },
+  paymentPlan: { type: String, required: true },
+  paymentHistory: { type: [PayablePaymentSchema], default: [] },
+  status: { type: String, enum: ['active', 'paid', 'overdue'], default: 'active' },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
+export default model<IPayable>('Payable', PayableSchema); 

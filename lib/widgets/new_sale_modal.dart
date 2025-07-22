@@ -16,6 +16,9 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:usb_serial/usb_serial.dart';
 import 'dart:io' show Platform;
 import 'package:blue_thermal_printer/blue_thermal_printer.dart' as btp;
+import '../providers/receivables_provider.dart';
+import '../models/receivable.dart';
+import '../helpers/analytics_service.dart';
 
 // Import POS device manager from POS screen
 import '../screens/pos_screen.dart';
@@ -48,6 +51,9 @@ class _NewSaleModalState extends State<NewSaleModal> {
   String _searchQuery = '';
   String _barcodeQuery = '';
   bool _isProcessing = false;
+  String _paymentType = 'Paid'; // 'Paid' or 'On Credit'
+  final TextEditingController _debtorNameController = TextEditingController();
+  final TextEditingController _debtorContactController = TextEditingController();
 
   // POS Device Manager for barcode scanning
   late final PosDeviceManager _deviceManager;
@@ -83,6 +89,7 @@ class _NewSaleModalState extends State<NewSaleModal> {
   @override
   void initState() {
     super.initState();
+    AnalyticsService.logEvent('open_new_sale_modal');
 
     // Use passed device manager or create new one
     _deviceManager = widget.deviceManager ?? PosDeviceManager();
@@ -96,6 +103,23 @@ class _NewSaleModalState extends State<NewSaleModal> {
 
     _initializeDevices();
     _setupBarcodeListener();
+  }
+
+  void _onSaleAdded(Sale sale, String paymentType) {
+    AnalyticsService.logEvent('sale_added', data: {
+      'amount': sale.grandTotal,
+      'paymentType': paymentType,
+      'items': sale.items.length,
+    });
+  }
+  void _onPaymentTypeSelected(String paymentType) {
+    AnalyticsService.logEvent('payment_type_selected', data: {'paymentType': paymentType});
+  }
+  void _onReceiptPrinted() {
+    AnalyticsService.logEvent('receipt_printed');
+  }
+  void _onPOSDeviceUsed(String action, {String? deviceType}) {
+    AnalyticsService.logEvent('pos_device_used', data: {'action': action, 'deviceType': deviceType});
   }
 
   @override
@@ -397,6 +421,24 @@ class _NewSaleModalState extends State<NewSaleModal> {
         );
         await Future.delayed(const Duration(milliseconds: 500));
         Navigator.of(context).pop();
+      }
+
+      if (_paymentType == 'On Credit') {
+        final newReceivable = Receivable(
+          id: 'receivable_${newSale.id}',
+          name: _debtorNameController.text,
+          contact: _debtorContactController.text,
+          principal: newSale.grandTotal,
+          dueDate: DateTime.now().add(const Duration(days: 30)), // Default due date
+          interestType: 'fixed',
+          interestValue: 0.0,
+          paymentPlan: 'lump_sum',
+          paymentHistory: [],
+          status: 'active',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        Provider.of<ReceivablesProvider>(context, listen: false).addReceivable(newReceivable);
       }
     } catch (e) {
       if (mounted) {
@@ -1735,6 +1777,32 @@ class _NewSaleModalState extends State<NewSaleModal> {
           keyboardType: TextInputType.numberWithOptions(decimal: true),
           onChanged: _updateDiscount,
         ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: _paymentType,
+          decoration: const InputDecoration(labelText: 'Payment Type'),
+          items: ['Paid', 'On Credit'].map((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+          onChanged: (newValue) {
+            setState(() {
+              _paymentType = newValue!;
+            });
+          },
+        ),
+        if (_paymentType == 'On Credit') ...[
+          TextFormField(
+            controller: _debtorNameController,
+            decoration: const InputDecoration(labelText: 'Debtor Name'),
+          ),
+          TextFormField(
+            controller: _debtorContactController,
+            decoration: const InputDecoration(labelText: 'Debtor Contact'),
+          ),
+        ],
         // Add tax info fields here if needed
         // const SizedBox(height: 8),
         const SizedBox(height: 16),

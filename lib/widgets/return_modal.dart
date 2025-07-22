@@ -5,6 +5,7 @@ import 'package:kantemba_finances/models/return.dart';
 import 'package:kantemba_finances/providers/returns_provider.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
+import '../helpers/analytics_service.dart';
 
 class ReturnModal extends StatefulWidget {
   final Sale sale;
@@ -19,6 +20,12 @@ class _ReturnModalState extends State<ReturnModal> {
   final List<ReturnItem> _selectedItems = [];
   final TextEditingController _reasonController = TextEditingController();
   bool _isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    AnalyticsService.logEvent('open_return_modal');
+  }
 
   @override
   void dispose() {

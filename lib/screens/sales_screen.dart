@@ -9,6 +9,7 @@ import '../providers/users_provider.dart';
 import '../providers/returns_provider.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
 import 'package:intl/intl.dart';
+import '../helpers/analytics_service.dart';
 
 class SalesScreen extends StatefulWidget {
   const SalesScreen({super.key});
@@ -22,6 +23,12 @@ class _SalesScreenState extends State<SalesScreen> {
   String _searchQuery = '';
   String _sortBy = 'date'; // 'date', 'total', 'discount'
   bool _sortAscending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    AnalyticsService.logEvent('screen_open', data: {'screen': 'Sales'});
+  }
 
   @override
   void dispose() {

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/shop_provider.dart';
 import '../models/shop.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
+import '../helpers/analytics_service.dart';
 
 class ShopManagementScreen extends StatefulWidget {
   const ShopManagementScreen({super.key});
@@ -13,6 +14,26 @@ class ShopManagementScreen extends StatefulWidget {
 }
 
 class _ShopManagementScreenState extends State<ShopManagementScreen> {
+  @override
+  void initState() {
+    super.initState();
+    AnalyticsService.logEvent('screen_open', data: {'screen': 'ShopManagement'});
+  }
+  void _onShopAdded(String name) {
+    AnalyticsService.logEvent('shop_added', data: {'name': name});
+  }
+  void _onShopEdited(String name) {
+    AnalyticsService.logEvent('shop_edited', data: {'name': name});
+  }
+  void _onShopDeleted(String name) {
+    AnalyticsService.logEvent('shop_deleted', data: {'name': name});
+  }
+  void _onShopDetailViewed(String name) {
+    AnalyticsService.logEvent('shop_detail_viewed', data: {'name': name});
+  }
+  void _openShopModal({String? action}) {
+    AnalyticsService.logEvent('open_shop_modal', data: {'action': action});
+  }
   final _formKey = GlobalKey<FormState>();
   String? _name;
   // String? _location;
@@ -36,6 +57,7 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
   }
 
   void _showShopDialog({Shop? shop}) {
+    _openShopModal(action: shop == null ? 'add' : 'edit');
     final businessProvider = Provider.of<BusinessProvider>(
       context,
       listen: false,
@@ -94,6 +116,7 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
                           businessId: businessProvider.id!,
                         ), // id and businessId will be set by backend
                       );
+                      _onShopAdded(_name!);
                     } else {
                       await shopProvider.editShop(
                         Shop(
@@ -103,6 +126,7 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
                           businessId: shop.businessId,
                         ),
                       );
+                      _onShopEdited(_name!);
                     }
                     Navigator.of(ctx).pop();
                   }
@@ -219,6 +243,7 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
                                                       listen: false,
                                                     ).id!,
                                                   );
+                                                  _onShopDeleted(shop.name);
                                                 },
                                               ),
                                             ],
@@ -311,6 +336,7 @@ class _ShopManagementScreenState extends State<ShopManagementScreen> {
                                 listen: false,
                               ).id!,
                             );
+                            _onShopDeleted(shop.name);
                           },
                         ),
                       ],

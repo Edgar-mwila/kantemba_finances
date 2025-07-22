@@ -26,11 +26,20 @@ import 'package:kantemba_finances/widgets/splash_screen.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:kantemba_finances/screens/dashboard_screen.dart';
 import 'package:kantemba_finances/screens/pos_screen.dart';
+import '../screens/debt_credit_screen.dart';
+import 'package:kantemba_finances/providers/receivables_provider.dart';
+import 'package:kantemba_finances/providers/payables_provider.dart';
+import 'package:kantemba_finances/providers/loans_provider.dart';
+import 'helpers/notification_helper.dart';
+import 'helpers/analytics_service.dart';
+import 'widgets/review_dialog.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  AnalyticsService.initializeErrorHandling();
+  AnalyticsService.logEvent('app_open');
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
@@ -45,6 +54,9 @@ void main() async {
         ChangeNotifierProvider(create: (ctx) => ExpensesProvider()),
         ChangeNotifierProvider(create: (ctx) => InventoryProvider()),
         ChangeNotifierProvider(create: (ctx) => ReturnsProvider()),
+        ChangeNotifierProvider(create: (ctx) => ReceivablesProvider()),
+        ChangeNotifierProvider(create: (ctx) => PayablesProvider()),
+        ChangeNotifierProvider(create: (ctx) => LoansProvider()),
       ],
       child: const KantembaFinancesApp(),
     ),
@@ -71,7 +83,72 @@ class KantembaFinancesApp extends StatefulWidget {
   State<KantembaFinancesApp> createState() => _KantembaFinancesAppState();
 }
 
-class _KantembaFinancesAppState extends State<KantembaFinancesApp> {
+class _KantembaFinancesAppState extends State<KantembaFinancesApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await NotificationHelper.initialize(context);
+      await _checkDueDates(context);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkDueDates(context);
+    }
+  }
+
+  Future<void> _checkDueDates(BuildContext context) async {
+    final receivablesProvider = Provider.of<ReceivablesProvider>(context, listen: false);
+    final payablesProvider = Provider.of<PayablesProvider>(context, listen: false);
+    final loansProvider = Provider.of<LoansProvider>(context, listen: false);
+    await receivablesProvider.fetchReceivables();
+    await payablesProvider.fetchPayables();
+    await loansProvider.fetchLoans();
+    final now = DateTime.now();
+    final soon = now.add(const Duration(days: 3));
+    int notifId = 1000;
+    for (final r in receivablesProvider.receivables) {
+      if (r.status == 'active' && (r.dueDate.isBefore(soon) || r.dueDate.isBefore(now))) {
+        final isOverdue = r.dueDate.isBefore(now);
+        await NotificationHelper.showNotification(
+          id: notifId++,
+          title: isOverdue ? 'Receivable Overdue' : 'Receivable Due Soon',
+          body: '${r.name} owes ${r.principal.toStringAsFixed(2)} due on ${r.dueDate.toLocal().toString().split(' ')[0]}',
+        );
+      }
+    }
+    for (final p in payablesProvider.payables) {
+      if (p.status == 'active' && (p.dueDate.isBefore(soon) || p.dueDate.isBefore(now))) {
+        final isOverdue = p.dueDate.isBefore(now);
+        await NotificationHelper.showNotification(
+          id: notifId++,
+          title: isOverdue ? 'Payable Overdue' : 'Payable Due Soon',
+          body: '${p.name} is owed ${p.principal.toStringAsFixed(2)} due on ${p.dueDate.toLocal().toString().split(' ')[0]}',
+        );
+      }
+    }
+    for (final l in loansProvider.loans) {
+      if (l.status == 'active' && (l.dueDate.isBefore(soon) || l.dueDate.isBefore(now))) {
+        final isOverdue = l.dueDate.isBefore(now);
+        await NotificationHelper.showNotification(
+          id: notifId++,
+          title: isOverdue ? 'Loan Overdue' : 'Loan Due Soon',
+          body: '${l.lenderName} loan of ${l.principal.toStringAsFixed(2)} due on ${l.dueDate.toLocal().toString().split(' ')[0]}',
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -131,10 +208,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Future<void> _initializeApp() async {
     final usersProvider = Provider.of<UsersProvider>(context, listen: false);
     await usersProvider.initialize(context);
-
     // Add a small delay to ensure all providers are properly initialized
     await Future.delayed(const Duration(milliseconds: 100));
-
     setState(() {
       _isInitializing = false;
     });
@@ -156,15 +231,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
   @override
   Widget build(BuildContext context) {
     final usersProvider = Provider.of<UsersProvider>(context);
-
     if (_isInitializing || !usersProvider.isInitialized) {
       return const SplashScreen();
     }
-
     if (usersProvider.currentUser == null) {
       return const InitialChoiceScreen();
     }
-
     return const MainAppScreen();
   }
 }
@@ -257,6 +329,12 @@ class _MainAppScreenState extends State<MainAppScreen> {
           screen: const PremiumScreen(),
           showFor: (_) => true,
         ),
+      NavItem(
+        title: 'Debt/Credit',
+        icon: Icons.account_balance_wallet,
+        screen: const DebtAndCreditScreen(),
+        showFor: (user) => user?.role == 'admin' || user?.role == 'manager',
+      ),
     ];
 
     // Filter items based on user permissions
@@ -301,6 +379,13 @@ class _MainAppScreenState extends State<MainAppScreen> {
     }
 
     return filteredItems;
+  }
+
+  void _onTabTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    AnalyticsService.logEvent('navigate', data: {'screen': _navItemsForUser(Provider.of<UsersProvider>(context, listen: false).currentUser)[index].title});
   }
 
   @override
@@ -502,7 +587,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.green.shade700,
         unselectedItemColor: Colors.grey,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        onTap: _onTabTapped,
         type: BottomNavigationBarType.fixed,
       ),
     );

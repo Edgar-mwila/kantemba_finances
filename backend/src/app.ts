@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import businessRoutes from './routes/business.route';
 import userRoutes from './routes/user.route';
 import inventoryRoutes from './routes/inventory.route';
@@ -11,6 +12,13 @@ import syncRoutes from './routes/sync.route';
 import saleItemRoutes from './routes/sale_item.route';
 import returnsRoutes from './routes/returns.route';
 import aiRoutes from './routes/ai.route';
+import loanRoutes from './routes/loan.route';
+import payableRoutes from './routes/payable.route';
+import receivableRoutes from './routes/receivable.route';
+import analyticsRoutes from './routes/analytics.route';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -51,8 +59,23 @@ app.use('/api/sync', syncRoutes);
 app.use('/api/sale_items', saleItemRoutes);
 app.use('/api/returns', returnsRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/loans', loanRoutes);
+app.use('/api/payables', payableRoutes);
+app.use('/api/receivables', receivableRoutes);
+app.use('/api/analytics', analyticsRoutes);
+
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dashboard.html'));
+});
+
 app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
+});
+
+const port = process.env.PORT || 3000;
+
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
 });
 
 export { app };

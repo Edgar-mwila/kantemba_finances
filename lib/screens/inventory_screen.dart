@@ -19,6 +19,7 @@ import 'dart:async';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:usb_serial/usb_serial.dart';
+import '../helpers/analytics_service.dart';
 
 // Import POS device manager from POS screen
 import 'pos_screen.dart';
@@ -59,6 +60,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   void initState() {
     super.initState();
+    AnalyticsService.logEvent('screen_open', data: {'screen': 'Inventory'});
     _initializeDevices();
     _setupBarcodeListener();
   }
@@ -1917,5 +1919,18 @@ class _InventoryScreenState extends State<InventoryScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to connect: $e')));
     }
+  }
+
+  void _onInventoryAdded(InventoryItem item) {
+    AnalyticsService.logEvent('inventory_added', data: {'item': item.name, 'quantity': item.quantity});
+  }
+  void _onInventoryUpdated(InventoryItem item) {
+    AnalyticsService.logEvent('inventory_updated', data: {'item': item.name, 'quantity': item.quantity});
+  }
+  void _onInventoryDeleted(String itemId) {
+    AnalyticsService.logEvent('inventory_deleted', data: {'itemId': itemId});
+  }
+  void _openNewInventoryModal() {
+    AnalyticsService.logEvent('open_new_inventory_modal');
   }
 }

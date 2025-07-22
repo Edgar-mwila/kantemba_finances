@@ -7,6 +7,8 @@ import 'package:kantemba_finances/models/expense.dart';
 import 'package:kantemba_finances/providers/inventory_provider.dart';
 import 'package:kantemba_finances/providers/expenses_provider.dart';
 import 'package:kantemba_finances/providers/users_provider.dart';
+import 'package:kantemba_finances/providers/payables_provider.dart';
+import 'package:kantemba_finances/models/payable.dart';
 import 'package:kantemba_finances/helpers/platform_helper.dart';
 
 class NewInventoryModal extends StatefulWidget {
@@ -33,6 +35,9 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
   bool _isLoading = false;
   bool _isExistingItem = false;
   String? _selectedItemId;
+  String _purchaseType = 'Paid'; // 'Paid' or 'On Credit'
+  final TextEditingController _creditorNameController = TextEditingController();
+  final TextEditingController _creditorContactController = TextEditingController();
 
   @override
   void initState() {
@@ -561,6 +566,7 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
         context,
         listen: false,
       );
+      final payablesProvider = Provider.of<PayablesProvider>(context, listen: false);
 
       final currentShop = shopProvider.currentShop;
       if (currentShop == null) {
@@ -612,6 +618,24 @@ class _NewInventoryModalState extends State<NewInventoryModal> {
         currentShop.id,
         Provider.of<BusinessProvider>(context, listen: false),
       );
+
+      if (_purchaseType == 'On Credit') {
+        final newPayable = Payable(
+          id: 'payable_${DateTime.now().millisecondsSinceEpoch}',
+          name: _creditorNameController.text,
+          contact: _creditorContactController.text,
+          principal: _bulkPrice, // Assuming bulk price is the payable amount
+          dueDate: DateTime.now().add(const Duration(days: 30)),
+          interestType: 'fixed',
+          interestValue: 0.0,
+          paymentPlan: 'lump_sum',
+          paymentHistory: [],
+          status: 'active',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        await payablesProvider.addPayable(newPayable);
+      }
 
       setState(() {
         _isLoading = false;

@@ -9,6 +9,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:kantemba_finances/helpers/platform_helper.dart';
 import 'package:intl/intl.dart';
+// import '../../providers/receivables_provider.dart';
+// import '../../providers/payables_provider.dart';
+// import '../../providers/loans_provider.dart';
 
 class CashFlowScreen extends StatefulWidget {
   const CashFlowScreen({super.key});
@@ -81,322 +84,348 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
     final salesData = Provider.of<SalesProvider>(context);
     final expensesData = Provider.of<ExpensesProvider>(context);
     final returnsData = Provider.of<ReturnsProvider>(context);
+    final shopProvider = Provider.of<ShopProvider>(context);
+    // final receivablesProvider = Provider.of<ReceivablesProvider>(context);
+    // final payablesProvider = Provider.of<PayablesProvider>(context);
+    // final loansProvider = Provider.of<LoansProvider>(context);
 
-    return Consumer<ShopProvider>(
-      builder: (context, shopProvider, child) {
-        // Use filtered data based on current shop
-        final allSales = salesData.getSalesForShop(shopProvider.currentShop);
-        final allExpenses = expensesData.getExpensesForShop(
-          shopProvider.currentShop,
-        );
-        final allReturns = returnsData.getReturnsForShop(
-          shopProvider.currentShop,
-        );
+    // // Principal repayments received (receivables)
+    // final principalReceived = receivablesProvider.receivables
+    //     .expand((r) => r.paymentHistory)
+    //     .where((p) => !p.method.toLowerCase().contains('interest'))
+    //     .fold<double>(0.0, (sum, p) => sum + p.amount);
+    // // Principal repayments paid (payables and loans)
+    // final principalPaidPayables = payablesProvider.payables
+    //     .expand((p) => p.paymentHistory)
+    //     .where((p) => !p.method.toLowerCase().contains('interest'))
+    //     .fold<double>(0.0, (sum, p) => sum + p.amount);
+    // final principalPaidLoans = loansProvider.loans
+    //     .expand((l) => l.paymentHistory)
+    //     .where((p) => !p.method.toLowerCase().contains('interest'))
+    //     .fold<double>(0.0, (sum, p) => sum + p.amount);
+    // final totalPrincipalPaid = principalPaidPayables + principalPaidLoans;
 
-        // Filter data by date range
-        final sales = _filterDataByDateRange(allSales);
-        final expenses = _filterDataByDateRange(allExpenses);
-        final returns = _filterDataByDateRange(allReturns);
+    // // Interest received/paid
+    // final interestReceived = receivablesProvider.receivables
+    //     .expand((r) => r.paymentHistory)
+    //     .where((p) => p.method.toLowerCase().contains('interest'))
+    //     .fold<double>(0.0, (sum, p) => sum + p.amount);
+    // final interestPaidPayables = payablesProvider.payables
+    //     .expand((p) => p.paymentHistory)
+    //     .where((p) => p.method.toLowerCase().contains('interest'))
+    //     .fold<double>(0.0, (sum, p) => sum + p.amount);
+    // final interestPaidLoans = loansProvider.loans
+    //     .expand((l) => l.paymentHistory)
+    //     .where((p) => p.method.toLowerCase().contains('interest'))
+    //     .fold<double>(0.0, (sum, p) => sum + p.amount);
+    // final totalInterestPaid = interestPaidPayables + interestPaidLoans;
 
-        // Calculate comprehensive cash flow metrics
-        final totalSales = sales.fold(
-          0.0,
-          (sum, sale) => sum + sale.grandTotal,
-        );
+    // Use filtered data based on current shop
+    final allSales = salesData.getSalesForShop(shopProvider.currentShop);
+    final allExpenses = expensesData.getExpensesForShop(
+      shopProvider.currentShop,
+    );
+    final allReturns = returnsData.getReturnsForShop(shopProvider.currentShop);
 
-        final totalReturns = returns.fold(
-          0.0,
-          (sum, ret) => sum + ret.grandReturnAmount,
-        );
+    // Filter data by date range
+    final sales = _filterDataByDateRange(allSales);
+    final expenses = _filterDataByDateRange(allExpenses);
+    final returns = _filterDataByDateRange(allReturns);
 
-        // Operating Activities
-        final cashInflows = totalSales;
-        final returnsOutflow = totalReturns;
+    // Calculate comprehensive cash flow metrics
+    final totalSales = sales.fold(0.0, (sum, sale) => sum + sale.grandTotal);
 
-        // Categorize expenses for better analysis
-        final operatingExpenses = expenses
-            .where(
-              (exp) =>
-                  !exp.category.toLowerCase().contains('purchase') &&
-                  !exp.category.toLowerCase().contains('inventory') &&
-                  !exp.category.toLowerCase().contains('stock'),
-            )
-            .fold(0.0, (sum, exp) => sum + exp.amount);
+    final totalReturns = returns.fold(
+      0.0,
+      (sum, ret) => sum + ret.grandReturnAmount,
+    );
 
-        final inventoryExpenses = expenses
-            .where(
-              (exp) =>
-                  exp.category.toLowerCase().contains('purchase') ||
-                  exp.category.toLowerCase().contains('inventory') ||
-                  exp.category.toLowerCase().contains('stock'),
-            )
-            .fold(0.0, (sum, exp) => sum + exp.amount);
+    // Operating Activities
+    final cashInflows = totalSales;
+    final returnsOutflow = totalReturns;
 
-        final damagedGoodsExpenses = expenses
-            .where((exp) => exp.category.toLowerCase().contains('damaged'))
-            .fold(0.0, (sum, exp) => sum + exp.amount);
+    // Categorize expenses for better analysis
+    final operatingExpenses = expenses
+        .where(
+          (exp) =>
+              !exp.category.toLowerCase().contains('purchase') &&
+              !exp.category.toLowerCase().contains('inventory') &&
+              !exp.category.toLowerCase().contains('stock'),
+        )
+        .fold(0.0, (sum, exp) => sum + exp.amount);
 
-        // Calculate net cash flows
-        final netOperatingCashFlow =
-            cashInflows - operatingExpenses - returnsOutflow;
-        final netInvestingCashFlow =
-            -inventoryExpenses; // Negative because it's an outflow
-        final netCashFlow = netOperatingCashFlow + netInvestingCashFlow;
+    final inventoryExpenses = expenses
+        .where(
+          (exp) =>
+              exp.category.toLowerCase().contains('purchase') ||
+              exp.category.toLowerCase().contains('inventory') ||
+              exp.category.toLowerCase().contains('stock'),
+        )
+        .fold(0.0, (sum, exp) => sum + exp.amount);
 
-        Widget reportContent = Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with date range
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    final damagedGoodsExpenses = expenses
+        .where((exp) => exp.category.toLowerCase().contains('damaged'))
+        .fold(0.0, (sum, exp) => sum + exp.amount);
+
+    // Calculate net cash flows
+    final netOperatingCashFlow =
+        cashInflows - operatingExpenses - returnsOutflow;
+    final netInvestingCashFlow =
+        -inventoryExpenses; // Negative because it's an outflow
+    final netCashFlow = netOperatingCashFlow + netInvestingCashFlow;
+
+    Widget reportContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header with date range
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.account_balance_wallet,
-                          color: Colors.green,
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Cash Flow',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const Spacer(),
-                        ElevatedButton(
-                          onPressed: _selectDateRange,
-                          child: const Icon(Icons.calendar_today),
-                        ),
-                      ],
+                    const Icon(
+                      Icons.account_balance_wallet,
+                      color: Colors.green,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'For the period ending ${DateFormat('MMMM dd, yyyy').format(DateTime.now())}',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Cash Flow',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    ElevatedButton(
+                      onPressed: _selectDateRange,
+                      child: const Icon(Icons.calendar_today),
                     ),
                   ],
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Operating Activities Section
-            _buildSection('OPERATING ACTIVITIES', [
-              _buildSubsection('Cash Inflows', [
-                _buildRow(
-                  'Sales Revenue',
-                  cashInflows,
-                  Icons.point_of_sale,
-                  Colors.green,
-                ),
-                _buildDivider(),
-                _buildRow(
-                  'Total Cash Inflows',
-                  cashInflows,
-                  null,
-                  Colors.green,
-                  isBold: true,
-                ),
-              ]),
-              _buildSubsection('Cash Outflows', [
-                _buildRow(
-                  'Operating Expenses',
-                  operatingExpenses,
-                  Icons.payments,
-                  Colors.red,
-                ),
-                _buildRow(
-                  'Returns & Refunds',
-                  returnsOutflow,
-                  Icons.assignment_return,
-                  Colors.orange,
-                ),
-                _buildDivider(),
-                _buildRow(
-                  'Total Cash Outflows',
-                  operatingExpenses + returnsOutflow,
-                  null,
-                  Colors.red,
-                  isBold: true,
-                ),
-              ]),
-              _buildDivider(),
-              _buildRow(
-                'Net Operating Cash Flow',
-                netOperatingCashFlow,
-                null,
-                netOperatingCashFlow >= 0 ? Colors.green : Colors.red,
-                isBold: true,
-              ),
-            ], Colors.blue.shade50),
-            const SizedBox(height: 16),
-
-            // Investing Activities Section
-            _buildSection('INVESTING ACTIVITIES', [
-              _buildRow(
-                'Inventory Purchases',
-                inventoryExpenses,
-                Icons.inventory,
-                Colors.red,
-              ),
-              _buildRow(
-                'Damaged Goods Write-offs',
-                damagedGoodsExpenses,
-                Icons.broken_image,
-                Colors.orange,
-              ),
-              _buildDivider(),
-              _buildRow(
-                'Net Investing Cash Flow',
-                netInvestingCashFlow,
-                null,
-                Colors.red,
-                isBold: true,
-              ),
-            ], Colors.purple.shade50),
-            const SizedBox(height: 16),
-
-            // Net Cash Flow Section
-            _buildSection(
-              'NET CASH FLOW',
-              [
-                _buildRow(
-                  'Net Cash Flow',
-                  netCashFlow,
-                  Icons.trending_up,
-                  netCashFlow >= 0 ? Colors.green : Colors.red,
-                  isBold: true,
-                  isTotal: true,
+                const SizedBox(height: 8),
+                Text(
+                  'For the period ending ${DateFormat('MMMM dd, yyyy').format(DateTime.now())}',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
               ],
-              netCashFlow >= 0 ? Colors.green.shade100 : Colors.red.shade100,
             ),
-            const SizedBox(height: 16),
+          ),
+        ),
+        const SizedBox(height: 16),
 
-            // Cash Flow Analysis
-            _buildCashFlowAnalysisSection(
-              netOperatingCashFlow,
-              netInvestingCashFlow,
-              netCashFlow,
+        // Operating Activities Section
+        _buildSection('OPERATING ACTIVITIES', [
+          _buildSubsection('Cash Inflows', [
+            _buildRow(
+              'Sales Revenue',
               cashInflows,
-              operatingExpenses + returnsOutflow,
-              totalReturns,
-              totalSales,
+              Icons.point_of_sale,
+              Colors.green,
             ),
-            const SizedBox(height: 32),
+            _buildDivider(),
+            _buildRow(
+              'Total Cash Inflows',
+              cashInflows,
+              null,
+              Colors.green,
+              isBold: true,
+            ),
+          ]),
+          _buildSubsection('Cash Outflows', [
+            _buildRow(
+              'Operating Expenses',
+              operatingExpenses,
+              Icons.payments,
+              Colors.red,
+            ),
+            _buildRow(
+              'Returns & Refunds',
+              returnsOutflow,
+              Icons.assignment_return,
+              Colors.orange,
+            ),
+            _buildDivider(),
+            _buildRow(
+              'Total Cash Outflows',
+              operatingExpenses + returnsOutflow,
+              null,
+              Colors.red,
+              isBold: true,
+            ),
+          ]),
+          _buildDivider(),
+          _buildRow(
+            'Net Operating Cash Flow',
+            netOperatingCashFlow,
+            null,
+            netOperatingCashFlow >= 0 ? Colors.green : Colors.red,
+            isBold: true,
+          ),
+        ], Colors.blue.shade50),
+        const SizedBox(height: 16),
 
-            // Premium AI Analysis
-            Consumer<BusinessProvider>(
-              builder: (context, businessProvider, _) {
-                if (!businessProvider.isPremium) return const SizedBox.shrink();
-                return FutureBuilder<Map<String, dynamic>>(
-                  future: fetchAIAnalysis(
-                    businessId: businessProvider.id!,
-                    reportType: 'cash_flow',
-                    data: {
-                      'cashInflows': cashInflows,
-                      'operatingExpenses': operatingExpenses,
-                      'returnsOutflow': returnsOutflow,
-                      'inventoryExpenses': inventoryExpenses,
-                      'damagedGoodsExpenses': damagedGoodsExpenses,
-                      'netOperatingCashFlow': netOperatingCashFlow,
-                      'netInvestingCashFlow': netInvestingCashFlow,
-                      'netCashFlow': netCashFlow,
-                      'startDate': _startDate?.toIso8601String(),
-                      'endDate': _endDate?.toIso8601String(),
-                    },
-                  ),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-                    if (snapshot.hasError) {
-                      return Text('AI analysis unavailable: ${snapshot.error}');
-                    }
-                    final ai = snapshot.data!;
-                    return Card(
-                      color: Colors.green.shade50,
-                      margin: const EdgeInsets.only(top: 16),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: const [
-                                Icon(
-                                  Icons.psychology,
-                                  color: Colors.green,
-                                  size: 24,
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'AI Cash Flow Analysis',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Cash Flow Trend: ${ai['trend'] ?? 'Analyzing...'}',
-                            ),
-                            Text(
-                              'Recommendation: ${ai['recommendation'] ?? 'No recommendations available'}',
-                            ),
-                            ...?ai['insights']
-                                ?.map<Widget>((i) => Text('• $i'))
-                                .toList(),
-                            if (ai['forecast'] != null)
-                              Text('Forecast: ${jsonEncode(ai['forecast'])}'),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
+        // Investing Activities Section
+        _buildSection('INVESTING ACTIVITIES', [
+          _buildRow(
+            'Inventory Purchases',
+            inventoryExpenses,
+            Icons.inventory,
+            Colors.red,
+          ),
+          _buildRow(
+            'Damaged Goods Write-offs',
+            damagedGoodsExpenses,
+            Icons.broken_image,
+            Colors.orange,
+          ),
+          _buildDivider(),
+          _buildRow(
+            'Net Investing Cash Flow',
+            netInvestingCashFlow,
+            null,
+            Colors.red,
+            isBold: true,
+          ),
+        ], Colors.purple.shade50),
+        const SizedBox(height: 16),
+
+        // Net Cash Flow Section
+        _buildSection(
+          'NET CASH FLOW',
+          [
+            _buildRow(
+              'Net Cash Flow',
+              netCashFlow,
+              Icons.trending_up,
+              netCashFlow >= 0 ? Colors.green : Colors.red,
+              isBold: true,
+              isTotal: true,
             ),
           ],
-        );
+          netCashFlow >= 0 ? Colors.green.shade100 : Colors.red.shade100,
+        ),
+        const SizedBox(height: 16),
 
-        if (isWindows(context)) {
-          reportContent = Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 800),
-              child: Card(
-                elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: reportContent,
-                ),
+        // Cash Flow Analysis
+        _buildCashFlowAnalysisSection(
+          netOperatingCashFlow,
+          netInvestingCashFlow,
+          netCashFlow,
+          cashInflows,
+          operatingExpenses + returnsOutflow,
+          totalReturns,
+          totalSales,
+        ),
+        const SizedBox(height: 32),
+
+        // Premium AI Analysis
+        Consumer<BusinessProvider>(
+          builder: (context, businessProvider, _) {
+            if (!businessProvider.isPremium) return const SizedBox.shrink();
+            return FutureBuilder<Map<String, dynamic>>(
+              future: fetchAIAnalysis(
+                businessId: businessProvider.id!,
+                reportType: 'cash_flow',
+                data: {
+                  'cashInflows': cashInflows,
+                  'operatingExpenses': operatingExpenses,
+                  'returnsOutflow': returnsOutflow,
+                  'inventoryExpenses': inventoryExpenses,
+                  'damagedGoodsExpenses': damagedGoodsExpenses,
+                  'netOperatingCashFlow': netOperatingCashFlow,
+                  'netInvestingCashFlow': netInvestingCashFlow,
+                  'netCashFlow': netCashFlow,
+                  'startDate': _startDate?.toIso8601String(),
+                  'endDate': _endDate?.toIso8601String(),
+                },
               ),
-            ),
-          );
-        }
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: CircularProgressIndicator(),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return Text('AI analysis unavailable: ${snapshot.error}');
+                }
+                final ai = snapshot.data!;
+                return Card(
+                  color: Colors.green.shade50,
+                  margin: const EdgeInsets.only(top: 16),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(
+                              Icons.psychology,
+                              color: Colors.green,
+                              size: 24,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'AI Cash Flow Analysis',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Cash Flow Trend: ${ai['trend'] ?? 'Analyzing...'}',
+                        ),
+                        Text(
+                          'Recommendation: ${ai['recommendation'] ?? 'No recommendations available'}',
+                        ),
+                        ...?ai['insights']
+                            ?.map<Widget>((i) => Text('• $i'))
+                            .toList(),
+                        if (ai['forecast'] != null)
+                          Text('Forecast: ${jsonEncode(ai['forecast'])}'),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+      ],
+    );
 
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Cash Flow'),
-            backgroundColor: Colors.green.shade700,
-            foregroundColor: Colors.white,
+    if (isWindows(context)) {
+      reportContent = Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: Card(
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: reportContent,
+            ),
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: reportContent,
-          ),
-        );
-      },
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Cash Flow'),
+        backgroundColor: Colors.green.shade700,
+        foregroundColor: Colors.white,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: reportContent,
+      ),
     );
   }
 
