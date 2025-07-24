@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kantemba_finances/helpers/api_service.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/providers/sales_provider.dart';
 import 'package:kantemba_finances/providers/expenses_provider.dart';
@@ -653,9 +654,13 @@ class _CashFlowScreenState extends State<CashFlowScreen> {
     required Map<String, dynamic> data,
   }) async {
     try {
+      final token = await ApiService.getToken();
       final response = await http.post(
-        Uri.parse('http://localhost:3000/api/ai/analyze'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('http://192.168.43.129:4000/api/ai/analyze'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
         body: jsonEncode({
           'businessId': businessId,
           'reportType': reportType,

@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:kantemba_finances/helpers/api_service.dart';
 import 'package:kantemba_finances/models/expense.dart';
@@ -19,18 +18,10 @@ class InventoryProvider with ChangeNotifier {
 
   List<InventoryItem> get items => [..._items];
 
-  // Get filtered items based on ShopProvider.currentShop
-  List<InventoryItem> get filteredItems {
-    // This will be accessed from the UI with ShopProvider context
-    return _items;
-  }
-
-  // Get all available shop IDs from inventory items
   List<String> get availableShopIds {
     return _items.map((item) => item.shopId).toSet().toList();
   }
 
-  // Get filtered items based on current shop (to be used with ShopProvider)
   List<InventoryItem> getItemsForShop(Shop? currentShop) {
     if (currentShop == null) {
       return _items; // Show all items when no shop is selected
@@ -38,21 +29,23 @@ class InventoryProvider with ChangeNotifier {
     return _items.where((item) => item.shopId == currentShop.id).toList();
   }
 
-  // Find item by barcode
   InventoryItem? findItemByBarcode(String barcode) {
     try {
       return _items.firstWhere(
-        (item) => item.barcode != null && item.barcode!.toLowerCase() == barcode.toLowerCase(),
+        (item) =>
+            item.barcode != null &&
+            item.barcode!.toLowerCase() == barcode.toLowerCase(),
       );
     } catch (e) {
       return null;
     }
   }
 
-  // Check if barcode already exists
   bool barcodeExists(String barcode) {
     return _items.any(
-      (item) => item.barcode != null && item.barcode!.toLowerCase() == barcode.toLowerCase(),
+      (item) =>
+          item.barcode != null &&
+          item.barcode!.toLowerCase() == barcode.toLowerCase(),
     );
   }
 
@@ -482,7 +475,6 @@ class InventoryProvider with ChangeNotifier {
     }
   }
 
-  // Helper method to create User from map (copied from UsersProvider)
   User _userFromMap(Map<String, dynamic> map) {
     List<String> permissions = [];
     if (map['permissions'] != null) {

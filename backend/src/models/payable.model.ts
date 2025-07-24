@@ -1,45 +1,155 @@
-import { Schema, model, Document } from 'mongoose';
+import { DataTypes, Model } from 'sequelize';
+import type { Optional } from 'sequelize';
+import { sequelize } from '../utils/db';
 
-export interface IPayablePayment {
+interface PayablePaymentAttributes {
+  id?: number;
+  payableId: string;
   amount: number;
   date: Date;
   method: string;
 }
 
-export interface IPayable extends Document {
+interface PayableAttributes {
+  id: string;
   name: string;
   contact: string;
-  address?: string;
+  address?: string | null;
   principal: number;
   interestType: 'fixed' | 'percentage';
   interestValue: number;
   dueDate: Date;
   paymentPlan: string;
-  paymentHistory: IPayablePayment[];
   status: 'active' | 'paid' | 'overdue';
   createdAt: Date;
   updatedAt: Date;
 }
 
-const PayablePaymentSchema = new Schema<IPayablePayment>({
-  amount: { type: Number, required: true },
-  date: { type: Date, required: true },
-  method: { type: String, required: true },
-});
+interface PayableCreationAttributes extends Optional<PayableAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
 
-const PayableSchema = new Schema<IPayable>({
-  name: { type: String, required: true },
-  contact: { type: String, required: true },
-  address: { type: String },
-  principal: { type: Number, required: true },
-  interestType: { type: String, enum: ['fixed', 'percentage'], required: true },
-  interestValue: { type: Number, required: true },
-  dueDate: { type: Date, required: true },
-  paymentPlan: { type: String, required: true },
-  paymentHistory: { type: [PayablePaymentSchema], default: [] },
-  status: { type: String, enum: ['active', 'paid', 'overdue'], default: 'active' },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-});
+class Payable extends Model<PayableAttributes, PayableCreationAttributes> implements PayableAttributes {
+  public id!: string;
+  public name!: string;
+  public contact!: string;
+  public address?: string | null;
+  public principal!: number;
+  public interestType!: 'fixed' | 'percentage';
+  public interestValue!: number;
+  public dueDate!: Date;
+  public paymentPlan!: string;
+  public status!: 'active' | 'paid' | 'overdue';
+  public createdAt!: Date;
+  public updatedAt!: Date;
+}
 
-export default model<IPayable>('Payable', PayableSchema); 
+class PayablePayment extends Model<PayablePaymentAttributes> implements PayablePaymentAttributes {
+  public id!: number;
+  public payableId!: string;
+  public amount!: number;
+  public date!: Date;
+  public method!: string;
+}
+
+Payable.init(
+  {
+    id: {
+      type: DataTypes.STRING,
+      primaryKey: true,
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    contact: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    address: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    principal: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    interestType: {
+      type: DataTypes.ENUM('fixed', 'percentage'),
+      allowNull: false,
+    },
+    interestValue: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    dueDate: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    paymentPlan: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    status: {
+      type: DataTypes.ENUM('active', 'paid', 'overdue'),
+      allowNull: false,
+      defaultValue: 'active',
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    },
+  },
+  {
+    sequelize,
+    modelName: 'Payable',
+    tableName: 'payables',
+    timestamps: true,
+  }
+);
+
+PayablePayment.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    payableId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      references: {
+        model: Payable,
+        key: 'id',
+      },
+      onDelete: 'CASCADE',
+    },
+    amount: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    date: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    method: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+  },
+  {
+    sequelize,
+    modelName: 'PayablePayment',
+    tableName: 'payable_payments',
+    timestamps: false,
+  }
+);
+
+Payable.hasMany(PayablePayment, { foreignKey: 'payableId' });
+PayablePayment.belongsTo(Payable, { foreignKey: 'payableId' });
+
+export { Payable, PayablePayment };

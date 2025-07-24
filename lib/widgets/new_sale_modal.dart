@@ -53,9 +53,6 @@ class _NewSaleModalState extends State<NewSaleModal> {
   String _barcodeQuery = '';
   bool _isProcessing = false;
   String _paymentType = 'Paid'; // 'Paid', 'On Credit', 'Mobile Money'
-  final TextEditingController _debtorNameController = TextEditingController();
-  final TextEditingController _debtorContactController =
-      TextEditingController();
 
   // POS Device Manager for barcode scanning
   late final PosDeviceManager _deviceManager;
@@ -447,8 +444,8 @@ class _NewSaleModalState extends State<NewSaleModal> {
       if (_paymentType == 'On Credit') {
         final newReceivable = Receivable(
           id: 'receivable_${newSale.id}',
-          name: _debtorNameController.text,
-          contact: _debtorContactController.text,
+          name: _customerNameController.text,
+          contact: _customerPhoneController.text,
           principal: newSale.grandTotal,
           dueDate: DateTime.now().add(
             const Duration(days: 30),
@@ -495,10 +492,10 @@ class _NewSaleModalState extends State<NewSaleModal> {
     try {
       final Customer customer = Customer(
         name:
-            _debtorNameController.text.isNotEmpty
-                ? _debtorNameController.text
+            _customerNameController.text.isNotEmpty
+                ? _customerNameController.text
                 : 'Customer',
-        phoneNumber: _debtorContactController.text,
+        phoneNumber: _customerPhoneController.text,
         email: '',
       );
       final Flutterwave flutterwave = Flutterwave(
@@ -605,8 +602,8 @@ class _NewSaleModalState extends State<NewSaleModal> {
     if (_paymentType == 'On Credit') {
       final newReceivable = Receivable(
         id: 'receivable_${_lastCompletedSale!.id}',
-        name: _debtorNameController.text,
-        contact: _debtorContactController.text,
+        name: _customerNameController.text,
+        contact: _customerPhoneController.text,
         principal: _lastCompletedSale!.grandTotal,
         dueDate: DateTime.now().add(
           const Duration(days: 30),
@@ -1495,17 +1492,29 @@ class _NewSaleModalState extends State<NewSaleModal> {
 
                 TextField(
                   controller: _customerNameController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Customer Name',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
+                    errorText:
+                        (_paymentType == 'Mobile Money' ||
+                                    _paymentType == 'On Credit') &&
+                                _customerNameController.text.trim().isEmpty
+                            ? 'Required for ${_paymentType.toLowerCase()} payment'
+                            : null,
                   ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _customerPhoneController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Phone Number',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
+                    errorText:
+                        (_paymentType == 'Mobile Money' ||
+                                    _paymentType == 'On Credit') &&
+                                _customerPhoneController.text.trim().isEmpty
+                            ? 'Required for ${_paymentType.toLowerCase()} payment'
+                            : null,
                   ),
                   keyboardType: TextInputType.phone,
                 ),
@@ -1522,6 +1531,46 @@ class _NewSaleModalState extends State<NewSaleModal> {
                   onChanged: _updateDiscount,
                 ),
                 const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: _paymentType,
+                  decoration: const InputDecoration(labelText: 'Payment Type'),
+                  items:
+                      ['Paid', 'On Credit', 'Mobile Money'].map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      _paymentType = newValue!;
+                    });
+                    AnalyticsService.logEvent(
+                      'payment_type_selected',
+                      data: {'paymentType': newValue},
+                    );
+                  },
+                ),
+                if (_paymentType == 'Mobile Money') ...[
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.phone_android),
+                    label:
+                        _isProcessingPayment
+                            ? const Text('Processing...')
+                            : const Text('Pay with Mobile Money'),
+                    onPressed:
+                        _isProcessingPayment
+                            ? null
+                            : () => _handleMobileMoneyPayment(_grandTotal),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green.shade700,
+                    ),
+                  ),
+                ],
+                // Add tax info fields here if needed
+                // const SizedBox(height: 8),
+                const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1963,17 +2012,29 @@ class _NewSaleModalState extends State<NewSaleModal> {
         const SizedBox(height: 8),
         TextField(
           controller: _customerNameController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Customer Name',
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
+            errorText:
+                (_paymentType == 'Mobile Money' ||
+                            _paymentType == 'On Credit') &&
+                        _customerNameController.text.trim().isEmpty
+                    ? 'Required for ${_paymentType.toLowerCase()} payment'
+                    : null,
           ),
         ),
         const SizedBox(height: 8),
         TextField(
           controller: _customerPhoneController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Phone Number',
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
+            errorText:
+                (_paymentType == 'Mobile Money' ||
+                            _paymentType == 'On Credit') &&
+                        _customerPhoneController.text.trim().isEmpty
+                    ? 'Required for ${_paymentType.toLowerCase()} payment'
+                    : null,
           ),
           keyboardType: TextInputType.phone,
         ),
@@ -2024,16 +2085,6 @@ class _NewSaleModalState extends State<NewSaleModal> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green.shade700,
             ),
-          ),
-        ],
-        if (_paymentType == 'On Credit') ...[
-          TextFormField(
-            controller: _debtorNameController,
-            decoration: const InputDecoration(labelText: 'Debtor Name'),
-          ),
-          TextFormField(
-            controller: _debtorContactController,
-            decoration: const InputDecoration(labelText: 'Debtor Contact'),
           ),
         ],
         // Add tax info fields here if needed

@@ -56,10 +56,7 @@ class SalesProvider with ChangeNotifier {
     if (!isOnline || !isPremium) {
       // Offline mode or non-premium business: load from local database
       try {
-        final localSales = await DBHelper.getDataByShopId(
-          'sales',
-          businessId,
-        );
+        final localSales = await DBHelper.getDataByShopId('sales', businessId);
         final localSaleItems = await DBHelper.getData('sale_items');
         final localReturnItems = await DBHelper.getData('return_items');
         final localReturns = await DBHelper.getDataByShopId(
@@ -614,7 +611,6 @@ class SalesProvider with ChangeNotifier {
     String shopId,
     BusinessProvider businessProvider,
   ) async {
-    print("sale being added: ${sale.toJson()}");
     if (!businessProvider.isPremium || !(await ApiService.isOnline())) {
       await DBHelper.insert('sales', {
         'id': sale.id,
@@ -649,9 +645,7 @@ class SalesProvider with ChangeNotifier {
       notifyListeners();
       return;
     }
-    // Online: save to backend
     await addSale(sale, createdBy, shopId);
-    // Optionally, mark as synced in local DB
   }
 
   Future<void> updateSaleItemsFromReturn(

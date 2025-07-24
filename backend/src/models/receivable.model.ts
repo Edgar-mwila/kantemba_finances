@@ -1,45 +1,155 @@
-import { Schema, model, Document } from 'mongoose';
+import { DataTypes, Model } from 'sequelize';
+import type { Optional } from 'sequelize';
+import { sequelize } from '../utils/db';
 
-export interface IReceivablePayment {
+interface ReceivablePaymentAttributes {
+  id?: number;
+  receivableId: string;
   amount: number;
   date: Date;
   method: string;
 }
 
-export interface IReceivable extends Document {
+interface ReceivableAttributes {
+  id: string;
   name: string;
   contact: string;
-  address?: string;
+  address?: string | null;
   principal: number;
   interestType: 'fixed' | 'percentage';
   interestValue: number;
   dueDate: Date;
   paymentPlan: string;
-  paymentHistory: IReceivablePayment[];
   status: 'active' | 'paid' | 'overdue';
   createdAt: Date;
   updatedAt: Date;
 }
 
-const ReceivablePaymentSchema = new Schema<IReceivablePayment>({
-  amount: { type: Number, required: true },
-  date: { type: Date, required: true },
-  method: { type: String, required: true },
-});
+interface ReceivableCreationAttributes extends Optional<ReceivableAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
 
-const ReceivableSchema = new Schema<IReceivable>({
-  name: { type: String, required: true },
-  contact: { type: String, required: true },
-  address: { type: String },
-  principal: { type: Number, required: true },
-  interestType: { type: String, enum: ['fixed', 'percentage'], required: true },
-  interestValue: { type: Number, required: true },
-  dueDate: { type: Date, required: true },
-  paymentPlan: { type: String, required: true },
-  paymentHistory: { type: [ReceivablePaymentSchema], default: [] },
-  status: { type: String, enum: ['active', 'paid', 'overdue'], default: 'active' },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-});
+class Receivable extends Model<ReceivableAttributes, ReceivableCreationAttributes> implements ReceivableAttributes {
+  public id!: string;
+  public name!: string;
+  public contact!: string;
+  public address?: string | null;
+  public principal!: number;
+  public interestType!: 'fixed' | 'percentage';
+  public interestValue!: number;
+  public dueDate!: Date;
+  public paymentPlan!: string;
+  public status!: 'active' | 'paid' | 'overdue';
+  public createdAt!: Date;
+  public updatedAt!: Date;
+}
 
-export default model<IReceivable>('Receivable', ReceivableSchema); 
+class ReceivablePayment extends Model<ReceivablePaymentAttributes> implements ReceivablePaymentAttributes {
+  public id!: number;
+  public receivableId!: string;
+  public amount!: number;
+  public date!: Date;
+  public method!: string;
+}
+
+Receivable.init(
+  {
+    id: {
+      type: DataTypes.STRING,
+      primaryKey: true,
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    contact: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    address: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    principal: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    interestType: {
+      type: DataTypes.ENUM('fixed', 'percentage'),
+      allowNull: false,
+    },
+    interestValue: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    dueDate: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    paymentPlan: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    status: {
+      type: DataTypes.ENUM('active', 'paid', 'overdue'),
+      allowNull: false,
+      defaultValue: 'active',
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    },
+  },
+  {
+    sequelize,
+    modelName: 'Receivable',
+    tableName: 'receivables',
+    timestamps: true,
+  }
+);
+
+ReceivablePayment.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    receivableId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      references: {
+        model: Receivable,
+        key: 'id',
+      },
+      onDelete: 'CASCADE',
+    },
+    amount: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    date: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    method: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+  },
+  {
+    sequelize,
+    modelName: 'ReceivablePayment',
+    tableName: 'receivable_payments',
+    timestamps: false,
+  }
+);
+
+Receivable.hasMany(ReceivablePayment, { foreignKey: 'receivableId' });
+ReceivablePayment.belongsTo(Receivable, { foreignKey: 'receivableId' });
+
+export { Receivable, ReceivablePayment };

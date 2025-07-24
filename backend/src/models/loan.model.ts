@@ -1,45 +1,155 @@
-import { Schema, model, Document } from 'mongoose';
+import { DataTypes, Model } from 'sequelize';
+import type { Optional } from 'sequelize';
+import { sequelize } from '../utils/db';
 
-export interface ILoanPayment {
+interface LoanPaymentAttributes {
+  id?: number;
+  loanId: string;
   amount: number;
   date: Date;
   method: string;
 }
 
-export interface ILoan extends Document {
+interface LoanAttributes {
+  id: string;
   lenderName: string;
   lenderContact: string;
-  lenderAddress?: string;
+  lenderAddress?: string | null;
   principal: number;
   interestType: 'fixed' | 'percentage';
   interestValue: number;
   dueDate: Date;
   paymentPlan: string;
-  paymentHistory: ILoanPayment[];
   status: 'active' | 'paid' | 'overdue';
   createdAt: Date;
   updatedAt: Date;
 }
 
-const LoanPaymentSchema = new Schema<ILoanPayment>({
-  amount: { type: Number, required: true },
-  date: { type: Date, required: true },
-  method: { type: String, required: true },
-});
+interface LoanCreationAttributes extends Optional<LoanAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
 
-const LoanSchema = new Schema<ILoan>({
-  lenderName: { type: String, required: true },
-  lenderContact: { type: String, required: true },
-  lenderAddress: { type: String },
-  principal: { type: Number, required: true },
-  interestType: { type: String, enum: ['fixed', 'percentage'], required: true },
-  interestValue: { type: Number, required: true },
-  dueDate: { type: Date, required: true },
-  paymentPlan: { type: String, required: true },
-  paymentHistory: { type: [LoanPaymentSchema], default: [] },
-  status: { type: String, enum: ['active', 'paid', 'overdue'], default: 'active' },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-});
+class Loan extends Model<LoanAttributes, LoanCreationAttributes> implements LoanAttributes {
+  public id!: string;
+  public lenderName!: string;
+  public lenderContact!: string;
+  public lenderAddress?: string | null;
+  public principal!: number;
+  public interestType!: 'fixed' | 'percentage';
+  public interestValue!: number;
+  public dueDate!: Date;
+  public paymentPlan!: string;
+  public status!: 'active' | 'paid' | 'overdue';
+  public createdAt!: Date;
+  public updatedAt!: Date;
+}
 
-export default model<ILoan>('Loan', LoanSchema); 
+class LoanPayment extends Model<LoanPaymentAttributes> implements LoanPaymentAttributes {
+  public id!: number;
+  public loanId!: string;
+  public amount!: number;
+  public date!: Date;
+  public method!: string;
+}
+
+Loan.init(
+  {
+    id: {
+      type: DataTypes.STRING,
+      primaryKey: true,
+    },
+    lenderName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    lenderContact: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    lenderAddress: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    principal: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    interestType: {
+      type: DataTypes.ENUM('fixed', 'percentage'),
+      allowNull: false,
+    },
+    interestValue: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    dueDate: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    paymentPlan: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    status: {
+      type: DataTypes.ENUM('active', 'paid', 'overdue'),
+      allowNull: false,
+      defaultValue: 'active',
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    },
+  },
+  {
+    sequelize,
+    modelName: 'Loan',
+    tableName: 'loans',
+    timestamps: true,
+  }
+);
+
+LoanPayment.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    loanId: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      references: {
+        model: Loan,
+        key: 'id',
+      },
+      onDelete: 'CASCADE',
+    },
+    amount: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+    },
+    date: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
+    method: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+  },
+  {
+    sequelize,
+    modelName: 'LoanPayment',
+    tableName: 'loan_payments',
+    timestamps: false,
+  }
+);
+
+Loan.hasMany(LoanPayment, { foreignKey: 'loanId' });
+LoanPayment.belongsTo(Loan, { foreignKey: 'loanId' });
+
+export { Loan, LoanPayment };

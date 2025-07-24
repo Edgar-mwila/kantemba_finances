@@ -1,13 +1,29 @@
-import { Router } from 'express';
-import { createReceivable, getReceivables, getReceivableById, updateReceivable, deleteReceivable } from '../controllers/receivable.controller';
-import { authMiddleware } from '../middlewares/auth.middleware';
+import { Router, type RequestHandler } from 'express';
+import { 
+    createReceivable, 
+    getReceivables, 
+    getReceivableById, 
+    updateReceivable, 
+    deleteReceivable,
+    addReceivablePayment,
+    getReceivablePayments
+} from '../controllers/receivable.controller';
+import { authenticateJWT } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-router.post('/', authMiddleware, createReceivable);
-router.get('/', authMiddleware, getReceivables);
-router.get('/:id', authMiddleware, getReceivableById);
-router.patch('/:id', authMiddleware, updateReceivable);
-router.delete('/:id', authMiddleware, deleteReceivable);
+// Apply authentication middleware to all routes
+router.use(authenticateJWT as RequestHandler);
 
-export default router; 
+// Main receivable routes
+router.post('/', createReceivable as RequestHandler);
+router.get('/', getReceivables as RequestHandler);
+router.get('/:id', getReceivableById as RequestHandler);
+router.patch('/:id', updateReceivable as RequestHandler);
+router.delete('/:id', deleteReceivable as RequestHandler);
+
+// Payment management routes
+router.post('/:id/payments', addReceivablePayment as RequestHandler);
+router.get('/:id/payments', getReceivablePayments as RequestHandler);
+
+export default router;

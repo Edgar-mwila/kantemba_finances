@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kantemba_finances/helpers/api_service.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/providers/inventory_provider.dart';
 import 'package:kantemba_finances/providers/sales_provider.dart';
@@ -94,7 +95,9 @@ class _BalanceSheetScreenState extends State<BalanceSheetScreen> {
     final inventory = inventoryData.getItemsForShop(
       Provider.of<ShopProvider>(context).currentShop,
     );
-    final allSales = salesData.getSalesForShop(Provider.of<ShopProvider>(context).currentShop);
+    final allSales = salesData.getSalesForShop(
+      Provider.of<ShopProvider>(context).currentShop,
+    );
     final allExpenses = expensesData.getExpensesForShop(
       Provider.of<ShopProvider>(context).currentShop,
     );
@@ -114,14 +117,8 @@ class _BalanceSheetScreenState extends State<BalanceSheetScreen> {
     );
 
     // Calculate cash position
-    final totalSales = sales.fold(
-      0.0,
-      (sum, sale) => sum + sale.grandTotal,
-    );
-    final totalExpenses = expenses.fold(
-      0.0,
-      (sum, exp) => sum + exp.amount,
-    );
+    final totalSales = sales.fold(0.0, (sum, sale) => sum + sale.grandTotal);
+    final totalExpenses = expenses.fold(0.0, (sum, exp) => sum + exp.amount);
     final totalReturns = returns.fold(
       0.0,
       (sum, ret) => sum + ret.grandReturnAmount,
@@ -159,12 +156,14 @@ class _BalanceSheetScreenState extends State<BalanceSheetScreen> {
         .fold<double>(0.0, (sum, l) => sum + l.principal);
 
     // Assets
-    final currentAssets = stockValue + netCashFlow + accountsReceivable + outstandingReceivables;
+    final currentAssets =
+        stockValue + netCashFlow + accountsReceivable + outstandingReceivables;
     final fixedAssets = 0.0; // Not tracked yet
     final totalAssets = currentAssets + fixedAssets;
 
     // Liabilities
-    final currentLiabilities = accountsPayable + outstandingPayables + outstandingLoans;
+    final currentLiabilities =
+        accountsPayable + outstandingPayables + outstandingLoans;
     final longTermLiabilities = 0.0; // Not tracked yet
     final totalLiabilities = currentLiabilities + longTermLiabilities;
 
@@ -656,9 +655,13 @@ class _BalanceSheetScreenState extends State<BalanceSheetScreen> {
     required Map<String, dynamic> data,
   }) async {
     try {
+      final token = await ApiService.getToken();
       final response = await http.post(
-        Uri.parse('http://localhost:3000/api/ai/analyze'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('http://192.168.43.129:4000/api/ai/analyze'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
         body: jsonEncode({
           'businessId': businessId,
           'reportType': reportType,

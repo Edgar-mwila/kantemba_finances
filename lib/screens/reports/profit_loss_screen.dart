@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kantemba_finances/helpers/api_service.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/providers/sales_provider.dart';
 import 'package:kantemba_finances/providers/expenses_provider.dart';
@@ -92,8 +93,12 @@ class _ProfitLossScreenState extends State<ProfitLossScreen> {
       builder: (context, shopProvider, child) {
         // Use filtered data based on current shop
         final allSales = salesData.getSalesForShop(shopProvider.currentShop);
-        final allExpenses = expensesData.getExpensesForShop(shopProvider.currentShop);
-        final allReturns = returnsData.getReturnsForShop(shopProvider.currentShop);
+        final allExpenses = expensesData.getExpensesForShop(
+          shopProvider.currentShop,
+        );
+        final allReturns = returnsData.getReturnsForShop(
+          shopProvider.currentShop,
+        );
 
         // Filter data by date range
         final sales = _filterDataByDateRange(allSales);
@@ -639,9 +644,13 @@ class _ProfitLossScreenState extends State<ProfitLossScreen> {
     required Map<String, dynamic> data,
   }) async {
     try {
+      final token = await ApiService.getToken();
       final response = await http.post(
-        Uri.parse('http://localhost:3000/api/ai/analyze'),
-        headers: {'Content-Type': 'application/json'},
+        Uri.parse('http://192.168.43.129:4000/api/ai/analyze'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
         body: jsonEncode({
           'businessId': businessId,
           'reportType': reportType,

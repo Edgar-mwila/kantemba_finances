@@ -49,124 +49,31 @@ class ExpensesProvider with ChangeNotifier {
     String businessId, {
     List<String>? shopIds,
   }) async {
-    bool isOnline = await ApiService.isOnline();
-    final business = await DBHelper.getDataById('businesses', businessId);
-    final isPremium = business?['isPremium'] == 1;
-
-    if (!isOnline || !isPremium) {
-      // Offline mode or non-premium business: load from local database
+    try {
+      final localExpenses = await DBHelper.getData('expenses');
       debugPrint(
-        'ExpensesProvider: Loading expenses from local database (offline: ${!isOnline}, premium: $isPremium)',
+        'ExpensesProvider: Loaded ${localExpenses} expenses from local DB',
       );
-      try {
-        final localExpenses = await DBHelper.getData('expenses');
-        debugPrint(
-          'ExpensesProvider: Loaded ${localExpenses} expenses from local DB',
-        );
-        _expenses =
-            localExpenses
-                .map(
-                  (item) => Expense(
-                    id: item['id'],
-                    description: item['description'],
-                    amount: (item['amount'] as num).toDouble(),
-                    date: DateTime.parse(item['date']),
-                    category: item['category'],
-                    createdBy: item['createdBy'] ?? 'Default',
-                    shopId: item['shopId'],
-                  ),
-                )
-                .toList();
-      } catch (e) {
-        debugPrint('Error loading expenses from local DB: $e');
-        _expenses = [];
-      }
-      notifyListeners();
-      return;
+      _expenses =
+          localExpenses
+              .map(
+                (item) => Expense(
+                  id: item['id'],
+                  description: item['description'],
+                  amount: (item['amount'] as num).toDouble(),
+                  date: DateTime.parse(item['date']),
+                  category: item['category'],
+                  createdBy: item['createdBy'] ?? 'Default',
+                  shopId: item['shopId'],
+                ),
+              )
+              .toList();
+    } catch (e) {
+      debugPrint('Error loading expenses from local DB: $e');
+      _expenses = [];
     }
-
-    // Online mode and premium business: fetch from API
-    debugPrint('ExpensesProvider: Loading expenses from API');
-    List<Expense> allExpenses = [];
-    if (shopIds != null && shopIds.isNotEmpty) {
-      for (final shopId in shopIds) {
-        final query = 'expenses?businessId=$businessId&shopId=$shopId';
-        final response = await ApiService.get(query);
-        if (response.statusCode == 200) {
-          dynamic data = json.decode(response.body);
-          List<dynamic> dataList;
-          if (data is List) {
-            dataList = data;
-          } else if (data is Map) {
-            dataList = [data];
-          } else if (data is String && data.trim().isNotEmpty) {
-            var decoded = json.decode(data);
-            if (decoded is List) {
-              dataList = decoded;
-            } else if (decoded is Map) {
-              dataList = [decoded];
-            } else {
-              dataList = [];
-            }
-          } else {
-            dataList = [];
-          }
-          allExpenses.addAll(
-            dataList.map(
-              (item) => Expense(
-                id: item['id'],
-                description: item['description'],
-                amount: (item['amount'] as num).toDouble(),
-                date: DateTime.parse(item['date']),
-                category: item['category'],
-                createdBy: item['createdBy'],
-                shopId: item['shopId'],
-              ),
-            ),
-          );
-        }
-      }
-    } else {
-      // No shopIds: fetch all for businessId
-      final query = 'expenses?businessId=$businessId';
-      final response = await ApiService.get(query);
-      if (response.statusCode == 200) {
-        dynamic data = json.decode(response.body);
-        List<dynamic> dataList;
-        if (data is List) {
-          dataList = data;
-        } else if (data is Map) {
-          dataList = [data];
-        } else if (data is String && data.trim().isNotEmpty) {
-          var decoded = json.decode(data);
-          if (decoded is List) {
-            dataList = decoded;
-          } else if (decoded is Map) {
-            dataList = [decoded];
-          } else {
-            dataList = [];
-          }
-        } else {
-          dataList = [];
-        }
-        allExpenses =
-            dataList
-                .map(
-                  (item) => Expense(
-                    id: item['id'],
-                    description: item['description'],
-                    amount: (item['amount'] as num).toDouble(),
-                    date: DateTime.parse(item['date']),
-                    category: item['category'],
-                    createdBy: item['createdBy'],
-                    shopId: item['shopId'],
-                  ),
-                )
-                .toList();
-      }
-    }
-    _expenses = allExpenses;
     notifyListeners();
+    return;
   }
 
   Future<void> addExpense(

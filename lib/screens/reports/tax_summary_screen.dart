@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kantemba_finances/helpers/api_service.dart';
 import 'package:provider/provider.dart';
 import 'package:kantemba_finances/providers/sales_provider.dart';
 import 'package:kantemba_finances/providers/returns_provider.dart';
@@ -329,91 +330,91 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
             const SizedBox(height: 32),
 
             // Premium AI Analysis
-            Consumer<BusinessProvider>(
-              builder: (context, businessProvider, _) {
-                if (!businessProvider.isPremium) return const SizedBox.shrink();
-                return FutureBuilder<Map<String, dynamic>>(
-                  future: fetchAIAnalysis(
-                    businessId: businessProvider.id!,
-                    reportType: 'tax_summary',
-                    data: {
-                      'totalSales': totalSales,
-                      'netSales': netSales,
-                      'totalReturns': totalReturns,
-                      'vat': vat,
-                      'turnoverTax': turnoverTax,
-                      'levy': levy,
-                      'vatRefunds': vatRefunds,
-                      'turnoverTaxRefunds': turnoverTaxRefunds,
-                      'levyRefunds': levyRefunds,
-                      'netVat': netVat,
-                      'netTurnoverTax': netTurnoverTax,
-                      'netLevy': netLevy,
-                      'totalTax': totalTax,
-                      'vatRate': vatRate,
-                      'turnoverTaxRate': turnoverTaxRate,
-                      'levyRate': levyRate,
-                      'totalTaxRate': totalTaxRate,
-                      'startDate': _startDate?.toIso8601String(),
-                      'endDate': _endDate?.toIso8601String(),
-                    },
-                  ),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-                    if (snapshot.hasError) {
-                      return Text('AI analysis unavailable: ${snapshot.error}');
-                    }
-                    final ai = snapshot.data!;
-                    return Card(
-                      color: Colors.green.shade50,
-                      margin: const EdgeInsets.only(top: 16),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: const [
-                                Icon(
-                                  Icons.psychology,
-                                  color: Colors.green,
-                                  size: 24,
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'AI Tax Compliance Analysis',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Compliance Status: ${ai['trend'] ?? 'Analyzing...'}',
-                            ),
-                            Text(
-                              'Recommendation: ${ai['recommendation'] ?? 'No recommendations available'}',
-                            ),
-                            ...?ai['insights']
-                                ?.map<Widget>((i) => Text('• $i'))
-                                .toList(),
-                            if (ai['forecast'] != null)
-                              Text('Forecast: ${jsonEncode(ai['forecast'])}'),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+            //   Consumer<BusinessProvider>(
+            //     builder: (context, businessProvider, _) {
+            //       if (!businessProvider.isPremium) return const SizedBox.shrink();
+            //       return FutureBuilder<Map<String, dynamic>>(
+            //         future: fetchAIAnalysis(
+            //           businessId: businessProvider.id!,
+            //           reportType: 'tax_summary',
+            //           data: {
+            //             'totalSales': totalSales,
+            //             'netSales': netSales,
+            //             'totalReturns': totalReturns,
+            //             'vat': vat,
+            //             'turnoverTax': turnoverTax,
+            //             'levy': levy,
+            //             'vatRefunds': vatRefunds,
+            //             'turnoverTaxRefunds': turnoverTaxRefunds,
+            //             'levyRefunds': levyRefunds,
+            //             'netVat': netVat,
+            //             'netTurnoverTax': netTurnoverTax,
+            //             'netLevy': netLevy,
+            //             'totalTax': totalTax,
+            //             'vatRate': vatRate,
+            //             'turnoverTaxRate': turnoverTaxRate,
+            //             'levyRate': levyRate,
+            //             'totalTaxRate': totalTaxRate,
+            //             'startDate': _startDate?.toIso8601String(),
+            //             'endDate': _endDate?.toIso8601String(),
+            //           },
+            //         ),
+            //         builder: (context, snapshot) {
+            //           if (snapshot.connectionState == ConnectionState.waiting) {
+            //             return const Padding(
+            //               padding: EdgeInsets.all(16.0),
+            //               child: CircularProgressIndicator(),
+            //             );
+            //           }
+            //           if (snapshot.hasError) {
+            //             return Text('AI analysis unavailable: ${snapshot.error}');
+            //           }
+            //           final ai = snapshot.data!;
+            //           return Card(
+            //             color: Colors.green.shade50,
+            //             margin: const EdgeInsets.only(top: 16),
+            //             child: Padding(
+            //               padding: const EdgeInsets.all(16.0),
+            //               child: Column(
+            //                 crossAxisAlignment: CrossAxisAlignment.start,
+            //                 children: [
+            //                   Row(
+            //                     children: const [
+            //                       Icon(
+            //                         Icons.psychology,
+            //                         color: Colors.green,
+            //                         size: 24,
+            //                       ),
+            //                       SizedBox(width: 8),
+            //                       Text(
+            //                         'AI Tax Compliance Analysis',
+            //                         style: TextStyle(
+            //                           fontWeight: FontWeight.bold,
+            //                           fontSize: 16,
+            //                         ),
+            //                       ),
+            //                     ],
+            //                   ),
+            //                   const SizedBox(height: 12),
+            //                   Text(
+            //                     'Compliance Status: ${ai['trend'] ?? 'Analyzing...'}',
+            //                   ),
+            //                   Text(
+            //                     'Recommendation: ${ai['recommendation'] ?? 'No recommendations available'}',
+            //                   ),
+            //                   ...?ai['insights']
+            //                       ?.map<Widget>((i) => Text('• $i'))
+            //                       .toList(),
+            //                   if (ai['forecast'] != null)
+            //                     Text('Forecast: ${jsonEncode(ai['forecast'])}'),
+            //                 ],
+            //               ),
+            //             ),
+            //           );
+            //         },
+            //       );
+            //     },
+            //   ),
           ],
         );
 
@@ -696,37 +697,41 @@ class _TaxSummaryScreenState extends State<TaxSummaryScreen> {
     );
   }
 
-  Future<Map<String, dynamic>> fetchAIAnalysis({
-    required String businessId,
-    required String reportType,
-    required Map<String, dynamic> data,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('http://localhost:3000/api/ai/analyze'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'businessId': businessId,
-          'reportType': reportType,
-          'data': data,
-        }),
-      );
+  // Future<Map<String, dynamic>> fetchAIAnalysis({
+  //   required String businessId,
+  //   required String reportType,
+  //   required Map<String, dynamic> data,
+  // }) async {
+  //   try {
+  //     final token = await ApiService.getToken();
+  //     final response = await http.post(
+  //       Uri.parse('http://192.168.43.129:4000/api/ai/analyze'),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': 'Bearer $token',
+  //       },
+  //       body: jsonEncode({
+  //         'businessId': businessId,
+  //         'reportType': reportType,
+  //         'data': data,
+  //       }),
+  //     );
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        return {
-          'trend': 'Analysis unavailable',
-          'recommendation': 'Unable to generate recommendations',
-          'insights': ['Please check your connection and try again'],
-        };
-      }
-    } catch (e) {
-      return {
-        'trend': 'Analysis unavailable',
-        'recommendation': 'Unable to generate recommendations',
-        'insights': ['Please check your connection and try again'],
-      };
-    }
-  }
+  //     if (response.statusCode == 200) {
+  //       return jsonDecode(response.body);
+  //     } else {
+  //       return {
+  //         'trend': 'Analysis unavailable',
+  //         'recommendation': 'Unable to generate recommendations',
+  //         'insights': ['Please check your connection and try again'],
+  //       };
+  //     }
+  //   } catch (e) {
+  //     return {
+  //       'trend': 'Analysis unavailable',
+  //       'recommendation': 'Unable to generate recommendations',
+  //       'insights': ['Please check your connection and try again'],
+  //     };
+  //   }
+  // }
 }

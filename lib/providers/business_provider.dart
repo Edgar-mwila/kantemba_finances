@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:kantemba_finances/helpers/api_service.dart';
 import 'package:kantemba_finances/helpers/db_helper.dart';
@@ -28,7 +27,7 @@ class BusinessProvider with ChangeNotifier {
     required String businessContact,
     required String adminName,
     required String adminContact,
-    bool isPremium = false,
+    bool isPremium = true,
   }) async {
     businessName = name;
     country = 'Zambia'; // Fixed to Zambia
@@ -54,47 +53,14 @@ class BusinessProvider with ChangeNotifier {
     // Always save to local DB first
     await DBHelper.insert('businesses', {...businessData, 'synced': 0});
 
-    // If premium and online, also save to API
-    if (isPremium && await ApiService.isOnline()) {
-      try {
-        await ApiService.post('business', businessData);
-        await DBHelper.markAsSynced('businesses', id);
-      } catch (e) {
-        // API failed, but we have local data
-        debugPrint('Failed to sync business to API: $e');
-      }
-    }
-
     notifyListeners();
     return id;
   }
 
   Future<void> setBusiness(String businessId) async {
-    // Try online first if premium and connected
-    if (isPremium && await ApiService.isOnline()) {
-      if (await _loadFromApi(businessId)) {
-        notifyListeners();
-        return;
-      }
-    }
-
     // Fallback to local DB
     await _loadFromLocal(businessId);
     notifyListeners();
-  }
-
-  Future<bool> _loadFromApi(String businessId) async {
-    try {
-      final response = await ApiService.get("business/$businessId");
-      if (response.statusCode == 200) {
-        final businessData = json.decode(response.body);
-        _setBusinessData(businessData);
-        return true;
-      }
-    } catch (e) {
-      debugPrint('Failed to load business from API: $e');
-    }
-    return false;
   }
 
   Future<void> _loadFromLocal(String businessId) async {
@@ -133,13 +99,6 @@ class BusinessProvider with ChangeNotifier {
   }
 
   Future<void> fetchAndSetBusinessHybrid(String businessId) async {
-    // For premium users, try online first, then fallback to local
-    if (isPremium && await ApiService.isOnline()) {
-      if (await _loadFromApi(businessId)) {
-        return;
-      }
-    }
-
     // Load from local DB
     final localBusiness = await DBHelper.getData('businesses');
     if (localBusiness.isEmpty) return;
@@ -169,32 +128,7 @@ class BusinessProvider with ChangeNotifier {
       'synced': 0,
     }, business.id!);
 
-    // If premium and online, also update API
-    if (business.isPremium && await ApiService.isOnline()) {
-      try {
-        await _updateBusinessApi(business);
-        await DBHelper.markAsSynced('businesses', business.id!);
-      } catch (e) {
-        debugPrint('Failed to sync business update to API: $e');
-      }
-    }
-
     notifyListeners();
-  }
-
-  Future<void> _updateBusinessApi(BusinessProvider business) async {
-    final response = await ApiService.put('business/${business.id}', {
-      'name': business.businessName,
-      'country': business.country,
-      'businessContact': business.businessContact,
-      'adminName': business.adminName,
-      'adminContact': business.adminContact,
-      'isPremium': business.isPremium,
-    });
-
-    if (response.statusCode == 200) {
-      await setBusiness(business.id!);
-    }
   }
 
   Future<void> syncBusinessToBackend({bool batch = false}) async {

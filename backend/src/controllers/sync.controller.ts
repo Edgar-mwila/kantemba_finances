@@ -6,9 +6,9 @@ import { Inventory } from '../models/inventory.model';
 import { Expense } from '../models/expense.model';
 import { Sale, SaleItem } from '../models/sale.model';
 import { Return, ReturnItem } from '../models/return.model';
-import Loan from '../models/loan.model';
-import Payable from '../models/payable.model';
-import Receivable from '../models/receivable.model';
+import { Loan, LoanPayment } from '../models/loan.model';
+import { Payable, PayablePayment } from '../models/payable.model';
+import { Receivable, ReceivablePayment } from '../models/receivable.model';
 
 // Utility: Clean foreign keys and remove unknown attributes
 function cleanRecord(record: any, allowedFields: string[], fkFields: string[] = []) {
@@ -51,6 +51,9 @@ export const syncData = async (req: Request, res: Response) => {
       receivables = [],
       payables = [],
       loans = [],
+      receivable_payments = [],
+      loan_payments = [],
+      payable_payments = [],
     } = req.body;
 
     // Log request data summary
@@ -67,6 +70,9 @@ export const syncData = async (req: Request, res: Response) => {
     console.log(`[${requestId}] - Receivables: ${receivables.length} items`);
     console.log(`[${requestId}] - Payables: ${payables.length} items`);
     console.log(`[${requestId}] - Loans: ${loans.length} items`);
+    console.log(`[${requestId}] - Receivables: ${receivable_payments.length} items`);
+    console.log(`[${requestId}] - Payables: ${payable_payments.length} items`);
+    console.log(`[${requestId}] - Loans: ${loan_payments.length} items`);
     
     // Log detailed request data (be careful with sensitive data)
     console.log(`[${requestId}] DETAILED REQUEST DATA:`);
@@ -84,6 +90,9 @@ export const syncData = async (req: Request, res: Response) => {
     console.log(`[${requestId}] Receivables Data:`, JSON.stringify(receivables, null, 2));
     console.log(`[${requestId}] Payables Data:`, JSON.stringify(payables, null, 2));
     console.log(`[${requestId}] Loans Data:`, JSON.stringify(loans, null, 2));
+    console.log(`[${requestId}] Receivable Payments Data:`, JSON.stringify(receivable_payments, null, 2));
+    console.log(`[${requestId}] Payable Payments Data:`, JSON.stringify(payable_payments, null, 2));
+    console.log(`[${requestId}] Loan Payments Data:`, JSON.stringify(loan_payments, null, 2));
 
     const results: any = {
       business: null,
@@ -98,6 +107,9 @@ export const syncData = async (req: Request, res: Response) => {
       receivables: { success: 0, error: 0 },
       payables: { success: 0, error: 0 },
       loans: { success: 0, error: 0 },
+      receivable_payments: { success: 0, error: 0 },
+      payable_payments: { success: 0, error: 0 },
+      loan_payments: { success: 0, error: 0 },
     };
 
     // Upsert business
@@ -294,13 +306,22 @@ export const syncData = async (req: Request, res: Response) => {
     // Sync Receivables, Payables, Loans
     const syncOperations = [];
     if (receivables && receivables.length > 0) {
-        syncOperations.push(...receivables.map((r: any) => Receivable.updateOne({ _id: r._id }, r, { upsert: true })));
+        syncOperations.push(...receivables.map((r: any) => Receivable.findOrCreate({ where: { id: r._id }, defaults: r})));
+    }
+    if (receivable_payments && receivable_payments.length > 0) {
+        syncOperations.push(...receivable_payments.map((r: any) => ReceivablePayment.findOrCreate({ where: { id: r._id }, defaults: r})));
     }
     if (payables && payables.length > 0) {
-        syncOperations.push(...payables.map((p: any) => Payable.updateOne({ _id: p._id }, p, { upsert: true })));
+        syncOperations.push(...payables.map((p: any) => Payable.findOrCreate({ where: { id: p._id }, defaults: p})));
+    }
+    if (payable_payments && payable_payments.length > 0) {
+        syncOperations.push(...payable_payments.map((p: any) => PayablePayment.findOrCreate({ where: { id: p._id }, defaults: p})));
     }
     if (loans && loans.length > 0) {
-        syncOperations.push(...loans.map((l: any) => Loan.updateOne({ _id: l._id }, l, { upsert: true })));
+        syncOperations.push(...loans.map((l: any) => Loan.findOrCreate({ where: { id: l._id }, defaults: l})));
+    }
+    if (loan_payments && loan_payments.length > 0) {
+        syncOperations.push(...loan_payments.map((l: any) => LoanPayment.findOrCreate({ where: { id: l._id }, defaults: l})));
     }
 
     try {
